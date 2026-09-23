@@ -43,9 +43,9 @@ it composes the three existing libraries."
 Those three are *not yet hard dependencies*. The evidence vocabulary and the
 taxonomy trie are defined here so that `using Protoctist` works today, in a bare
 environment, with nothing else published. When a sibling package is present the
-matching extension defers to it. This keeps an honest green: the package really
-does load and really does pass its tests, rather than declaring dependencies that
-do not yet exist.
+matching extension is designed to defer to it, once that extension is
+added. This keeps an honest green: the package really does load and really
+does pass its tests, rather than declaring dependencies that do not yet exist.
 ====
 
 === Provenance — this package was recovered, not written from scratch
