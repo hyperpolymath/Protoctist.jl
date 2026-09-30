@@ -21,7 +21,8 @@ using ..Types
 using ..Tree: annotate_newick
 
 export ECSVTable, PlacementBatch, Placement,
-       read_ecsv, write_ecsv, read_jplace, write_jplace, export_itol_bundle
+       read_ecsv, write_ecsv, read_jplace, write_jplace, best_placements,
+       export_itol_bundle
 
 """
     ECSVTable(names, columns, meta)
@@ -215,10 +216,18 @@ function write_jplace(b::PlacementBatch, path::AbstractString)
         println(fh, "  \"version\": ", b.version, ",")
         println(fh, "  \"fields\": [", join(_json_quote.(fields), ", "), "],")
         println(fh, "  \"placements\": [")
-        for (i, p) in enumerate(b.placements)
-            vals = join((_jplace_value(p, f) for f in fields), ", ")
-            print(fh, "    {\"p\": [[", vals, "]], \"n\": [", _json_quote(p.name), "]}")
-            println(fh, i == length(b.placements) ? "" : ",")
+        # One object per query, holding all of its candidates, as placers write it.
+        order = String[]
+        groups = Dict{String,Vector{Placement}}()
+        for p in b.placements
+            haskey(groups, p.name) || (push!(order, p.name); groups[p.name] = Placement[])
+            push!(groups[p.name], p)
+        end
+        for (i, name) in enumerate(order)
+            entries = join(("[" * join((_jplace_value(p, f) for f in fields), ", ") * "]"
+                            for p in groups[name]), ", ")
+            print(fh, "    {\"p\": [", entries, "], \"n\": [", _json_quote(name), "]}")
+            println(fh, i == length(order) ? "" : ",")
         end
         println(fh, "  ]")
         println(fh, "}")
@@ -228,12 +237,15 @@ end
 
 function _jplace_value(p::Placement, f::AbstractString)
     f == "edge_num"          && return string(p.edge_num)
-    f == "likelihood"        && return string(p.likelihood)
-    f == "like_weight_ratio" && return string(p.like_weight_ratio)
-    f == "distal_length"     && return string(p.distal_length)
-    f == "pendant_length"    && return string(p.pendant_length)
+    f == "likelihood"        && return _jnum(p.likelihood)
+    f == "like_weight_ratio" && return _jnum(p.like_weight_ratio)
+    f == "distal_length"     && return _jnum(p.distal_length)
+    f == "pendant_length"    && return _jnum(p.pendant_length)
     return "0"
 end
+
+# JSON has no NaN; a missing value read as NaN goes back out as null.
+_jnum(x::Float64) = isnan(x) ? "null" : string(x)
 
 _json_quote(s::AbstractString) =
     "\"" * replace(String(s), "\\" => "\\\\", "\"" => "\\\"", "\n" => "\\n") * "\""
@@ -257,26 +269,62 @@ function _json_string_array(s::AbstractString, key::AbstractString)
 end
 
 # Scan "placements": [ { "p": [[...],...], "n": [...] or "nm": [[name,mult],...] } ]
+#
+# One placement object carries EVERY candidate edge for its query (pplacer and
+# EPA-ng list several, each with its own like_weight_ratio) and may name
+# several identical queries. The result is one entry per (name, candidate):
+# nothing is dropped, and no candidate is privileged by its position in the
+# file. `null` values (which some placers write for missing fields) become
+# NaN in place, so the remaining columns stay aligned with `fields`.
 function _jplace_entries(s::AbstractString, fields::Vector{String})
     out = Tuple{String,Dict{String,Float64}}[]
     pm = match(r"\"placements\"\s*:\s*\[", s)
     pm === nothing && return out
     for obj in eachmatch(r"\{[^{}]*\"p\"\s*:\s*\[\[(.*?)\]\][^{}]*\}"s, s[pm.offset:end])
         body = obj.match
-        nums = [parse(Float64, x.match) for x in eachmatch(r"-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?", obj.captures[1])]
-        vals = Dict{String,Float64}()
-        for (i, f) in enumerate(fields)
-            i <= length(nums) && (vals[f] = nums[i])
+        names = _json_string_array(body, "n")
+        if isempty(names)
+            m2 = match(r"\"nm\"\s*:\s*\[(.*?)\]\s*\]"s, body)
+            m2 !== nothing &&
+                (names = [String(x.captures[1]) for x in eachmatch(r"\[\s*\"([^\"]*)\"", m2.captures[1])])
         end
-        nm = _json_string_array(body, "n")
-        name = isempty(nm) ? "" : nm[1]
-        if isempty(name)
-            m2 = match(r"\"nm\"\s*:\s*\[\s*\[\s*\"([^\"]*)\"", body)
-            m2 !== nothing && (name = String(m2.captures[1]))
+        isempty(names) && (names = [""])
+        for entry in split(obj.captures[1], r"\]\s*,\s*\[")
+            toks = strip.(split(entry, ','))
+            vals = Dict{String,Float64}()
+            for (i, f) in enumerate(fields)
+                i <= length(toks) || break
+                vals[f] = toks[i] == "null" ? NaN : parse(Float64, toks[i])
+            end
+            for name in names
+                push!(out, (name, vals))
+            end
         end
-        push!(out, (name, vals))
     end
     return out
+end
+
+"""
+    best_placements(b::PlacementBatch) -> Vector{Placement}
+
+One placement per query: the candidate with the highest `like_weight_ratio`
+(the first listed wins an exact tie). Queries keep the order in which they
+first appear. Use this when a downstream step needs a single edge per
+query; `b.placements` itself keeps the full distribution.
+"""
+function best_placements(b::PlacementBatch)
+    best = Dict{String,Placement}()
+    order = String[]
+    for p in b.placements
+        cur = get(best, p.name, nothing)
+        if cur === nothing
+            push!(order, p.name)
+            best[p.name] = p
+        elseif p.like_weight_ratio > cur.like_weight_ratio
+            best[p.name] = p
+        end
+    end
+    return [best[n] for n in order]
 end
 
 """
