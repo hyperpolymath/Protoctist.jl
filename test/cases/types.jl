@@ -17,6 +17,13 @@
     @test_throws ArgumentError TaxPath("a;b"; ladder = :greengenes)
     @test_throws ArgumentError TaxPath(fill("x", 20))          # longer than ladder
     @test_throws ArgumentError truncate_to(p, :phylum)         # rank off-ladder
+
+    # A closing ';' (SILVA / QIIME 2 style) is not an extra rank.
+    full = "Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Enterobacteriaceae;Escherichia;coli"
+    @test TaxPath(full * ";"; ladder = :silva) == TaxPath(full; ladder = :silva)
+    @test TaxPath("Eukaryota;TSAR;Rhizaria;;Cercozoa;").labels ==
+          ["Eukaryota", "TSAR", "Rhizaria", "", "Cercozoa"]   # interior blank kept
+    @test length(TaxPath("Eukaryota;;;")) == 1
 end
 
 @testset "EpiStatus and residuals" begin

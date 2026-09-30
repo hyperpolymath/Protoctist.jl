@@ -148,9 +148,16 @@ struct TaxPath
 
     function TaxPath(labels::AbstractVector{<:AbstractString}; ladder::Symbol = :pr2)
         r = ranks_for(ladder)
-        length(labels) > length(r) && throw(ArgumentError(
-            "lineage has $(length(labels)) labels but the $(ladder) ladder has $(length(r)) ranks"))
-        new(String.(collect(labels)), ladder)
+        # Trailing blanks are ranks the path does not reach, not unfilled
+        # ones, so they are dropped: SILVA and QIIME 2 write a fully resolved
+        # lineage with a closing ';', and "a;b;" must equal "a;b".
+        labs = String.(collect(labels))
+        while !isempty(labs) && isempty(last(labs))
+            pop!(labs)
+        end
+        length(labs) > length(r) && throw(ArgumentError(
+            "lineage has $(length(labs)) labels but the $(ladder) ladder has $(length(r)) ranks"))
+        new(labs, ladder)
     end
 end
 
