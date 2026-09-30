@@ -126,8 +126,10 @@ function _splitcsv(line::AbstractString, sep::Char)
     return out
 end
 
-_csvfield(s::AbstractString) =
-    any(c -> c in (',', '"', '\n', '\r'), s) ? "\"" * replace(s, "\"" => "\"\"") * "\"" : String(s)
+# Quote on the separator actually in use: a space-delimited (Astropy) or TSV
+# file must quote a field containing a space or tab, not only a comma.
+_csvfield(s::AbstractString, sep::Char = ',') =
+    any(c -> c == sep || c in ('"', '\n', '\r'), s) ? "\"" * replace(s, "\"" => "\"\"") * "\"" : String(s)
 
 """
     write_ecsv(t::ECSVTable, path; sep = ',')
@@ -139,9 +141,9 @@ function write_ecsv(t::ECSVTable, path::AbstractString; sep::Char = ',')
         for m in t.meta
             println(fh, m)
         end
-        println(fh, join(_csvfield.(t.names), sep))
+        println(fh, join(_csvfield.(t.names, sep), sep))
         for i in 1:length(t)
-            println(fh, join((_csvfield(t.columns[j][i]) for j in eachindex(t.names)), sep))
+            println(fh, join((_csvfield(t.columns[j][i], sep) for j in eachindex(t.names)), sep))
         end
     end
     return path

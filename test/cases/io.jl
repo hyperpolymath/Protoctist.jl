@@ -158,3 +158,16 @@ end
         @test ("Cercozoa" => 7) in clade_cumulus(run)
     end
 end
+
+@testset "a field containing the separator round-trips" begin
+    mktempdir() do dir
+        # QIIME 2 lineages contain spaces; Astropy ECSV is space-delimited.
+        t = Protoctist.IO.ECSVTable(["taxonomy", "reads"],
+            [["d__Eukaryota; p__Cercozoa", "a\tb"], ["4", "2"]], ["# %ECSV 1.0"])
+        for sep in (' ', '\t', ',')
+            p = joinpath(dir, "sep.ecsv")
+            Protoctist.IO.write_ecsv(t, p; sep = sep)
+            @test Protoctist.IO.read_ecsv(p; sep = sep).columns == t.columns
+        end
+    end
+end
