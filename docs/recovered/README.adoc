@@ -26,8 +26,9 @@ even though the thread contains 69 occurrences of the word.
 `DESIGN-SPEC-recovered.md`::
 The 14 passages of the thread that specify Protoctist: its purpose, the module
 skeleton, the scope directive and the usage example. This is the spec `src/`
-implements. It is kept as Markdown, byte-for-byte as extracted, because it is
-evidence. Converting it would make it harder to show that it was not edited.
+implements. It is kept as Markdown, byte-for-byte as extracted apart from the
+redaction below, because it is evidence. Converting it would make it harder to show
+that nothing else was edited. Three runs of Arena page-state JSON that the extractor caught after passage 12 and in the bodies of passages 13 and 14 (message ids and session telemetry, including a hashed client IP) are replaced with a marked `[Redacted: …]` line. They are not thread text. Before redaction the file had SHA-256 `44d86e730be094e744ddb3904ac429213492c50b39c79a02c74590339a86529c`; lines 1–849 are unchanged.
 It is allow-listed in `scripts/check-no-md-in-docs.sh` for that reason.
 
 `code-blocks/`::
