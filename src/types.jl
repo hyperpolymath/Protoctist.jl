@@ -4,9 +4,10 @@
 # Protoctist.Types — the vocabulary protist workflows share.
 #
 # Recovered from the design thread "Clades and Other Prompts" (2026-09-16).
-# The design names EpistemicTypes.jl as the owner of the evidence vocabulary;
-# until that package is published these are defined here as the canonical
-# shapes, and the extension in `ext/` re-binds them when the sibling loads.
+# The design names EpistemicTypes.jl as the owner of the evidence vocabulary.
+# Protoctist 0.1 defines these shapes itself and takes no dependency on it;
+# binding them to EpistemicTypes through a package extension is planned and
+# is not present in this release.
 
 module Types
 
@@ -103,11 +104,11 @@ end
 
 A per-row "claim with a receipt" — the fibre binding a visible taxon at a
 rank to the origin witness that entitles it. The design aliases this to
-`EpistemicTypes.Receipt`; the alias is re-established by the extension when
-that package is present.
+`EpistemicTypes.Receipt`; in this release it is a separate type.
 
-`signature` is opaque here: Protoctist verifies receipts it is given and
-never mints one, so the signing scheme stays with the issuing library.
+`signature` is opaque here: Protoctist carries the receipts it is given and
+never mints one, and it does not check signatures itself. Signing and
+verification stay with the issuing library.
 """
 struct EvidenceReceipt
     standpoint::Standpoint

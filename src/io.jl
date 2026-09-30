@@ -9,11 +9,11 @@
 #   export_itol_bundle(tree, node_annot, outdir)
 #
 # The design returns a DataFrame. DataFrames.jl is deliberately NOT a hard
-# dependency: the core must load in a bare environment. `read_ecsv` returns a
-# column table (a NamedTuple of vectors) which is the Tables.jl shape every
-# DataFrame constructor accepts — `DataFrame(read_ecsv(p))` is the design's
-# signature, one call away, with no dependency imposed on users who do not
-# want it.
+# dependency: the core must load in a bare environment. `read_ecsv` returns an
+# `ECSVTable`; `columntable(t)` turns it into a NamedTuple of vectors, which is
+# the Tables.jl column-table shape every DataFrame constructor accepts, so
+# `DataFrame(Protoctist.IO.columntable(read_ecsv(p)))` gives the design's
+# DataFrame without imposing the dependency on users who do not want it.
 
 module IO
 

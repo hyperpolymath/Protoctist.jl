@@ -132,3 +132,29 @@ end
         @test occursin("DATASET_SIMPLEBAR", read(joinpath(out, "itol_counts.txt"), String))
     end
 end
+
+@testset "counts are never silently zeroed; TSV loads" begin
+    mktempdir() do dir
+        # Integral floats (as pandas/R write them) are whole counts.
+        p = joinpath(dir, "float.csv")
+        write(p, "lineage,count\nEukaryota;TSAR;Rhizaria,12.0\nEukaryota;TSAR;Alveolata,3\n")
+        run = load_protist_run(p)
+        @test first(clade_cumulus(run)) == ("root" => 15)
+
+        # A count that is not a whole number is an error naming the row,
+        # never a zero that drops the reads.
+        for bad in ("NA", "", "12.5")
+            q = joinpath(dir, "bad.csv")
+            write(q, "lineage,count\nEukaryota;TSAR;Rhizaria,5\nEukaryota;TSAR;Alveolata,$bad\n")
+            err = try load_protist_run(q); nothing catch e; e end
+            @test err isa ArgumentError
+            @test occursin("row 2", sprint(showerror, err))
+        end
+
+        # Tab-separated, as DADA2 / QIIME 2 export.
+        t = joinpath(dir, "run.tsv")
+        write(t, "Taxon\treads\nEukaryota;TSAR;Rhizaria;;Cercozoa\t7\n")
+        run = load_protist_run(t; sep = '\t')
+        @test ("Cercozoa" => 7) in clade_cumulus(run)
+    end
+end

@@ -10,8 +10,8 @@
 #
 # Cladistics.jl owns the general tree algebra. Protoctist does not duplicate
 # it: this module builds the *taxonomy* tree, which is a trie over ranked
-# lineages, and hands it over. When Cladistics is loaded the extension
-# converts `TaxonomyTree` to its `Tree`.
+# lineages. Converting `TaxonomyTree` to Cladistics' `Tree` through a
+# package extension is planned and is not present in this release.
 
 module Tree
 

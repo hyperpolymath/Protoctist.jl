@@ -7,9 +7,10 @@
 #   build_manifest(run_cfg, policy, hashes)::Dict
 #   validate_merge(manA, manB)  -> uses EpistemicTypes.can_merge
 #
-# `can_merge` belongs to EpistemicTypes. Until that package is published,
-# `validate_merge` implements the check directly and the extension defers to
-# the sibling when it is loaded, so the answer never silently changes shape.
+# `can_merge` belongs to EpistemicTypes. Protoctist 0.1 takes no dependency on
+# it, so `validate_merge` implements the check directly. Any later deferral to
+# the sibling must keep the MergeVerdict shape, so callers never see the
+# answer change form.
 
 module Manifest
 
