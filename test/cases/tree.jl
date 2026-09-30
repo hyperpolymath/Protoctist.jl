@@ -5,8 +5,8 @@
     t = build_taxonomy_tree(paths)
 
     labs = [n.label for n in t.nodes]
-    # A blank subdivision must NOT truncate the lineage: PR2 leaves it empty
-    # for lineages that do reach genus, and these are the target taxa.
+    # A blank interior rank must NOT truncate the lineage: the labels below
+    # it are still placed, each at its own rank.
     @test "Cercozoa" in labs
     @test "Giardia"  in labs
     @test "Ciliophora" in labs
@@ -21,6 +21,16 @@
     @test a.cum[1] == 9                 # root carries every read
     @test a.f[1]   == 9                 # all factive
     @test a.contam[1] == 0
+
+    # A row whose lineage leaves the tree is counted at the deepest node the
+    # tree contains — never dropped.
+    lost = rollup_counts(t, [(path = TaxPath("Eukaryota;TSAR;Alveolata;;Ciliophora;Spirotrichea"), count = 5),
+                             (path = TaxPath("Eukaryota;Amorphea"), count = 2)])
+    cil = findfirst(n -> n.label == "Ciliophora", t.nodes)
+    euk = findfirst(n -> n.label == "Eukaryota", t.nodes)
+    @test lost.counts[cil] == 5
+    @test lost.counts[euk] == 2
+    @test lost.cum[1] == 7
 
     # mixing ladders in one tree is refused, not coerced
     @test_throws ArgumentError build_taxonomy_tree(

@@ -1,118 +1,360 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= RSR Template Repo - Explainme
-image:https://img.shields.io/badge/License-MPL_2.0-blue.svg[License: MPL-2.0,link="https://opensource.org/licenses/MPL-2.0"]
-
+= Protoctist.jl — design decisions
 :toc:
+:toclevels: 2
 :icons: font
 
-This file explains how the key template claims map to real files.
+This document is for people who will judge whether Protoctist belongs in a
+protist analysis pipeline: protistologists who run PR2 or SILVA
+classifications and bioinformaticians who maintain the pipelines around them.
+Each section states a decision, the reason for it, what goes wrong without
+it, and what it costs. The limits come after the decisions, stated at the same
+level of detail.
 
-== Central Session Protocol Authority
+The source is small enough to check every claim here against it: four modules
+in `src/`, about 1,100 lines. The test suite exercises each decision.
 
-Claim:
-Session protocols are centrally maintained and not duplicated in this template.
+== The problem being solved
 
-How this is implemented:
+A protist amplicon study ends with a table: lineage strings from a classifier
+run against a reference, a count per row, and often a set of phylogenetic
+placements for the reads the reference could not name. Between that table and
+a figure or a pooled analysis there are four places where results get silently
+damaged:
 
-* The local dispatcher (`session/dispatch.sh`) maps canonical commands to central
-  protocol paths in `standards/3-practice/session-management-standards`.
-* Local files (`session/custom-checks.k9`, `session/local-hooks.sh`,
-  `coordination.k9`) are integration-only.
+. *Lineages from different references get compared.* PR2 v5 has nine ranks and
+  SILVA has seven. The fourth label of a PR2 lineage is a subdivision; the
+  fourth label of a SILVA lineage is an order. A string comparison cannot tell
+  them apart.
+. *Reads go missing during aggregation.* A row whose lineage does not appear
+  in the tree being aggregated over, or a count that fails to parse, is easily
+  dropped without any message.
+. *Placement uncertainty is collapsed early.* A jplace file lists several
+  candidate edges per query, each with a likelihood-weight ratio. Keeping only
+  the first-listed edge discards the distribution and prefers an arbitrary
+  edge.
+. *Runs that should not be pooled are pooled.* Two runs classified against
+  different reference versions or thresholds produce tables that look
+  identical in shape.
 
-Caveat:
+Each decision below closes one of these.
 
-* If `SESSION_STANDARDS_DIR` is unset and no adjacent standards checkout exists,
-  the dispatcher records the command but cannot resolve central checklist paths.
+== Decisions
 
-== Canonical Command Surface
+=== D1. A lineage carries its rank ladder
 
-Claim:
-Template bindings align to one canonical command model.
+*Decision.* `TaxPath` stores its labels together with the ladder they were
+assigned under (`:pr2` or `:silva`). Equality and hashing include the ladder.
+`build_taxonomy_tree` rejects input that mixes ladders.
 
-How this is implemented:
+*Why.* Rank is positional in a lineage string, and the positions mean
+different things on different ladders. Carrying the ladder turns a silent
+misreading into a type-level distinction. `at_rank(p, :subdivision)` answers
+correctly for a PR2 path and returns `nothing` for a SILVA path, because
+SILVA has no subdivision.
 
-* `Justfile` provides thin aliases (`intake-repo`, `checkpoint-change`,
-  `verify-maintenance`, `verify-substantial`, `verify-release`, `close-planned`,
-  `close-urgent`, `recover-repo`, `handover-*`).
-* Every alias calls `session/dispatch.sh` with canonical verb-object pairs.
+*Without it.* A merged PR2+SILVA table produces a tree in which SILVA orders
+sit beside PR2 subdivisions as siblings, and every count above them is
+wrong.
 
-Caveat:
+*Cost.* Converting between ladders is an explicit step the caller must write.
+Protoctist does not guess a mapping between PR2 supergroups and SILVA phyla.
 
-* Recipes are wrappers only. They do not replace protocol content from
-  the central standards repo.
+=== D2. An interior blank is an unfilled rank; a trailing blank is not a rank
 
-== Runtime State Is Local
+*Decision.* In `a;;c`, the empty label is kept: `c` is placed at the third
+rank, not promoted to the second. In `a;b;` the trailing empty label is
+dropped, so `a;b;` equals `a;b`.
 
-Claim:
-Session state is per-repository runtime output, not standards text.
+*Why.* An interior gap arises when a reference or a curation step leaves a
+rank empty while resolving deeper ones. Promoting the next label would
+misplace every label below the gap. A trailing separator, by contrast, is a
+formatting convention: SILVA reference strings and QIIME 2 taxonomy strings
+end with `;`. Treating it as an extra rank made a fully resolved 7-rank SILVA
+lineage appear to have 8 ranks, and it was rejected.
 
-How this is implemented:
+*Without it.* Either lineages with gaps are truncated at the gap and their
+reads are attributed to too coarse a clade, or SILVA-formatted input fails to
+load at all.
 
-* `session/dispatch.sh` writes command and continuity-core capture stubs to
-  `.session/LAST-CANONICAL-COMMAND.md` in the target repository path.
+=== D3. Tree node identity is (label, rank) under a parent
 
-Caveat:
+*Decision.* Two lineages share a node only when they agree on the label *and*
+the rank at that depth, under the same parent.
 
-* Runtime files are intentionally lightweight and require human/agent completion.
+*Why.* Skipping unfilled ranks (D2) means the same label can arrive at a
+parent at different ranks. Identity by label alone would merge them. Identity
+by (label, rank) keeps the tree a faithful trie of what was observed.
 
-== Template Token Policy
+=== D4. No read is dropped by aggregation
 
-Claim:
-Placeholders are explicit template content until initialization.
+*Decision.* `rollup_counts` walks each row's lineage down the tree. If the
+lineage leaves the tree, the row is counted at the deepest node the tree
+contains. It is never discarded. `load_protist_run` raises an error naming the
+file, row and column when a count is blank, `NA` or fractional. It does not
+read such a count as zero. An integral float such as `12.0` is accepted,
+because pandas and R write counts that way.
 
-How this is implemented:
+*Why.* Losing reads is the one aggregation error nobody can see afterwards:
+the totals are simply smaller. Coarse attribution is visible. The read shows
+up as a non-zero *own* count on an interior node, and in NHX output as
+`count=` > 0 on a node with children.
 
-* `README.adoc` and bootstrap recipes keep `{{TOKEN}}` placeholders visible.
-* `just init` performs token replacement.
+*Without it.* An unparseable count column produces a plausible-looking tree
+whose root total is wrong. An earlier version did exactly this, and a test
+now fails if that behaviour returns.
 
-Caveat:
+*Cost.* `rollup_counts` does not return a per-row list of which rows were
+attributed coarsely. You can recover it by comparing each row's lineage depth
+with the depth of the node it landed on, but the package does not do that for
+you.
 
-* Uninitialized placeholders must not be treated as project-specific truth.
+=== D5. Cumulative counts in one iterative post-order pass
 
-== Dependency Updates (Dependabot)
+*Decision.* After per-row attribution, cumulative tallies (reads, factive,
+belief, residual, novel, contaminated) are accumulated in a single post-order
+traversal driven by an explicit stack.
 
-Claim:
-Dependency bumps land fast and safely, without manual chasing.
+*Why.* A node's clade total is its own count plus its children's totals. One
+pass computes every clade total in time linear in the number of nodes. The
+explicit stack means lineage depth cannot overflow the call stack.
 
-How this is implemented:
+*Measured.* 200,000 synthetic nine-rank rows produce a 752,836-node tree. The
+tree builds in 1.5 s and the rollup takes 1.3 s (Julia 1.12, i9-13900H).
 
-* `dependabot.yml` watches the Dependabot-supported ecosystems the estate
-  actually uses: `github-actions`, `cargo`, `mix` (Elixir), `docker`.
-* `dependabot-automerge.yml` auto-merges *every* bump (patch/minor/major,
-  security or routine) **once the required checks are green** — a broken bump
-  fails CI and stays open (you get an email); it never lands on a red `main`.
+*Cost.* Matching a row to the tree scans the children of each node on the
+path, so attribution is O(rows × depth × siblings). Real taxonomies have
+small sibling sets; a node with tens of thousands of direct children would
+make this the slow step.
 
-Caveat:
+=== D6. Integer counts on the tree; fractions downstream
 
-* Dependabot has **no  or Bun ecosystem**, and `pnpm` only rides under the
-  `npm` ecosystem (itself banned). For this -first estate Dependabot cannot
-  watch the runtime dependencies; the `npm`/`pip` entries are retained only for
-  transitional/legacy manifests and are otherwise inert.  dependency
-  currency is managed via `.json`/`.lock`, not Dependabot.
-* Do **not** add Dependabot as a ruleset *bypass* actor: that lets bumps skip
-  the required checks (secret-scanning, SAST), removing the safety gate and the
-  "it broke" signal. Auto-merge-on-green gives fast merges without it.
+*Decision.* Every tally on a node is an integer count of reads. `f`, `b` and
+`res` are counts, not proportions.
 
-== Julia Registry Packages — Standalone Repo Requirement
+*Why.* Counts add up the tree exactly; proportions do not. A proportion is one
+division away for any consumer, iTOL's MULTIBAR included. Storing it would
+fix a denominator (clade? sample? run?) that different analyses choose
+differently.
 
-Claim:
-If this template is used to create a Julia package, it must remain a standalone repository registered with the Julia package registry.
+=== D7. Evidence status follows a factive/belief split
 
-How this is implemented:
+*Decision.* Each row can carry an `EpiStatus`:
 
-* Julia's package registry (General.jl or other) expects each package to be a standalone GitHub repository with `Project.toml` at the repository root.
-* Installation via `Pkg.add()`, dependency resolution, and automated CI/CD all depend on this canonical structure.
+* `FACTIVE`: the gates entitle the claim at this rank.
+* `BELIEF`: the evidence supports the claim but falls short of the threshold.
+* `COLLAPSED`: the claim was moved to a coarser rank.
+* `SANS_FIBRE`: no receipt.
 
-Caveat:
+Each row can also carry a `ResidualInfo`: the named candidates still in
+contention, whether novelty is admissible, and whether a contamination gate
+fired.
 
-* Do NOT move this repository into a monorepo or subdirectory, as this breaks registry registration and package discoverability.
-* Julia packages published to a registry must each remain a standalone top-level repository (registry registration and package discovery require it).
-* Non-registry Julia packages can be organized differently if they are not published to any registry.
+*Why.* A single confidence score conflates two different questions. The first
+is whether this assignment is entitled at this rank. The second is what else
+it could be. The split follows
+https://github.com/hyperpolymath/epistemic-types[epistemic-types]. There, a
+factive modality has a reflection principle (if it is known, it holds) and a
+belief modality deliberately has none. Residual identification follows
+https://github.com/hyperpolymath/residual-evidence-types[residual-evidence-types],
+where "identified" quantifies over *every* admissible candidate. Both are
+checked in Agda under `--safe --without-K` and have suites of terms they must
+reject. The Julia types follow these designs; they are not extracted from the
+proofs.
 
+*Ordering.* `novel_ok` is meaningful only after the contamination gates have
+passed. A read cannot be called a novel lineage while contamination remains a
+live explanation. The field exists to record that ordering.
 
-== License
+=== D8. Receipts are carried, never minted or verified
 
-This project is licensed under the Mozilla Public License, v. 2.0. See the `LICENSE` file for details.
+*Decision.* `EvidenceReceipt` holds a standpoint, a warrant, a projection and
+an opaque `signature`. Protoctist never creates a signed receipt and does not
+check signatures.
 
-SPDX-License-Identifier: CC-BY-SA-4.0
+*Why.* A receipt is worth something only if the component that made the
+decision issued it. In the formal model, a warrant has no constructor from
+evidence to claim for exactly this reason. An integration library that could
+mint receipts would let any caller manufacture entitlement. Verification
+belongs with the key-holding issuer, not with every consumer.
+
+=== D9. Manifests record hashes; merges compare only the judgement surface
+
+*Decision.* `build_manifest` stores the hashes the pipeline computed and never
+recomputes them. `validate_merge` compares the schema, every policy key, and
+the run's reference, ladder and version. It returns a `MergeVerdict` listing
+*every* reason for refusal.
+
+*Why.* Inputs are supposed to differ between runs that are pooled, so
+comparing them would refuse every merge. What must match is how the runs were
+judged. Recomputing hashes inside the library would let it disagree with the
+run it describes, for example over compression or line endings. Returning
+every reason means one re-run fixes everything; a first-reason-only answer
+turns that into a loop.
+
+=== D10. No package dependencies
+
+*Decision.* `[deps]` in `Project.toml` is empty. ECSV, CSV/TSV and jplace are
+read and written by code in `src/io.jl`.
+
+*Why.* A package that enters an existing analysis environment should not be
+able to change the resolution of anything already there. With no dependencies,
+adding Protoctist cannot downgrade CSV.jl, JSON3.jl or DataFrames.jl in your
+environment. A Tables.jl-shaped escape hatch covers users who want a
+DataFrame: `DataFrame(Protoctist.IO.columntable(Protoctist.IO.read_ecsv(p)))`.
+
+*Cost.* The file readers are written for the formats as pipelines emit them,
+not as general parsers. The limits below list where that matters.
+
+=== D11. jplace keeps the full placement distribution
+
+*Decision.* `read_jplace` returns one `Placement` per (query name, candidate
+edge). This covers every candidate in `p` and every name in `n` or `nm`.
+`best_placements` selects per query by the highest `like_weight_ratio`, and a
+tie goes to the first listed. `write_jplace` groups candidates back into one
+object per query. A JSON `null` is read as `NaN` and written back as `null`.
+
+*Why.* EPA-ng, pplacer and APPLES all report placement uncertainty as several
+weighted edges. Keeping only one edge, and choosing it by file position,
+throws away the distribution and replaces a likelihood decision with an
+arbitrary one. The test suite lists the weaker edge first to prove that
+selection ignores position.
+
+=== D12. Tree annotations sit in Newick comments
+
+*Decision.* `annotate_newick` writes
+`[&&NHX:rank=..:count=..:cum=..:f=..:b=..:res=..:novel=..:contam=..]` after
+each node label. `tags = false` writes plain Newick. Taxon labels containing
+Newick-reserved characters are quoted.
+
+*Why.* NHX lives inside bracket comments, so a reader that does not
+understand it still sees a valid tree, and one that does (ETE, treeio's
+`read.nhx`) gets every tally per node. The same evidence goes to iTOL as
+separate dataset files, which is the form iTOL renders as bars and strips.
+
+=== D13. ECSV headers survive a round-trip
+
+*Decision.* `read_ecsv` keeps every leading `#` line verbatim and
+`write_ecsv` writes them back. A file with no header is ordinary CSV. Fields
+are quoted when they contain the separator in use, so space-delimited
+(Astropy) and tab-delimited output round-trips lineages that contain spaces.
+
+*Why.* An ECSV header carries column types and provenance written by whatever
+produced the table. A tool that reads the file and writes it back must not
+strip that header.
+
+== Pipeline compatibility
+
+[cols="2,2,4"]
+|===
+| Tool | What Protoctist exchanges | What to do
+
+| DADA2 `assignTaxonomy` / `addSpecies`
+| A table with one lineage column
+| DADA2 returns one column per rank. Join them first, with `NA` as empty:
+  `apply(taxa, 1, function(r) paste(ifelse(is.na(r), "", r), collapse = ";"))`.
+  Trailing empties from unresolved ranks are then dropped by D2. Write TSV and
+  load with `sep = '\t'`.
+
+| QIIME 2 `taxonomy.tsv`
+| `Taxon` column, detected automatically
+| Rank prefixes (`d__`, `p__`, …) stay part of the label. Strip them first if
+  you want bare names. Counts live in the feature table; join on
+  `Feature ID`. Without a count column each row counts once.
+
+| vsearch `--sintax`
+| Lineage column
+| SINTAX writes `d:…,p:…` with commas and rank prefixes. Convert it to a
+  `;`-separated lineage first.
+
+| Astropy ECSV
+| ECSV body and header
+| Load with `sep = ' '`. The header's own `delimiter:` key is not read.
+
+| EPA-ng, pplacer, APPLES
+| jplace v3
+| Read and written directly (D11).
+
+| gappa, guppy
+| jplace
+| Protoctist's output is jplace, so these tools read it unchanged.
+
+| IQ-TREE, RAxML-NG
+| Tree labels
+| The iTOL dataset files are keyed by taxon name, so they apply to a
+  phylogeny whose node or tip labels use the same names.
+
+| iTOL
+| Newick + SIMPLEBAR / MULTIBAR / COLORSTRIP
+| Upload the tree and drag the three dataset files onto it.
+
+| ETE, treeio / ggtree
+| Newick with NHX
+| Read with the NHX reader to get per-node tallies (D12).
+
+| DataFrames.jl, any Tables.jl sink
+| NamedTuple of columns
+| `Protoctist.IO.columntable`.
+|===
+
+== What it deliberately does not do
+
+* *Classify.* Protoctist consumes assignments; it does not produce them.
+* *Infer trees.* The exported tree is the *taxonomy* the lineages span, with
+  ranks and no branch lengths. It is not a phylogeny. The dataset files carry
+  the evidence to a real phylogeny when labels match.
+* *Map between PR2 and SILVA.* See D1.
+* *Mint or verify receipts.* See D8.
+* *Compute hashes.* See D9.
+
+== Current limits
+
+These are properties of version 0.1, stated so that nobody meets them by
+surprise.
+
+* *jplace reading.* The reader is a focused scanner, not a JSON parser. It
+  expects placement objects without nested objects, and names without escaped
+  quotes. It keeps the five standard fields. pplacer's `post_prob` and
+  `marginal_like` are not retained. For `nm`, the names are kept but the
+  multiplicities are not, and a written file uses `n`.
+* *CSV reading.* A quoted field cannot span lines.
+* *Duplicate labels.* The tree is keyed by (label, rank) under a parent, but
+  the iTOL dataset files are keyed by label alone. The same taxon name in two
+  different branches produces two lines with the same key.
+* *Row matching cost.* O(rows × depth × siblings), as in D5.
+* *No per-row attribution report.* See D4.
+* *Evidence from tables.* `load_protist_run` rolls up counts only. Status and
+  residuals are passed to `rollup_counts` as row fields (see the README).
+* *Sibling packages.* Protoctist 0.1 defines its own copies of the evidence
+  shapes. Binding them to EpistemicTypes.jl and Cladistics.jl through package
+  extensions is planned; none ships in this release.
+
+== Checking these claims
+
+[source,bash]
+----
+git clone https://github.com/hyperpolymath/Protoctist.jl
+cd Protoctist.jl
+julia --project=. -e 'using Pkg; Pkg.test()'
+----
+
+The suite runs `Aqua.test_all` (11 checks) and then 100 behaviour tests. The
+tests that pin each decision are:
+
+[cols="1,3"]
+|===
+| Decision | Test (in `test/cases/`)
+
+| D1, D2 | `types.jl` — "TaxPath — ladders, ranks, truncation"
+| D3, D4, D5 | `tree.jl`
+| D4 (counts) | `io.jl` — "counts are never silently zeroed; TSV loads"
+| D9 | `manifest.jl`
+| D11 | `io.jl` — "jplace keeps every candidate placement"
+| D12 | `io.jl` — "iTOL bundle + run pipeline"
+| D13 | `io.jl` — "ECSV round-trip", "a field containing the separator round-trips"
+|===
+
+Where a decision fixed an earlier defect (D2's trailing separator, D4's count
+parsing, D11's placement handling, D13's quoting), the test was first
+confirmed to fail on the defective code.

@@ -227,7 +227,7 @@ branch lengths on the taxonomy tree, and row matching that is linear in rows
 julia --project=. -e 'using Pkg; Pkg.test()'
 ----
 
-97 behaviour tests across types, trees, IO and manifests. They run after
+100 behaviour tests across types, trees, IO and manifests. They run after
 `Aqua.test_all` (11 checks), which covers method ambiguities, unbound type
 parameters, undefined exports, stale dependencies, compat bounds, type piracy
 and persistent tasks.
