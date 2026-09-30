@@ -201,8 +201,11 @@ _rowresidual(r) = hasproperty(r, :residual) ? getproperty(r, :residual) : nothin
 """
     annotate_newick(tree, annot; tags = true) -> String
 
-Render `tree` as Extended Newick with NHX-style annotation blocks
-(`[&&NHX:key=value:...]`), the form iTOL and the BEAST-lineage tools read.
+Render `tree` as Extended Newick with NHX annotation blocks
+(`[&&NHX:key=value:...]`), which NHX-aware readers such as ETE and treeio's
+`read.nhx` parse. The blocks are Newick comments; pass `tags = false` for
+plain Newick if a viewer rejects comments. iTOL takes the same evidence from
+the dataset files `export_itol_bundle` writes.
 
 Labels are quoted when they contain a character Newick reserves, so a taxon
 name with a space or a comma round-trips instead of corrupting the string.
