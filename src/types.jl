@@ -52,7 +52,7 @@ end
 
 The epistemic standing of a per-row claim, as decided by the warrant gates.
 
-- `FACTIVE`     — warranted at this rank; the receipt verifies.
+- `FACTIVE`     — warranted at this rank by the gates that issued it.
 - `BELIEF`      — supported but below the factive threshold.
 - `COLLAPSED`   — the claim collapsed to a coarser rank than requested.
 - `SANS_FIBRE`  — no origin witness; the claim carries no receipt at all.
