@@ -4,10 +4,11 @@
 #   1. Aqua package-shape gate — runs FIRST: a package that does not load
 #      cleanly, whose deps are not compat-closed, or whose exports are
 #      ambiguous is rejected before any behaviour test can pass.
-#   2. Behaviour — every test/cases/*.jl is included. The shipped case
-#      (smoke.jl) is a LOAD check only; replace/extend it as real
-#      behaviour tests land. Until then, `Pkg.test()` passing is necessary
-#      but NOT sufficient — record that in STATE.a2ml (smoke-only suite).
+#   2. Behaviour — every test/cases/*.jl is included, in sorted order. There is
+#      one file per source module (types, tree, io, manifest); io.jl covers
+#      the lineage tables, jplace and the exporters, manifest.jl the
+#      manifest and merge check, examples.jl runs examples/*/run.jl. smoke.jl
+#      is only the load check.
 
 using Test
 using Protoctist

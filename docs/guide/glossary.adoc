@@ -1,0 +1,64 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Glossary
+
+Terms as Protoctist uses them.
+
+Belief (`BELIEF`)::
+A claim the gates support, but below the factive threshold at this rank.
+
+Clade cumulus::
+The cumulative read count of a clade: the node's own reads plus those of every
+descendant. `clade_cumulus(run)` returns it for every node, largest first.
+
+Collapsed (`COLLAPSED`)::
+The claim was made at a coarser rank than the one requested.
+
+Contaminated::
+A `ResidualInfo` flag, set when a contamination gate fired for the row.
+
+Evidence receipt (`EvidenceReceipt`)::
+The record of what a claim rested on: its standpoint, warrant, projection and
+an opaque signature. Protoctist carries the receipts it is given. It never
+creates one and does not check signatures. Signing and verification stay with
+the library that issued the receipt, such as EpistemicTypes.jl.
+
+Factive (`FACTIVE`)::
+A claim warranted at this rank by the gates that issued it.
+
+Judgement surface::
+The fields `validate_merge` compares: the reference database, its version, the
+rank ladder and the classification policy. Two runs that agree on all of them
+were judged under the same conditions and can be pooled.
+
+Ladder::
+The ordered list of ranks a lineage is read against: `:pr2` (9 ranks) or
+`:silva` (7). See link:lineage-formats.adoc[Lineage formats].
+
+Lineage::
+A path from the root of a taxonomy to one taxon, written as a separated string
+and held as a `TaxPath`.
+
+Like weight ratio (LWR)::
+In jplace, a placement's share of the total likelihood across the candidate
+edges for its query. `best_placements` selects by it.
+
+Novel (`novel_ok`)::
+A `ResidualInfo` flag: the novelty gates were satisfied. It is only ever set
+after the contamination gates pass, so a contaminated row is never reported as
+novel.
+
+Residual (`ResidualInfo`)::
+What is left over after a claim is made: the number of named species still in
+contention, the novel and contaminated flags, and a free-text note.
+
+Sans fibre (`SANS_FIBRE`)::
+No origin witness. The claim carries no receipt at all.
+
+Standpoint::
+Where a claim is made from: the reference, the rank ladder and its version.
+Two claims are comparable only from the same standpoint.
+
+Unfilled rank::
+A rank inside a lineage with an empty label (`a;;c`). The lineage continues
+past it, and the next label keeps its own rank.

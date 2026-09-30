@@ -1,0 +1,148 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Cookbook
+:toc: preamble
+
+Three routes from a classifier or placer into Protoctist. Each recipe has a
+runnable copy under `examples/` with small input files, and the test suite runs
+all three (`test/cases/examples.jl`), so the code on this page is known to work
+against the current release.
+
+== DADA2 and PR2 to an iTOL figure
+
+`dada2::assignTaxonomy` returns a matrix with one row per ASV and one column per
+rank, with `NA` wherever the classifier stopped. Protoctist wants one lineage
+string per row. The only step that needs care is the `NA`: it has to become an
+empty field, which Protoctist reads as an unfilled rank. Written as-is, it
+would become a taxon named "NA".
+
+.In R, after `assignTaxonomy` (and `addSpecies`, if used)
+[source,r]
+----
+lineage <- apply(taxa, 1, function(r) paste(ifelse(is.na(r), "", r), collapse = ";"))
+out <- data.frame(feature = rownames(taxa), lineage = lineage,
+                  count = colSums(seqtab.nochim)[rownames(taxa)])
+write.csv(out, "lineages.csv", row.names = FALSE)
+----
+
+This gives rows such as
+
+----
+"ASV2","Eukaryota;TSAR;Rhizaria;Cercozoa;;Glissomonadida;;;",100
+----
+
+where the classifier resolved the order but not the class. Protoctist places
+Glissomonadida at order, under Cercozoa, and does not move it up into the class
+slot.
+
+.In Julia
+[source,julia]
+----
+using Protoctist
+
+run = load_protist_run("lineages.csv")      # ProtistRun(3 rows, 12 taxa, ladder=:pr2)
+clade_cumulus(run)[1:5]
+# "root" => 260, "Eukaryota" => 260, "TSAR" => 255, "Alveolata" => 155, "Ciliophora" => 155
+
+export_iqtree_annotated(run, "out")
+# out/tree.newick, out/itol_counts.txt, out/itol_status.txt, out/itol_contamination.txt
+----
+
+Load `tree.newick` into iTOL and drag the three dataset files onto the tree.
+`itol_counts.txt` is a `DATASET_SIMPLEBAR` of cumulative reads per clade.
+`load_protist_run` rolls up counts only, so the status and contamination files
+are all zeros here. To fill them, build rows that carry a `status` and a
+`residual`, roll them up with `rollup_counts`, and write the files with
+`Protoctist.IO.export_itol_bundle(tree, annot, "out")`. The README section on
+evidence status shows the row shape.
+
+The counts summed here are over all samples. For one tree per sample, write one
+table per sample from `seqtab.nochim[sample, ]` and load each one.
+
+Runnable copy: `examples/dada2/` (`lineages.R`, then `run.jl`).
+
+== QIIME 2 and SILVA
+
+`qiime feature-classifier` writes lineages as
+`d__Bacteria; p__Proteobacteria; c__Gammaproteobacteria`. Protoctist strips the
+spaces around `;` itself. The rank prefixes are removed in the recipe, because
+a prefix is part of the label as far as Protoctist is concerned. An empty rank
+such as `g__` becomes an empty field, which is the right reading.
+
+[source,julia]
+----
+strip_prefixes(taxon) =
+    join((replace(strip(l), r"^[a-z]__" => "") for l in split(taxon, ';')), ';')
+
+strip_prefixes("d__Bacteria; p__Proteobacteria; c__Gammaproteobacteria")
+# "Bacteria;Proteobacteria;Gammaproteobacteria"
+----
+
+The inputs are `taxonomy.tsv` from `qiime tools export` and the feature table
+converted with `biom convert --to-tsv`. The recipe joins them on feature id,
+sums each feature over samples, writes a three-column TSV and loads it on the
+SILVA ladder:
+
+[source,julia]
+----
+run = load_protist_run("lineages.tsv"; sep = '\t', ladder = :silva)
+# ProtistRun(3 rows, 8 taxa, ladder=:silva)
+----
+
+`biom` writes counts as floats (`10.0`). The recipe rounds them when it sums.
+Protoctist itself refuses a count that is not a whole number rather than
+guessing (see link:troubleshooting.adoc[Troubleshooting]).
+
+Runnable copy: `examples/qiime2/`.
+
+== EPA-ng placements
+
+EPA-ng, pplacer and APPLES write jplace. Protoctist reads every candidate
+placement for every query, and for `nm` entries every name:
+
+[source,julia]
+----
+using Protoctist
+const PIO = Protoctist.IO
+
+b = PIO.read_jplace("epa_result.jplace")
+length(b.placements)               # 4: ASV1 on two edges, ASV2 and ASV7 sharing one
+
+best = PIO.best_placements(b)      # one per query, the highest like_weight_ratio
+# ASV1 edge 1 lwr 0.79 · ASV2 edge 3 lwr 1.0 · ASV7 edge 3 lwr 1.0
+
+confident = filter(p -> p.like_weight_ratio >= 0.9, best)
+PIO.write_jplace(PIO.PlacementBatch(b.tree, confident, b.fields, b.version),
+                 "confident.jplace")
+----
+
+In the example file, ASV1's first listed placement has LWR 0.21 and its second
+0.79. `best_placements` returns the second: selection is by weight, not by the
+order the placer wrote.
+
+The written file is jplace version 3. Two things from the input are not
+carried across: the `nm` multiplicities (the names are kept,
+each written as its own `n` entry) and the `metadata` block. If you rely on
+multiplicities downstream, filter with a tool that keeps them, such as gappa.
+
+Protoctist does not turn placements into taxonomic assignments. gappa's
+`examine assign` does that.
+
+Runnable copy: `examples/epa-ng/`.
+
+== Pooling two runs
+
+Before summing two runs, check that they were judged under the same conditions:
+
+[source,julia]
+----
+ma = build_manifest((reference = "PR2", version = "5.0.0", ladder = :pr2),
+                    (min_identity = 0.97,), Dict("seqtab" => "sha256:aa..."))
+mb = build_manifest((reference = "PR2", version = "5.0.0", ladder = :pr2),
+                    (min_identity = 0.97,), Dict("seqtab" => "sha256:bb..."))
+validate_merge(ma, mb)             # MergeVerdict(ok)
+----
+
+The input hashes differ, as they should for two different runs, and the
+verdict is still `ok`. Only the reference, version, ladder and policy are
+compared. A difference in any of them refuses the merge and names each one.

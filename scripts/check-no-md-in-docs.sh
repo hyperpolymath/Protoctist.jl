@@ -22,8 +22,10 @@ set -euo pipefail
 REPO_ROOT="${1:-.}"
 DOCS_DIR="$REPO_ROOT/docs"
 
-# Justified exceptions, relative to repo root. Empty by default.
-ALLOWED=()
+# Justified exceptions, relative to repo root.
+# docs/recovered/DESIGN-SPEC-recovered.md is recovered EVIDENCE, kept byte-for-byte
+# as extracted; converting it would destroy the ability to show it is unedited.
+ALLOWED=("docs/recovered/DESIGN-SPEC-recovered.md")
 # docs/berrywiki/ and docs/wikis/ are wiki-SYNC source trees: their content is
 # mirrored to/from forge-hosted wikis (GitHub/GitLab), which are inherently
 # Markdown. Converting them to AsciiDoc would break the sync contract, so the

@@ -37,6 +37,7 @@ CLAUDE.md                  # generated arrival pack; the generator, pre-commit a
 ?GEMINI.md                # pointer to CLAUDE.md for repos without AGENTS.md yet
 Justfile                   # thin; delegates phases to build/just/*.just
 coordination.k9.ncl        # repo-local session binding (template-mandated)
+Project.toml               # Julia package manifest; Pkg resolves a package from the ROOT Project.toml and nowhere else
 
 # ─── Conventional dotfiles (tool-required at root) ───────────────────────────
 .editorconfig
@@ -59,7 +60,7 @@ mise.toml                  # pinned toolchains
 .git/
 .github/                 # community health + workflows (GitHub reads this path and no other) + versioned git hooks (.github/hooks/, wired via core.hooksPath)
 www/                       # site-operations bundle; canonical .well-known/ lives at www/.well-known/ (issue #53)
-.machine_readable/          # manifests, contractiles, policies. Renamed back from machine-readable/ 2026-09-17 by owner ruling, for one canonical spelling estate-wide (census at the 2026-08 divergence: 48 dotted vs 9 hyphenated — the majority was already dotted). See docs/governance/TEMPLATE-LINEAGE-AUDIT.adoc
+.machine_readable/          # manifests, contractiles, policies. Renamed back from machine-readable/ 2026-09-17 by owner ruling, for one canonical spelling estate-wide (census at the 2026-08 divergence: 48 dotted vs 9 hyphenated — the majority was already dotted). (Recorded in the rsr-template-repo lineage audit.)
 docs/                      # human documentation
 build/                     # build orchestration: just/ phase modules, container/, docs-seed/, templates/, guix.scm (canon 1.2.1 guix-primary template_ref = "build/")
 ci/                        # .gitlab-ci.yml + .pre-commit-config.yaml; ci/README.adoc records the out-of-band GitLab project setting these require
@@ -67,6 +68,7 @@ scripts/                   # repo helper scripts
 session/                   # dispatch.sh, custom-checks.k9.ncl, local-hooks.sh
 src/
 tests/
+test/                      # Julia package tests; Pkg.test() runs test/runtests.jl and nowhere else. tests/ holds the estate shell/shape suites
 
 # ─── Optional: capability-gated or template-only ─────────────────────────────
 ?archetypes/               # template-only variation seam (ADR-0003); `just repo-init` removes it from minted repos

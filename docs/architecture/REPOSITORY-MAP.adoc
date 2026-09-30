@@ -67,7 +67,7 @@ predecessors did.
 
 | `.machine_readable/`
 | yes
-| manifests, contractiles, policies. Renamed back from machine-readable/ 2026-09-17 by owner ruling, for one canonical spelling estate-wide (census at the 2026-08 divergence: 48 dotted vs 9 hyphenated — the majority was already dotted). See docs/governance/TEMPLATE-LINEAGE-AUDIT.adoc
+| manifests, contractiles, policies. Renamed back from machine-readable/ 2026-09-17 by owner ruling, for one canonical spelling estate-wide (census at the 2026-08 divergence: 48 dotted vs 9 hyphenated — the majority was already dotted). (Recorded in the rsr-template-repo lineage audit.)
 
 | `.mailmap`
 | yes
@@ -113,13 +113,17 @@ predecessors did.
 | yes
 | REUSE licence texts, dual-licence model (code MPL-2.0 / docs CC-BY-SA-4.0)
 
+| `Project.toml`
+| yes
+| Julia package manifest; Pkg resolves a package from the ROOT Project.toml and nowhere else
+
+| `Protoctist.jl_chora.deed`
+| yes
+| the repo deed: universal AI entry point; family-7 allocation manifest + ply tree folded in (standards#837 pilot). Filename carries the repo slug (deed dispatch <stem>_chora.deed), so repo-init renames it at mint
+
 | `README.adoc`
 | yes
 | -
-
-| `archetypes/`
-| optional
-| template-only variation seam (ADR-0003); `just repo-init` removes it from minted repos
 
 | `benches/`
 | optional
@@ -141,21 +145,9 @@ predecessors did.
 | yes
 | human documentation
 
-| `examples/`
-| optional
-| Cargo-conventional at package root
-
-| `features/`
-| optional
-| optional feature packs
-
 | `mise.toml`
 | yes
 | pinned toolchains
-
-| `Protoctist.jl_chora.deed`
-| yes
-| the repo deed: universal AI entry point; family-7 allocation manifest + ply tree folded in (standards#837 pilot). Filename carries the repo slug (deed dispatch <stem>_chora.deed), so repo-init renames it at mint
 
 | `scripts/`
 | yes
@@ -172,6 +164,10 @@ predecessors did.
 | `src/`
 | yes
 | -
+
+| `test/`
+| yes
+| Julia package tests; Pkg.test() runs test/runtests.jl and nowhere else. tests/ holds the estate shell/shape suites
 
 | `tests/`
 | yes
@@ -198,49 +194,6 @@ your own repo - but do not read their emptiness as neglect here.
 [cols="1"]
 |===
 | `.machine_readable/scripts/verification/`
-| `docs/governance/audit/`
-| `docs/governance/audit/compliance/`
-| `docs/governance/audit/effects/`
-| `docs/governance/audit/systems/`
-| `docs/governance/maintenance/`
-| `docs/governance/maintenance/adaptive/`
-| `docs/governance/maintenance/corrective/`
-| `docs/governance/maintenance/perfective/`
-| `docs/governance/planning/`
-| `docs/governance/planning/could/`
-| `docs/governance/planning/must/`
-| `docs/governance/planning/should/`
-| `docs/reports/compliance/`
-| `docs/reports/maintenance/`
-| `docs/reports/performance/`
-| `docs/reports/quality/`
-| `docs/reports/security/`
-| `docs/standards/`
-| `docs/theory/`
-| `docs/theory/computing/`
-| `docs/theory/formalisms/`
-| `docs/theory/mathematics/`
-| `docs/theory/ontologies/`
-| `docs/theory/other/`
-| `docs/theory/socio-technical/`
-| `docs/whitepapers/`
-| `docs/whitepapers/academic/`
-| `docs/whitepapers/industry/`
-| `docs/whitepapers/outreach/`
-| `examples/`
-| `features/boj-server/`
-| `features/panic-attacker/`
-| `src/aspects/`
-| `src/aspects/integrity/`
-| `src/aspects/observability/`
-| `src/aspects/security/`
-| `src/bridges/`
-| `src/contracts/`
-| `src/core/`
-| `src/definitions/`
-| `src/errors/`
-| `src/interface/generated/`
-| `src/interface/generated/abi/`
 | `tests/fuzz/`
 | `verification/benchmarks/`
 | `verification/coverage/`

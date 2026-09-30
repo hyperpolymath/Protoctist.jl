@@ -1,0 +1,47 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+= Recovered source material
+
+This directory holds the material `Protoctist.jl` was reconstructed from.
+It is kept in-tree on purpose. The design existed only inside a chat thread
+on Arena.ai and was never pushed anywhere, so this repository is now the only
+durable copy.
+
+== Provenance
+
+[cols="1,3"]
+|===
+| Source | Arena.ai conversation *"Clades and Other Prompts"*
+| Thread id | `01a0a9f1-d658-7865-9fd2-0aa633ea26d7`
+| Created | 2026-09-16
+| Recovered | 2026-09-23
+|===
+
+The thread was found by sweeping the account's full conversation index of 449
+conversations. Arena's own search matches conversation titles only, not
+message bodies. That is why searching Arena for "Protoctist" returned nothing,
+even though the thread contains 69 occurrences of the word.
+
+== Contents
+
+`DESIGN-SPEC-recovered.md`::
+The 14 passages of the thread that specify Protoctist: its purpose, the module
+skeleton, the scope directive and the usage example. This is the spec `src/`
+implements. It is kept as Markdown, byte-for-byte as extracted, because it is
+evidence. Converting it would make it harder to show that it was not edited.
+It is allow-listed in `scripts/check-no-md-in-docs.sh` for that reason.
+
+`code-blocks/`::
+All 23 Julia code blocks from the thread, extracted verbatim (1,607 lines).
+Most of them are not Protoctist. The bulk is `Epistemic.jl`, which now lives in
+its own package,
+https://github.com/hyperpolymath/EpistemicTypes.jl[EpistemicTypes.jl]. A copy
+stays here because the blocks were recovered together.
+
+== What is design and what is code
+
+The thread specifies Protoctist as a design: a module skeleton, an API list and
+a usage example, not a finished implementation. `src/` is therefore an
+implementation of that design, not a restored file, because no Protoctist
+source file was ever written in the thread. Where the design named a behaviour
+without pinning it down, the choice made here is documented where it is
+defined.

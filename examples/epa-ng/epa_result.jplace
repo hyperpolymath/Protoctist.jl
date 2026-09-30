@@ -1,0 +1,10 @@
+{
+  "tree": "((Ciliophora:0.1{0},Dinoflagellata:0.2{1}):0.05{2},Cercozoa:0.3{3});",
+  "placements": [
+    {"p": [[0, -2104.3, 0.21, 0.04, 0.11], [1, -2103.0, 0.79, 0.12, 0.09]], "n": ["ASV1"]},
+    {"p": [[3, -1987.6, 1.0, 0.15, 0.02]], "nm": [["ASV2", 100], ["ASV7", 3]]}
+  ],
+  "metadata": {"invocation": "epa-ng --tree ref.newick --msa query.fasta --ref-msa ref.fasta --model GTR+G"},
+  "version": 3,
+  "fields": ["edge_num", "likelihood", "like_weight_ratio", "distal_length", "pendant_length"]
+}
