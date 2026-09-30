@@ -1,23 +1,40 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= YOUR Template Repo Roadmap
+= Roadmap
 
-== Current Status
+== 0.1.0 (current)
 
-Initial development phase.
+* Ladder-typed lineages (`:pr2`, `:silva`), with unfilled ranks kept in place.
+* Taxonomy tree, count and evidence rollup, and clade cumulus.
+* Lineage tables in CSV, TSV and ECSV, read back as a Tables.jl column table.
+* jplace reading and writing, with every placement kept and selection by LWR.
+* Newick/NHX and iTOL dataset export.
+* Run manifests and a merge check over the judgement surface.
+* No hard dependencies.
+* Tested by Aqua and the behaviour suite, which runs the three worked examples
+  under `examples/`.
 
-== Milestones
+== Candidates for the next release
 
-=== v0.1.0 - Foundation
-* [ ] Core functionality
-* [ ] Basic documentation
-* [ ] CI/CD pipeline
+These are open. Their order is not fixed.
 
-=== v1.0.0 - Stable Release
-* [ ] Full feature set
-* [ ] Comprehensive tests
-* [ ] Production ready
+Package extensions::
+Load-time integration with EpistemicTypes.jl (receipt verification) and
+Cladistics.jl (TaxonomyTree to a Cladistics tree), without making either a
+hard dependency.
 
-== Future Directions
+Classifier conventions::
+Read QIIME 2 rank prefixes (`d__`) and a literal `NA` as unfilled ranks, as an
+option at load time, instead of leaving that to the caller. See
+link:../guide/troubleshooting.adoc#na-taxa[the NA pitfall].
 
-_To be determined based on community feedback._
+Per-row attribution report::
+List each row that was attributed to an ancestor because its full lineage was
+not in the tree. Today this shows up only as a count on an interior node.
+
+jplace fidelity::
+Keep `nm` multiplicities and the `metadata` block when writing jplace.
+
+iTOL label collisions::
+Detect when two nodes share a label, and either disambiguate or refuse, since
+iTOL datasets are keyed by label alone.

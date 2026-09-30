@@ -1,0 +1,112 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Lineage formats
+:toc: preamble
+
+How Protoctist reads a lineage string, and what the common classifiers write.
+
+== Rank ladders
+
+A lineage is read against a ladder, and the ladder is part of its identity.
+
+[cols="1,4",options="header"]
+|===
+| Ladder | Ranks, in order
+
+| `:pr2` (default)
+| domain, supergroup, division, subdivision, class, order, family, genus, species (PR2 v5, 9 ranks)
+
+| `:silva`
+| domain, phylum, class, order, family, genus, species (7 ranks)
+|===
+
+`PR2_RANKS`, `SILVA_RANKS` and `ranks_for(ladder)` return these tuples. A
+lineage with more labels than its ladder has ranks is an error, not a
+truncation.
+
+There is no mapping between the two ladders. PR2's division and SILVA's phylum
+are not the same cut through the tree, so a PR2 lineage and a SILVA lineage
+never compare equal, and a tree built on one ladder rejects paths from the
+other.
+
+== How a string is parsed
+
+`TaxPath(s; ladder = :pr2, sep = ';')` splits on `sep` and strips whitespace
+around each label.
+
+[cols="2,3",options="header"]
+|===
+| Input | Reading
+
+| `Eukaryota;TSAR;Alveolata`
+| Three ranks filled: domain, supergroup, division.
+
+| `Eukaryota;TSAR;;Ciliophora`
+| The division is unfilled. Ciliophora is the subdivision, and stays there.
+
+| `Eukaryota;TSAR;`
+| The trailing separator is not a rank. Same as `Eukaryota;TSAR`.
+
+| `Eukaryota ; TSAR`
+| Whitespace is stripped. Same as `Eukaryota;TSAR`.
+
+| `Eukaryota;TSAR;NA`
+| `NA` is a label. See link:troubleshooting.adoc#na-taxa[Troubleshooting].
+|===
+
+[source,julia]
+----
+p = TaxPath("Eukaryota;TSAR;;Ciliophora")
+at_rank(p, :division)                    # nothing: unfilled
+at_rank(p, :subdivision)                 # "Ciliophora"
+truncate_to(TaxPath("Eukaryota;TSAR;Alveolata;Ciliophora"), :division)
+# TaxPath(Eukaryota;TSAR;Alveolata; ladder=:pr2)
+----
+
+== What classifiers write
+
+[cols="1,2,2",options="header"]
+|===
+| Source | Shape | Conversion
+
+| DADA2 `assignTaxonomy` / `addSpecies`
+| Matrix, one column per rank, `NA` where unresolved. PR2 v5's DADA2 file has
+  9 levels. SILVA's DADA2 training set gives 6, or 7 with `addSpecies`.
+| Paste each row with `;`, turning `NA` into `""`
+  (link:cookbook.adoc#_dada2_and_pr2_to_an_itol_figure[recipe]).
+
+| QIIME 2 `feature-classifier`
+| `d__Bacteria; p__Proteobacteria; ...`. Ranks below the confidence cut-off
+  are omitted from the end.
+| Strip the `x__` prefixes (link:cookbook.adoc#_qiime_2_and_silva[recipe]).
+  The spaces need no handling.
+
+| vsearch / usearch `--sintax`
+| `d:Eukaryota,k:TSAR,...`, comma-separated, one letter per rank. The cut-off
+  column truncates from the first rank below the threshold.
+| Split on `,` and strip the `x:` prefix. See below.
+
+| PR2 / SILVA reference headers
+| Already `;`-separated.
+| None.
+|===
+
+.SINTAX
+[source,julia]
+----
+sintax = "d:Eukaryota,k:TSAR,p:Alveolata,c:Ciliophora"
+TaxPath(join((replace(l, r"^[a-z]:" => "") for l in split(sintax, ',')), ';'))
+# TaxPath(Eukaryota;TSAR;Alveolata;Ciliophora; ladder=:pr2)
+----
+
+This strips any single-letter prefix. Which letter marks which rank varies
+between reference databases, and does not matter here, because the position
+in the string gives the rank.
+
+== Column detection in tables
+
+`load_protist_run` looks for a lineage column named `lineage`, `taxonomy`,
+`taxpath` or `taxon`, and a count column named `count`, `abundance`, `reads`
+or `n`. If no count column is found, each row counts once. If no lineage column
+is found, it stops and lists the columns it saw. Name the columns explicitly
+with `lineage =` and `count =` when your table uses other headers.

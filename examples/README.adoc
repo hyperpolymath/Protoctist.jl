@@ -1,3 +1,29 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= examples Pillar
+= Examples
+
+Each directory holds small input files and a `run.jl`. Run one from inside its
+directory:
+
+[source,shell]
+----
+cd examples/dada2
+julia --project=../.. run.jl
+----
+
+[cols="1,3",options="header"]
+|===
+| Directory | Shows
+
+| `dada2/`  | A DADA2 taxonomy matrix pasted into lineages (`lineages.R`, with
+              its output committed as `lineages.csv`), rolled up on the PR2
+              ladder and exported for iTOL.
+| `qiime2/` | QIIME 2 taxonomy and a feature table joined, with rank prefixes
+              stripped, then loaded on the SILVA ladder.
+| `epa-ng/` | An EPA-ng jplace file: the best placement per query by LWR, then
+              filtered by confidence and written back.
+|===
+
+`test/cases/examples.jl` runs all three in a temporary directory, so they stay
+in step with the package. The walk-through for each is in
+link:../docs/guide/cookbook.adoc[the cookbook].

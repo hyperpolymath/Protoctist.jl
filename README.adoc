@@ -212,6 +212,12 @@ Protoctist 0.1 defines its own copies of the few shapes it needs from these,
 which is why it has no dependencies. Binding to them through package
 extensions is planned.
 
+== Guides
+
+link:docs/guide/cookbook.adoc[Cookbook] (DADA2, QIIME 2, EPA-ng, pooling runs, all runnable
+under `examples/`) · link:docs/guide/lineage-formats.adoc[Lineage formats] ·
+link:docs/guide/troubleshooting.adoc[Troubleshooting] · link:docs/guide/glossary.adoc[Glossary]
+
 == Design and limits
 
 link:docs/EXPLAINME.adoc[EXPLAINME] gives the reasoning behind each design

@@ -1,0 +1,89 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Troubleshooting
+:toc: preamble
+
+The messages below are the ones Protoctist actually prints. Each one names the
+file, row or column involved. Protoctist stops rather than guessing, so each
+error points at something in the input that needs a decision.
+
+== `lineage has 8 labels but the silva ladder has 7 ranks`
+
+The string has more fields than the ladder has ranks. The usual causes:
+
+* a strain or ASV id appended after the species (`...;Escherichia coli;K-12`);
+* a PR2 lineage read with `ladder = :silva`;
+* a separator inside a label, for example a `;` in a species epithet.
+
+Remove the extra field, or load with the ladder the lineages were assigned
+under.
+
+== `path ladder :silva does not match tree ladder :pr2`
+
+A tree holds one ladder. Two tables classified against different references
+cannot share a tree. Build one per reference, and compare them at a rank both
+ladders define, such as genus or domain, with `at_rank`.
+
+== `row 1 of column "reads" is "NA", not a whole-number count`
+
+Counts must be whole numbers. `NA`, a blank, or `12.5` stops the load, because
+reading them as zero would drop reads from every clade above that row. Fix the
+value, or drop the row on purpose before loading. Tables written by `biom`
+hold floats such as `10.0`. Round them when you build the table (see the
+QIIME 2 recipe in the link:cookbook.adoc[Cookbook]).
+
+== `no lineage column found among ["feature", "name", "reads"]; pass `lineage=` explicitly`
+
+The lineage column has a name Protoctist does not recognise. Say which one it
+is:
+
+[source,julia]
+----
+load_protist_run("table.csv"; lineage = "name")
+----
+
+`count =` works the same way for the count column. When no count column is
+found, each row counts once. That is correct for a list of assignments and
+wrong for an abundance table, so name the column if you have one.
+
+== `unknown rank ladder :gtdb; expected :pr2 or :silva`
+
+Only PR2 v5 and SILVA ladders are defined. See link:lineage-formats.adoc[Lineage formats].
+
+== `no "tree" field — not a jplace file`
+
+The file given to `read_jplace` is not jplace. jplace files usually come from
+EPA-ng (`epa_result.jplace`), pplacer (`*.jplace`) or `gappa`.
+
+[[na-taxa]]
+== A taxon called "NA" appears in the tree
+
+No error is raised for this one. A lineage such as
+`Eukaryota;TSAR;Alveolata;NA;NA` has five labels, and "NA" is a legal label, so
+the tree gains two nodes named `NA`, one nested in the other. This happens when
+a DADA2 taxonomy matrix is pasted in R without converting missing values. Use
+the conversion in the link:cookbook.adoc#_dada2_and_pr2_to_an_itol_figure[DADA2 recipe]
+so unresolved ranks become empty fields.
+
+== Reads sit on an interior node
+
+If `annotate_newick` shows a non-zero `count=` on a node that has children, some
+rows carried a lineage that goes deeper than the tree does. Those reads were
+attributed to the deepest ancestor the tree contains, not dropped. This happens
+when the tree was built from a different set of lineages from the rows being
+rolled up. Build the tree from the same rows to get full depth.
+
+== The same name appears twice in an iTOL dataset
+
+The taxonomy tree keys nodes by name and rank under a parent, so the same name
+in two branches gives two distinct nodes. The iTOL dataset files are keyed by
+name alone, so both nodes produce a line with the same key, and iTOL applies
+only one of them. This is a known limit of 0.1.
+
+== Two runs refuse to merge
+
+`validate_merge` lists every difference it found in the reference, version,
+ladder and policy. Differences in input hashes are expected and are never a
+reason to refuse. If the refusal names a policy value you did not mean to
+change, the two runs were classified under different settings and should be
+re-run before they are pooled.

@@ -1,0 +1,4 @@
+Feature ID	Taxon	Confidence
+f1	d__Bacteria; p__Proteobacteria; c__Gammaproteobacteria; o__Enterobacterales	0.99
+f2	d__Eukaryota; p__Ciliophora	0.91
+f3	d__Bacteria; p__Proteobacteria; c__Alphaproteobacteria	0.87
