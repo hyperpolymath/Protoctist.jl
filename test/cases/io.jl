@@ -58,6 +58,54 @@ end
     end
 end
 
+@testset "jplace keeps every candidate placement" begin
+    mktempdir() do dir
+        p = joinpath(dir, "multi.jplace")
+        # query1 lists its WEAKER edge first: selection must go by
+        # like_weight_ratio, never by position. query2 names two identical
+        # sequences via "nm"; query3 has a null field.
+        write(p, """
+        {
+          "tree": "((A:0.1{0},B:0.2{1}):0.3{2});",
+          "version": 3,
+          "fields": ["edge_num", "likelihood", "like_weight_ratio", "distal_length", "pendant_length"],
+          "placements": [
+            {"p": [[0, -120.0, 0.35, 0.01, 0.02], [1, -119.5, 0.65, 0.02, 0.03]], "n": ["query1"]},
+            {"p": [[2, -110.0, 1.0, 0.05, 0.06]], "nm": [["query2a", 3], ["query2b", 1]]},
+            {"p": [[1, null, 0.5, 0.0, 0.1]], "n": ["query3"]}
+          ]
+        }
+        """)
+        b = Protoctist.IO.read_jplace(p)
+        @test length(b.placements) == 5
+        q1 = filter(x -> x.name == "query1", b.placements)
+        @test [x.edge_num for x in q1] == [0, 1]
+        @test [x.like_weight_ratio for x in q1] ≈ [0.35, 0.65]
+        @test sum(x.like_weight_ratio for x in q1) ≈ 1.0
+        @test Set(x.name for x in b.placements) == Set(["query1", "query2a", "query2b", "query3"])
+        q3 = only(filter(x -> x.name == "query3", b.placements))
+        @test isnan(q3.likelihood)
+        @test q3.like_weight_ratio ≈ 0.5           # columns after the null stay aligned
+        @test q3.pendant_length ≈ 0.1
+
+        best = Protoctist.IO.best_placements(b)
+        @test [x.name for x in best] == ["query1", "query2a", "query2b", "query3"]
+        @test best[1].edge_num == 1                # highest LWR, not first listed
+        @test best[1].like_weight_ratio ≈ 0.65
+
+        q = joinpath(dir, "out.jplace")
+        Protoctist.IO.write_jplace(b, q)
+        out = read(q, String)
+        @test !occursin("NaN", out)                # JSON has no NaN
+        @test count("\"n\":", out) == 4            # one object per query
+        b2 = Protoctist.IO.read_jplace(q)
+        @test length(b2.placements) == length(b.placements)
+        @test [(x.name, x.edge_num) for x in b2.placements] ==
+              [(x.name, x.edge_num) for x in b.placements]
+        @test isnan(only(filter(x -> x.name == "query3", b2.placements)).likelihood)
+    end
+end
+
 @testset "iTOL bundle + run pipeline" begin
     mktempdir() do dir
         p = joinpath(dir, "run.ecsv")
