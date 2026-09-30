@@ -1,0 +1,92 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath)
+= Protoctist.jl architecture
+:toc:
+
+How the package is put together, and where each concern lives. The reasons
+behind the design are in link:EXPLAINME.adoc[EXPLAINME]. The file-by-file
+inventory is link:architecture/REPOSITORY-MAP.adoc[REPOSITORY-MAP].
+
+== Data flow
+
+----
+lineage table (ECSV / CSV)          jplace (EPA-ng, pplacer)
+        │ IO.read_ecsv                      │ IO.read_jplace
+        ▼                                   ▼
+  ProtistRun  ── TaxPath per row      PlacementBatch ── best_placements
+        │
+        │ Tree.build_taxonomy_tree   (trie over (label, rank))
+        │ Tree.rollup_counts         (one accumulate pass, leaves → root)
+        ▼
+  TaxonomyTree + NodeAnnot
+        │ Tree.annotate_newick       (NHX in bracket comments)
+        │ IO.export_itol_bundle
+        ▼
+  Newick, iTOL datasets, ECSV       Manifest.build_manifest / validate_merge
+----
+
+`clade_cumulus` and `export_iqtree_annotated` in `src/Protoctist.jl` are the
+three calls above joined together. Every stage is public, so a pipeline can
+enter or leave at any point.
+
+== Modules
+
+[cols="1,1,3",options="header"]
+|===
+| Module | File | Responsibility
+
+| `Protoctist`
+| `src/Protoctist.jl`
+| `ProtistRun`, `load_protist_run` (column detection, count parsing with row
+  and column in every error), `clade_cumulus`, `export_iqtree_annotated`.
+  Re-exports the public names of the four submodules.
+
+| `Types`
+| `src/types.jl`
+| `TaxPath` (labels plus a rank ladder, `:pr2` by default), `rank_index`,
+  `at_rank`, `truncate_to`; the evidence vocabulary `Standpoint`, `Warrant`,
+  `ProjectionY`, `EvidenceReceipt`, `EpiStatus`, `ResidualInfo`.
+
+| `Tree`
+| `src/tree.jl`
+| `TaxonomyTree` (a trie keyed by `(label, rank)`), `NodeAnnot`,
+  `build_taxonomy_tree`, `rollup_counts`, `annotate_newick`.
+
+| `IO`
+| `src/io.jl`
+| `ECSVTable`, `read_ecsv`/`write_ecsv` (header comments kept verbatim),
+  `columntable` (the Tables.jl column-table shape), `read_jplace`/`write_jplace`
+  (every placement of every query), `best_placements` (highest
+  `like_weight_ratio`, not first-listed), `export_itol_bundle`.
+
+| `Manifest`
+| `src/manifest.jl`
+| `build_manifest`, `validate_merge`, `MergeVerdict` (every reason a merge is
+  refused, not only the first).
+|===
+
+The include order in `src/Protoctist.jl` is `types`, `tree`, `io`,
+`manifest`. Each file depends only on the ones before it.
+
+== Dependencies
+
+`[deps]` is empty. Only the standard library is used, so the package adds
+nothing to an existing environment's resolution. There is no `ext/` directory
+yet. Integration with EpistemicTypes.jl, Cladistics.jl and EchoTypes.jl is
+planned as package extensions and is not in 0.1.
+
+== Tests
+
+`test/runtests.jl` runs `Aqua.test_all` first, then every
+`test/cases/*.jl` in sorted order: one file per source module (`types.jl`,
+`tree.jl`, `io.jl`, `manifest.jl`), `examples.jl`, which runs each
+`examples/*/run.jl`, and `smoke.jl`. The worked examples under `examples/`
+(`dada2/`, `qiime2/`, `epa-ng/`) are therefore tested and cannot drift from the
+code.
+
+== Documentation
+
+* `docs/guide/`: user guide (cookbook, lineage formats, glossary,
+  troubleshooting).
+* `docs/EXPLAINME.adoc`: design decisions.
+* `docs/recovered/`: the recovered design thread, kept as evidence.

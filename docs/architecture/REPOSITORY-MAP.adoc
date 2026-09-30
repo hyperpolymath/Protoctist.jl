@@ -145,6 +145,10 @@ predecessors did.
 | yes
 | human documentation
 
+| `examples/`
+| optional
+| Cargo-conventional at package root
+
 | `mise.toml`
 | yes
 | pinned toolchains
