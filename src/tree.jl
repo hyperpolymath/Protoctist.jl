@@ -54,9 +54,10 @@ leaves(t::TaxonomyTree) = [i for i in eachindex(t.nodes) if isempty(t.nodes[i].c
     build_taxonomy_tree(paths; ladder = :pr2)
 
 Build the taxonomy trie from `paths` (a collection of `TaxPath`, or of
-strings parsed against `ladder`). A blank label is an *unfilled* rank, not the end of the lineage: PR2
-routinely leaves `subdivision` empty for lineages that do reach genus, so a
-blank is skipped and the next filled rank attaches at its own true rank.
+strings parsed against `ladder`). A blank label is an *unfilled* rank, not
+the end of the lineage: exported tables blank a rank the classifier could
+not resolve while still resolving the ranks below it, so a blank is skipped
+and the next filled rank attaches at its own true rank.
 Node identity is the pair (label, rank), so skipping cannot collide two
 different taxa onto one node.
 

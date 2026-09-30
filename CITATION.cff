@@ -3,15 +3,26 @@ message: "If you use this software, please cite it as below."
 authors:
   - family-names: "Jewell"
     given-names: "Jonathan D.A."
-    orcid: "https://orcid.org/0000-0000-0000-0000" # Placeholder
 title: "Protoctist.jl"
+abstract: >-
+  Rank-aware taxonomy trees, evidence rollup and phylogenetic-placement
+  I/O for protist metabarcoding in Julia. Reads PR2 and SILVA lineages,
+  jplace placements and ECSV tables; writes annotated Newick (NHX) and
+  iTOL dataset bundles.
 version: 0.1.0
 date-released: "2026-09-23"
 url: "https://github.com/hyperpolymath/Protoctist.jl"
 repository-code: "https://github.com/hyperpolymath/Protoctist.jl"
 license: MPL-2.0
 keywords:
-  - "rsr"
-  - "formal-verification"
-  - "neurosymbolic"
-  - "provenance"
+  - "protist"
+  - "metabarcoding"
+  - "18S"
+  - "PR2"
+  - "SILVA"
+  - "taxonomy"
+  - "phylogenetic-placement"
+  - "jplace"
+  - "Newick"
+  - "iTOL"
+  - "Julia"
