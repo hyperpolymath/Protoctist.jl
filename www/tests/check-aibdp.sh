@@ -8,8 +8,8 @@
 set -uo pipefail
 WWW="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FAIL=0
-bad() { echo "AIBDP FAIL: $*" >&2; FAIL=1; }
-ok()  { echo "ok: $*"; }
+bad() { echo "AIBDP FAIL: $*" >&2; FAIL=1; return "$?"; }
+ok()  { echo "ok: $*"; return 0; }
 
 if ! command -v jq >/dev/null 2>&1; then
     echo "note: jq unavailable — AIBDP checks skipped"
@@ -60,6 +60,7 @@ consistency_with_ai_txt() { # declaration must not contradict ai.txt
         case "$want" in
             yes) [[ "$got" = "disallowed" ]] || { echo "  ai.txt $key yes but aibdp policies.$field.status=$got" >&2; v=1; } ;;
             no)  [[ "$got" = "allowed" ]]    || { echo "  ai.txt $key no but aibdp policies.$field.status=$got" >&2; v=1; } ;;
+            *) : ;; # stance absent or unrecognised in ai.txt — no claim to contradict
         esac
     done
     return "$v"

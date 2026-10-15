@@ -28,9 +28,10 @@ ALLOW
 printf 'fixture\n' > "$FIXTURE/README.adoc"
 
 fail() { echo "FAIL: $1" >&2; exit 1; }
+PASS_RE='^PASS:' # what scripts/check-root-shape.sh prints on a conforming root
 
 # 1. A conforming root passes.
-bash "$CHECKER" "$FIXTURE" | grep -q '^PASS:' || fail "conforming fixture did not pass"
+bash "$CHECKER" "$FIXTURE" | grep -q "$PASS_RE" || fail "conforming fixture did not pass"
 
 # 2. An entry at root that is not allow-listed fails, and is named.
 printf 'stray\n' > "$FIXTURE/STRAY.adoc"
@@ -51,7 +52,7 @@ mv "$FIXTURE/machine-readable/README.adoc.parked" "$FIXTURE/README.adoc"
 
 # 4. An OPTIONAL entry that is absent passes. Capability-gated and template-only
 #    material is legitimately missing in a conforming repo.
-bash "$CHECKER" "$FIXTURE" | grep -q '^PASS:' || fail "absent ?optional entry wrongly failed"
+bash "$CHECKER" "$FIXTURE" | grep -q "$PASS_RE" || fail "absent ?optional entry wrongly failed"
 
 # 5. A git-ignored root entry is not drift: the allowlist governs tracked shape,
 #    not build output. (A .tmp probe once made this gate look broken when it
@@ -59,7 +60,7 @@ bash "$CHECKER" "$FIXTURE" | grep -q '^PASS:' || fail "absent ?optional entry wr
 printf '*.tmp\n' > "$FIXTURE/.gitignore"
 printf 'x\n' > "$FIXTURE/build-output.tmp"
 sed -i 's|^README.adoc$|README.adoc\n.gitignore|' "$FIXTURE/machine-readable/root-allow.txt"
-bash "$CHECKER" "$FIXTURE" | grep -q '^PASS:' || fail "git-ignored root entry was wrongly treated as drift"
+bash "$CHECKER" "$FIXTURE" | grep -q "$PASS_RE" || fail "git-ignored root entry was wrongly treated as drift"
 
 
 # ---------------------------------------------------------------------------
@@ -84,7 +85,7 @@ ALLOW
 printf 'fixture\n' > "$DOTTED/README.adoc"
 
 # 6. The dotted spelling resolves and a conforming root passes.
-bash "$CHECKER" "$DOTTED" | grep -q '^PASS:' || fail "dotted .machine_readable/ allowlist was not resolved"
+bash "$CHECKER" "$DOTTED" | grep -q "$PASS_RE" || fail "dotted .machine_readable/ allowlist was not resolved"
 
 # 7. The dotted spelling still FAILS on drift. Resolving the file is not the
 #    same as enforcing against it; without this case, case 6 would also pass

@@ -9,8 +9,8 @@ set -uo pipefail
 WWW="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WK="$WWW/.well-known"
 FAIL=0
-bad() { echo "WELLKNOWN FAIL: $*" >&2; FAIL=1; }
-ok()  { echo "ok: $*"; }
+bad() { echo "WELLKNOWN FAIL: $*" >&2; FAIL=1; return "$?"; }
+ok()  { echo "ok: $*"; return 0; }
 
 for f in security.txt ai.txt humans.txt; do
     [[ -f "$WK/$f" ]] && ok "$f present" || bad "$f missing from www/.well-known/"
