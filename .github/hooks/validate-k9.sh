@@ -27,6 +27,7 @@ set -euo pipefail
 
 SCAN_PATH="${INPUT_PATH:-.}"
 STRICT="${INPUT_STRICT:-false}"
+SEVERITY_WARNING="warning"
 PATHS_IGNORE_RAW="${INPUT_PATHS_IGNORE:-}"
 GITHUB_OUTPUT_FILE="${GITHUB_OUTPUT:-/dev/null}"
 
@@ -75,7 +76,7 @@ annotate() {
 report_issue() {
     local severity="$1" file="$2" line="$3" message="$4"
 
-    if [[ "$severity" == "warning" && "$STRICT" == "true" ]]; then
+    if [[ "$severity" == "$SEVERITY_WARNING" && "$STRICT" == "true" ]]; then
         severity="error"
     fi
 
@@ -150,7 +151,7 @@ validate_k9() {
     done < "$file"
 
     if [[ "$has_spdx" == "false" ]]; then
-        report_issue "warning" "$file" 1 \
+        report_issue "$SEVERITY_WARNING" "$file" 1 \
             "Missing SPDX-License-Identifier in first 10 lines"
     fi
 
@@ -286,7 +287,7 @@ validate_k9() {
         fi
 
         if [[ "$has_pedigree_version" == "false" ]]; then
-            report_issue "warning" "$file" 1 \
+            report_issue "$SEVERITY_WARNING" "$file" 1 \
                 "Pedigree block missing 'version' or 'schema_version' field"
         fi
     fi
@@ -307,7 +308,7 @@ validate_k9() {
         fi
     else
         if [[ "$has_pedigree" == "true" ]]; then
-            report_issue "warning" "$file" 1 \
+            report_issue "$SEVERITY_WARNING" "$file" 1 \
                 "No security level (leash/security_level) found in pedigree block"
         fi
     fi
@@ -381,7 +382,7 @@ echo "::endgroup::"
 
 # Exit with failure if errors were found
 if [[ $ERRORS -gt 0 ]]; then
-    echo "::error::K9 validation failed with ${ERRORS} error(s)"
+    echo "::error::K9 validation failed with ${ERRORS} error(s)" >&2
     exit 1
 fi
 

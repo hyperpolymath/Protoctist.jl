@@ -78,7 +78,10 @@ DETECTOR_ARGS=(--exclude-detectors SonarCloud)
 # PATH, answers `command -v` happily, and fails every actual invocation with
 # "No version is set for shim". Installed is not invokable. Each candidate is
 # therefore probed with `--version` and only accepted on exit 0.
-probe() { [[ -n "${1:-}" ]] && [[ -x "$1" ]] && "$1" --version >/dev/null 2>&1; }
+probe() {
+  local bin="${1:-}"
+  [[ -n "$bin" ]] && [[ -x "$bin" ]] && "$bin" --version >/dev/null 2>&1
+}
 
 TH=""
 if probe "${TRUFFLEHOG:-}"; then

@@ -26,6 +26,7 @@ set -euo pipefail
 
 SCAN_PATH="${INPUT_PATH:-.}"
 STRICT="${INPUT_STRICT:-false}"
+SEVERITY_WARNING="warning"
 PATHS_IGNORE_RAW="${INPUT_PATHS_IGNORE:-}"
 GITHUB_OUTPUT_FILE="${GITHUB_OUTPUT:-/dev/null}"
 
@@ -75,7 +76,7 @@ annotate() {
 report_issue() {
     local severity="$1" file="$2" line="$3" message="$4"
 
-    if [[ "$severity" == "warning" && "$STRICT" == "true" ]]; then
+    if [[ "$severity" == "$SEVERITY_WARNING" && "$STRICT" == "true" ]]; then
         severity="error"
     fi
 
@@ -111,7 +112,7 @@ validate_deed() {
     done < "$file"
 
     if [[ "$has_spdx" == "false" ]]; then
-        report_issue "warning" "$file" 1 \
+        report_issue "$SEVERITY_WARNING" "$file" 1 \
             "Missing SPDX-License-Identifier in first 10 lines"
     fi
 
@@ -231,6 +232,9 @@ validate_deed() {
         *file.a2ml)
             is_manifest=true
             ;;
+        *)
+            # Not a manifest shape: validated as a regular DEED file.
+            ;;
     esac
 
     # Contractile-shape DEED files use `@directive:` syntax instead of
@@ -267,7 +271,7 @@ validate_deed() {
     fi
 
     if [[ "$has_version" == "false" && "$is_manifest" == "false" && "$is_contractile_shape" == "false" && "$is_structural_identity" == "false" ]]; then
-        report_issue "warning" "$file" 1 \
+        report_issue "$SEVERITY_WARNING" "$file" 1 \
             "Missing version or schema_version field"
     fi
 
@@ -303,7 +307,7 @@ validate_deed() {
     done < "$file"
 
     if [[ $attestation_line -gt 0 && "$attestation_has_content" == "false" ]]; then
-        report_issue "warning" "$file" "$attestation_line" \
+        report_issue "$SEVERITY_WARNING" "$file" "$attestation_line" \
             "Attestation block found but missing proof/signature/hash fields"
     fi
 
@@ -313,12 +317,11 @@ validate_deed() {
     while IFS= read -r line; do
         line_num=$((line_num + 1))
         # Lines starting with [ should have a matching ]
-        if [[ "$line" =~ ^\[ && ! "$line" =~ ^\[.+\] ]]; then
-            # Exclude markdown-style links and multi-line values
-            if [[ ! "$line" =~ ^\[.*\]\( && ! "$line" =~ ^\[TODO && ! "$line" =~ ^\[YOUR ]]; then
-                report_issue "warning" "$file" "$line_num" \
-                    "Possibly malformed section heading: unclosed bracket"
-            fi
+        # Exclude markdown-style links and multi-line values
+        if [[ "$line" =~ ^\[ && ! "$line" =~ ^\[.+\] && ! "$line" =~ ^\[.*\]\( && \
+             ! "$line" =~ ^\[TODO && ! "$line" =~ ^\[YOUR ]]; then
+            report_issue "$SEVERITY_WARNING" "$file" "$line_num" \
+                "Possibly malformed section heading: unclosed bracket"
         fi
     done < "$file"
 }
@@ -385,7 +388,7 @@ echo "::endgroup::"
 
 # Exit with failure if errors were found
 if [[ $ERRORS -gt 0 ]]; then
-    echo "::error::DEED validation failed with ${ERRORS} error(s)"
+    echo "::error::DEED validation failed with ${ERRORS} error(s)" >&2
     exit 1
 fi
 

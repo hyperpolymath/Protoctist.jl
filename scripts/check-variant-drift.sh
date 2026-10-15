@@ -29,7 +29,8 @@ PIN=$(sed -n 's/^parent-pin = "\([0-9a-f]*\)".*/\1/p' "$CONTRACT" | head -1)
 
 # Extract the paths array of one [paths.<section>] block.
 section_paths() {
-  awk -v sec="[paths.$1]" '
+  local section="$1"
+  awk -v sec="[paths.$section]" '
     $0 == sec { insec = 1; next }
     insec && /^\[/ { insec = 0 }
     insec && /^ *"/ {
@@ -47,14 +48,17 @@ SKIP=$(printf '%s\n' "$(section_paths diverged)" \
                      "$(section_paths operational-state)")
 
 in_list() { # $1 = path, $2 = newline list (entries ending in / are prefixes)
-  local p="$1" e
+  local p="$1" e list="$2"
   while IFS= read -r e; do
     [[ -z "$e" ]] && continue
     case "$e" in
-      */) case "$p" in "$e"*) return 0;; esac ;;
+      */) case "$p" in
+            "$e"*) return 0 ;;
+            *) ;; # no prefix match — keep checking
+          esac ;;
       *)  [[ "$p" = "$e" ]] && return 0 ;;
     esac
-  done <<< "$2"
+  done <<< "$list"
   return 1
 }
 
@@ -64,8 +68,9 @@ in_list() { # $1 = path, $2 = newline list (entries ending in / are prefixes)
 # sides keeps inherited files that legitimately mention the parent by name
 # convergent, while still matching self-identity substitutions.
 normalise() { # $1 = file
+  local f="$1"
   sed -E -e 's/@[0-9a-f]{40}[^ ]*( # v[^ ]*)?/@PIN/g' \
-         -e "s/$SELF_NAME/SELF/g" -e "s/$PARENT_NAME/SELF/g" "$1"
+         -e "s/$SELF_NAME/SELF/g" -e "s/$PARENT_NAME/SELF/g" "$f"
 }
 
 DRIFT=0

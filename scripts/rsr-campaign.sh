@@ -158,6 +158,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     [[ -z "$line" ]] && continue
     case "$line" in
         \[*\]) MANIFEST_SECTION="$(printf '%s' "$line" | tr -d '[]')"; continue ;;
+        *)     ;; # not a section header — dispatched on $MANIFEST_SECTION below
     esac
     case "$MANIFEST_SECTION" in
         meta)
@@ -167,6 +168,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
             case "$key" in
                 name)        [[ -n "$val" ]] && CAMP_NAME="$val" ;;
                 description) CAMP_DESC="$val" ;;
+                *)           ;; # unknown meta keys are ignored
             esac
             ;;
         paths)    PATHS+=("$line") ;;
@@ -247,13 +249,16 @@ substitute() { # src-file repo-name -> stdout
 # a decision. Matches check-variant-drift.sh's in_list semantics, including the
 # 'dir/' prefix form.
 declared_diverged() { # repo-path path -> 0 if declared diverged
-    local dir="$1" want="$2" contract="$1/.machine_readable/descriptiles/VARIANT.a2ml"
+    local want="$2" contract="$1/.machine_readable/descriptiles/VARIANT.a2ml"
     [[ -f "$contract" ]] || return 1
     local e
     while IFS= read -r e; do
         [[ -z "$e" ]] && continue
         case "$e" in
-            */) case "$want" in "$e"*) return 0 ;; esac ;;
+            */) case "$want" in
+                    "$e"*) return 0 ;;
+                    *) ;; # no prefix match — keep looking
+                esac ;;
             *)  [[ "$want" = "$e" ]] && return 0 ;;
         esac
     done < <(awk '
@@ -269,7 +274,10 @@ excluded() { # path -> 0 if excluded by the manifest
     local want="$1" e
     for e in ${EXCLUDES+"${EXCLUDES[@]}"}; do
         case "$e" in
-            */) case "$want" in "$e"*) return 0 ;; esac ;;
+            */) case "$want" in
+                    "$e"*) return 0 ;;
+                    *) ;; # no prefix match — keep looking
+                esac ;;
             *)  [[ "$want" = "$e" ]] && return 0 ;;
         esac
     done
@@ -321,6 +329,7 @@ for repo in "${SELECTED[@]}"; do
         [[ -z "$rel" ]] && continue
         case "$rel" in
             *.gitkeep|*/.gitkeep) continue ;;
+            *)                   ;; # everything else is a propagation candidate
         esac
         if excluded "$rel"; then
             printf '%s\t%s\tEXCLUDED\tmanifest exclude\n' "$repo" "$rel" >> "$REPORT"

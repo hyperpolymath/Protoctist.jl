@@ -16,8 +16,8 @@ echo "=== High-Rigor Security Assault ==="
 
 # 1. Verify environment
 if ! command -v "$PA_BIN" &>/dev/null; then
-    echo "Error: panic-attack tool not found."
-    echo "Please install it or set PANIC_ATTACK_BIN environment variable."
+    echo "Error: panic-attack tool not found." >&2
+    echo "Please install it or set PANIC_ATTACK_BIN environment variable." >&2
     exit 1
 fi
 

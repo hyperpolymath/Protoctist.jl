@@ -41,8 +41,10 @@ import { join } from "node:path";
 
 const WF = ".github/workflows";
 const LOCK = join(WF, "actions.lock");
-// `-?` matches the list-item form; see the header.
-const USES = /^\s*-?\s*uses:\s*([^\s#]+)/;
+// the optional `-` matches the list-item form; see the header. Folding it and
+// its trailing whitespace into one group keeps the parse unique (the leading
+// `\s*` cannot backtrack: what follows is `-` or `u`, never whitespace).
+const USES = /^\s*(?:-\s*)?uses:\s*([^\s#]+)/;
 const SHA = /@[a-f0-9]{40}$/;
 const EXEMPT_PREFIX = ["./", "$", "docker://"];
 
@@ -63,8 +65,12 @@ function main() {
   let known = new Set();
   if (existsSync(LOCK)) {
     const lock = readFileSync(LOCK, "utf8");
+    // Both alternatives exclude `@` before the split, so the `@` in the middle
+    // is pinned to the first interior `@` — one parse per match, no
+    // super-linear backtracking. The second alternative covers values that
+    // themselves start with `@`.
     known = new Set(
-      [...lock.matchAll(/'([^']+@[^']+)'/g)].map((m) => m[1].toLowerCase()),
+      [...lock.matchAll(/'((?:[^'@]+|@[^'@]*)@[^']+)'/g)].map((m) => m[1].toLowerCase()),
     );
     console.log(`lockfile present: ${known.size} ref(s) resolvable through it`);
   } else {

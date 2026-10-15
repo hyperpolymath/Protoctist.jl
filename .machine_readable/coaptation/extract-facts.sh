@@ -29,10 +29,10 @@ done
 
 # scalar KEY FILE -> first `KEY = "value"` or unquoted `KEY = value` (anchored)
 scalar() {
-  local v
-  v="$(grep -oP "^$1 = \"\K[^\"]+" "$2" | head -1 || true)"
+  local key="$1" file="$2" v
+  v="$(grep -oP "^$key = \"\K[^\"]+" "$file" | head -1 || true)"
   if [[ -z "$v" ]]; then
-    v="$(grep -oP "^$1 = \K[^\"#]+" "$2" | head -1 | sed 's/[[:space:]]*$//' || true)"
+    v="$(grep -oP "^$key = \K[^\"#]+" "$file" | head -1 | sed 's/[[:space:]]*$//' || true)"
   fi
   printf '%s' "$v"
 }
@@ -55,10 +55,16 @@ arr() {
 }
 
 # short content hash (drift provenance)
-sh() { sha256sum "$1" | cut -c1-12; }
+sh() {
+  local file="$1"
+  sha256sum "$file" | cut -c1-12
+}
 
 # id <TAB> value rows. Empty value => present:false in jq below.
-emit() { printf '%s\t%s\n' "$1" "$2"; }
+emit() {
+  local id="$1" value="$2"
+  printf '%s\t%s\n' "$id" "$value"
+}
 
 rows="$(
   # --- CLADE: identity / lineage ---

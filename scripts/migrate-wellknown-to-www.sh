@@ -100,8 +100,9 @@ if [[ -n "$REPORT" ]]; then
 fi
 
 rep() {
+    local action="$1" path="$2" detail="${3:-}"
     if [[ -n "$REPORT" ]]; then
-        printf '%s\t%s\t%s\n' "$1" "$2" "${3:-}" >> "$REPORT"
+        printf '%s\t%s\t%s\n' "$action" "$path" "$detail" >> "$REPORT"
     fi
     return 0
 }
@@ -114,7 +115,10 @@ fi
 STAMP="$(date -u +%Y%m%d)"
 QUARANTINE="www/.legacy-well-known-$STAMP"
 
-git_tracked() { git ls-files --error-unmatch "$1" >/dev/null 2>&1; }
+git_tracked() {
+    local path="$1"
+    git ls-files --error-unmatch "$path" >/dev/null 2>&1
+}
 
 move_file() { # src dst — never overwrites; caller guarantees dst is free
     local src="$1" dst="$2"
