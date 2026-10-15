@@ -18,11 +18,17 @@
 module IO
 
 using ..Types
-using ..Tree: annotate_newick
+using ..Tree: annotate_newick, TaxonomyTree, NodeAnnot
 
-export ECSVTable, PlacementBatch, Placement,
-       read_ecsv, write_ecsv, read_jplace, write_jplace, best_placements,
-       export_itol_bundle
+export ECSVTable,
+    PlacementBatch,
+    Placement,
+    read_ecsv,
+    write_ecsv,
+    read_jplace,
+    write_jplace,
+    best_placements,
+    export_itol_bundle
 
 """
     ECSVTable(names, columns, meta)
@@ -35,6 +41,13 @@ struct ECSVTable
     names::Vector{String}
     columns::Vector{Vector{String}}
     meta::Vector{String}
+
+    # See types.jl's Warrant: explicit inner constructor, no convert().
+    ECSVTable(
+        names::Vector{String},
+        columns::Vector{Vector{String}},
+        meta::Vector{String},
+    ) = new(names, columns, meta)
 end
 
 Base.length(t::ECSVTable) = isempty(t.columns) ? 0 : length(t.columns[1])
@@ -45,7 +58,8 @@ function Base.getindex(t::ECSVTable, col::AbstractString)
     i === nothing && throw(KeyError(col))
     return t.columns[i]
 end
-Base.haskey(t::ECSVTable, col::AbstractString) = findfirst(==(String(col)), t.names) !== nothing
+Base.haskey(t::ECSVTable, col::AbstractString) =
+    findfirst(==(String(col)), t.names) !== nothing
 Base.keys(t::ECSVTable) = t.names
 
 """
@@ -54,8 +68,7 @@ Base.keys(t::ECSVTable) = t.names
 `t` as a `NamedTuple` of columns — the Tables.jl column-table shape, so
 `DataFrame(columntable(t))` gives the DataFrame the design specifies.
 """
-columntable(t::ECSVTable) =
-    NamedTuple{Tuple(Symbol.(t.names))}(Tuple(t.columns))
+columntable(t::ECSVTable) = NamedTuple{Tuple(Symbol.(t.names))}(Tuple(t.columns))
 
 """
     read_ecsv(path; sep = ',') -> ECSVTable
@@ -67,10 +80,14 @@ Quoted fields are parsed (RFC4180 rules: `""` is a literal quote inside a
 quoted field), because a taxon string legitimately contains commas.
 """
 function read_ecsv(path::AbstractString; sep::Char = ',')
+    # Plain loop, no do-block: JET analyzes the bare code cleanly, and no
+    # captured-and-reassigned local can widen the ECSVTable constructor's
+    # arguments to Any (a Core.Box) the way a closure would.
     meta = String[]
     names = String[]
     rows = Vector{Vector{String}}()
-    open(path, "r") do fh
+    fh = open(path, "r")
+    try
         for line in eachline(fh)
             if startswith(line, "#")
                 push!(meta, line)
@@ -82,13 +99,15 @@ function read_ecsv(path::AbstractString; sep::Char = ',')
                 push!(rows, _splitcsv(line, sep))
             end
         end
+    finally
+        close(fh)
     end
     ncol = length(names)
-    cols = [String[] for _ in 1:ncol]
+    cols = [String[] for _ = 1:ncol]
     for (ln, r) in enumerate(rows)
-        length(r) == ncol || throw(ArgumentError(
-            "row $ln has $(length(r)) fields, header declares $ncol"))
-        for j in 1:ncol
+        length(r) == ncol ||
+            throw(ArgumentError("row $ln has $(length(r)) fields, header declares $ncol"))
+        for j = 1:ncol
             push!(cols[j], r[j])
         end
     end
@@ -106,7 +125,8 @@ function _splitcsv(line::AbstractString, sep::Char)
             if c == '"'
                 nxt = nextind(line, i)
                 if nxt <= lastindex(line) && line[nxt] == '"'
-                    print(buf, '"'); i = nxt
+                    print(buf, '"')
+                    i = nxt
                 else
                     inq = false
                 end
@@ -128,8 +148,20 @@ end
 
 # Quote on the separator actually in use: a space-delimited (Astropy) or TSV
 # file must quote a field containing a space or tab, not only a comma.
-_csvfield(s::AbstractString, sep::Char = ',') =
-    any(c -> c == sep || c in ('"', '\n', '\r'), s) ? "\"" * replace(s, "\"" => "\"\"") * "\"" : String(s)
+# Quoted via a buffer loop rather than `"\"" * replace(s, ...) * "\""`:
+# the three-argument `*` with an AbstractString middle widens under abstract
+# interpretation to unions Base's Regex concatenation cannot satisfy.
+function _csvfield(s::AbstractString, sep::Char = ',')
+    any(c -> c == sep || c in ('"', '\n', '\r'), s) || return String(s)
+    buf = IOBuffer()
+    print(buf, '"')
+    for c in s
+        print(buf, c)
+        c == '"' && print(buf, c)
+    end
+    print(buf, '"')
+    return String(take!(buf))
+end
 
 """
     write_ecsv(t::ECSVTable, path; sep = ',')
@@ -142,8 +174,11 @@ function write_ecsv(t::ECSVTable, path::AbstractString; sep::Char = ',')
             println(fh, m)
         end
         println(fh, join(_csvfield.(t.names, sep), sep))
-        for i in 1:length(t)
-            println(fh, join((_csvfield(t.columns[j][i], sep) for j in eachindex(t.names)), sep))
+        for i = 1:length(t)
+            println(
+                fh,
+                join((_csvfield(t.columns[j][i], sep) for j in eachindex(t.names)), sep),
+            )
         end
     end
     return path
@@ -174,6 +209,15 @@ struct PlacementBatch
     placements::Vector{Placement}
     fields::Vector{String}
     version::Int
+
+    # See types.jl's Warrant: explicit inner constructor; the String/Int
+    # conversions are explicit and concretely typed, not convert()-ed.
+    PlacementBatch(
+        tree::AbstractString,
+        placements::Vector{Placement},
+        fields::Vector{String},
+        version::Integer,
+    ) = new(String(tree), placements, fields, Int(version))
 end
 
 """
@@ -192,12 +236,17 @@ function read_jplace(path::AbstractString)
     ver = something(_json_int_field(s, "version"), 3)
     placements = Placement[]
     for (nm, vals) in _jplace_entries(s, fields)
-        push!(placements, Placement(nm,
-            Int(get(vals, "edge_num", 0.0)),
-            get(vals, "likelihood", 0.0),
-            get(vals, "like_weight_ratio", 0.0),
-            get(vals, "distal_length", 0.0),
-            get(vals, "pendant_length", 0.0)))
+        push!(
+            placements,
+            Placement(
+                nm,
+                Int(get(vals, "edge_num", 0.0)),
+                get(vals, "likelihood", 0.0),
+                get(vals, "like_weight_ratio", 0.0),
+                get(vals, "distal_length", 0.0),
+                get(vals, "pendant_length", 0.0),
+            ),
+        )
     end
     return PlacementBatch(tree, placements, fields, ver)
 end
@@ -209,7 +258,8 @@ Write `b` as a jplace file. Field order follows `b.fields` when it is
 populated, otherwise the canonical order.
 """
 function write_jplace(b::PlacementBatch, path::AbstractString)
-    fields = isempty(b.fields) ?
+    fields =
+        isempty(b.fields) ?
         ["edge_num", "likelihood", "like_weight_ratio", "distal_length", "pendant_length"] :
         b.fields
     open(path, "w") do fh
@@ -226,8 +276,13 @@ function write_jplace(b::PlacementBatch, path::AbstractString)
             push!(groups[p.name], p)
         end
         for (i, name) in enumerate(order)
-            entries = join(("[" * join((_jplace_value(p, f) for f in fields), ", ") * "]"
-                            for p in groups[name]), ", ")
+            entries = join(
+                (
+                    "[" * join((_jplace_value(p, f) for f in fields), ", ") * "]" for
+                    p in groups[name]
+                ),
+                ", ",
+            )
             print(fh, "    {\"p\": [", entries, "], \"n\": [", _json_quote(name), "]}")
             println(fh, i == length(order) ? "" : ",")
         end
@@ -238,36 +293,63 @@ function write_jplace(b::PlacementBatch, path::AbstractString)
 end
 
 function _jplace_value(p::Placement, f::AbstractString)
-    f == "edge_num"          && return string(p.edge_num)
-    f == "likelihood"        && return _jnum(p.likelihood)
+    f == "edge_num" && return string(p.edge_num)
+    f == "likelihood" && return _jnum(p.likelihood)
     f == "like_weight_ratio" && return _jnum(p.like_weight_ratio)
-    f == "distal_length"     && return _jnum(p.distal_length)
-    f == "pendant_length"    && return _jnum(p.pendant_length)
+    f == "distal_length" && return _jnum(p.distal_length)
+    f == "pendant_length" && return _jnum(p.pendant_length)
     return "0"
 end
 
 # JSON has no NaN; a missing value read as NaN goes back out as null.
 _jnum(x::Float64) = isnan(x) ? "null" : string(x)
 
-_json_quote(s::AbstractString) =
-    "\"" * replace(String(s), "\\" => "\\\\", "\"" => "\\\"", "\n" => "\\n") * "\""
+# Buffer loop rather than `"\"" * replace(...) * "\""` — see _csvfield.
+function _json_quote(s::AbstractString)
+    buf = IOBuffer()
+    print(buf, '"')
+    for c in s
+        if c == '\\' || c == '"'
+            print(buf, '\\', c)
+        elseif c == '\n'
+            print(buf, "\\n")
+        else
+            print(buf, c)
+        end
+    end
+    print(buf, '"')
+    return String(take!(buf))
+end
+
+# A capture group the pattern requires: the `nothing` arm of the captures
+# union is unreachable once the match succeeded, but the type cannot say so,
+# and JET is right to flag the unguarded access. Fail loud on the impossible
+# branch rather than `something()`-ing it into a TypeError further away.
+function _required_capture(m::RegexMatch)
+    c = m.captures[1]
+    c === nothing && error("required capture group did not participate: pattern regression")
+    return c
+end
 
 function _json_string_field(s::AbstractString, key::AbstractString)
     m = match(Regex("\"" * key * "\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\""), s)
     m === nothing && return nothing
-    return replace(m.captures[1], "\\\"" => "\"", "\\\\" => "\\", "\\n" => "\n")
+    return replace(_required_capture(m), "\\\"" => "\"", "\\\\" => "\\", "\\n" => "\n")
 end
 
 function _json_int_field(s::AbstractString, key::AbstractString)
     m = match(Regex("\"" * key * "\"\\s*:\\s*(-?\\d+)"), s)
     m === nothing && return nothing
-    return parse(Int, m.captures[1])
+    return parse(Int, _required_capture(m))
 end
 
 function _json_string_array(s::AbstractString, key::AbstractString)
     m = match(Regex("\"" * key * "\"\\s*:\\s*\\[([^\\]]*)\\]"), s)
     m === nothing && return String[]
-    return [String(x.captures[1]) for x in eachmatch(r"\"([^\"]*)\"", m.captures[1])]
+    return [
+        String(_required_capture(x)) for
+        x in eachmatch(r"\"([^\"]*)\"", _required_capture(m))
+    ]
 end
 
 # Scan "placements": [ { "p": [[...],...], "n": [...] or "nm": [[name,mult],...] } ]
@@ -287,11 +369,15 @@ function _jplace_entries(s::AbstractString, fields::Vector{String})
         names = _json_string_array(body, "n")
         if isempty(names)
             m2 = match(r"\"nm\"\s*:\s*\[(.*?)\]\s*\]"s, body)
-            m2 !== nothing &&
-                (names = [String(x.captures[1]) for x in eachmatch(r"\[\s*\"([^\"]*)\"", m2.captures[1])])
+            m2 !== nothing && (
+                names = [
+                    String(_required_capture(x)) for
+                    x in eachmatch(r"\[\s*\"([^\"]*)\"", _required_capture(m2))
+                ]
+            )
         end
         isempty(names) && (names = [""])
-        for entry in split(obj.captures[1], r"\]\s*,\s*\[")
+        for entry in split(_required_capture(obj), r"\]\s*,\s*\[")
             toks = strip.(split(entry, ','))
             vals = Dict{String,Float64}()
             for (i, f) in enumerate(fields)
@@ -342,7 +428,7 @@ Write an iTOL-ready bundle for `tree`/`annot` into `outdir`:
 Returns the paths written. iTOL dataset files are plain text with a small
 declarative header, so this needs no dependency.
 """
-function export_itol_bundle(tree, annot, outdir::AbstractString)
+function export_itol_bundle(tree::TaxonomyTree, annot::NodeAnnot, outdir::AbstractString)
     mkpath(outdir)
     written = String[]
 
@@ -354,8 +440,11 @@ function export_itol_bundle(tree, annot, outdir::AbstractString)
 
     p = joinpath(outdir, "itol_counts.txt")
     open(p, "w") do fh
-        println(fh, "DATASET_SIMPLEBAR\nSEPARATOR TAB\nDATASET_LABEL\tclade cumulus\nCOLOR\t#1f77b4\nDATA")
-        for i in 2:length(labels)
+        println(
+            fh,
+            "DATASET_SIMPLEBAR\nSEPARATOR TAB\nDATASET_LABEL\tclade cumulus\nCOLOR\t#1f77b4\nDATA",
+        )
+        for i = 2:length(labels)
             isempty(labels[i]) && continue
             println(fh, labels[i], "\t", annot.cum[i])
         end
@@ -367,7 +456,7 @@ function export_itol_bundle(tree, annot, outdir::AbstractString)
         println(fh, "DATASET_MULTIBAR\nSEPARATOR TAB\nDATASET_LABEL\tepistemic status")
         println(fh, "FIELD_COLORS\t#2ca02c\t#ff7f0e\t#7f7f7f")
         println(fh, "FIELD_LABELS\tfactive\tbelief\tresidual\nDATA")
-        for i in 2:length(labels)
+        for i = 2:length(labels)
             isempty(labels[i]) && continue
             println(fh, labels[i], "\t", annot.f[i], "\t", annot.b[i], "\t", annot.res[i])
         end
@@ -376,8 +465,11 @@ function export_itol_bundle(tree, annot, outdir::AbstractString)
 
     p = joinpath(outdir, "itol_contamination.txt")
     open(p, "w") do fh
-        println(fh, "DATASET_COLORSTRIP\nSEPARATOR TAB\nDATASET_LABEL\tcontamination\nCOLOR\t#d62728\nDATA")
-        for i in 2:length(labels)
+        println(
+            fh,
+            "DATASET_COLORSTRIP\nSEPARATOR TAB\nDATASET_LABEL\tcontamination\nCOLOR\t#d62728\nDATA",
+        )
+        for i = 2:length(labels)
             (isempty(labels[i]) || annot.contam[i] == 0) && continue
             println(fh, labels[i], "\t#d62728\tcontaminated")
         end

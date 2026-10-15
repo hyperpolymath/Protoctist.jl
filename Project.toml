@@ -1,14 +1,18 @@
 # minted by: just repo-init julia-library (2026)
 # owner: hyperpolymath
 #
-# uuid = "ba28c840-aa2f-57ee-a1bd-b1699a90df0b" is DERIVED at mint (UUIDv5 over the repo
-# identity — see repo-init's julia-library rule); it is stable across
-# re-mints of the same repo and is never hand-edited. If the mint could not
-# derive it (no uuidgen AND no python3 on the operator machine) it is
-# UNASSIGNED and Pkg refuses to load the package until the owner assigns one.
+# uuid = "01a13f1b-39a3-8594-91b8-10e6f6e3533e" is the UUIDv8 re-mint of
+# this package's identity (ADR-008 amendment D320, 2026-10-07: a Julia
+# package's own uuid is re-minted as version 8, not exempted, where the
+# package is not registered in General), minted with the estate generator
+# (standards' scripts/uuid-v8.js, profile T) on 2026-10-15. It supersedes
+# the original mint-time UUIDv5 over the repo identity
+# (ba28c840-aa2f-57ee-a1bd-b1699a90df0b), which the strict UUIDv8 gate
+# rejects; the package is unregistered, so no registry identity moves.
+# Do not hand-edit, and do not "restore" the v5 literal.
 
 name = "Protoctist"
-uuid = "ba28c840-aa2f-57ee-a1bd-b1699a90df0b"
+uuid = "01a13f1b-39a3-8594-91b8-10e6f6e3533e"
 description = "Integration library unifying types, IO and exports for PR2/SILVA-driven protist workflows"
 authors = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
 license = "MPL-2.0"

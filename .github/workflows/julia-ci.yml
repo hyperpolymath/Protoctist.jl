@@ -39,13 +39,13 @@ jobs:
             using Pkg
             Pkg.add("JuliaFormatter")
             using JuliaFormatter
-            for f in filter(isfile, Iterators.flatten((
+            for f in filter(isfile, collect(Iterators.flatten((
                 [joinpath("src", x) for x in readdir("src")],
                 [joinpath("test", x) for x in readdir("test") if x != "cases"],
                 [joinpath("test", "cases", x) for x in readdir(joinpath("test", "cases"))],
-            )))
+            ))))
                 text = read(f, String)
-                formatted = JuliaFormatter.format_string(text)
+                formatted = JuliaFormatter.format_text(text)
                 if text != formatted
                     @error "not formatted" file=f
                     exit(1)

@@ -1,12 +1,12 @@
 @testset "TaxPath — ladders, ranks, truncation" begin
     p = TaxPath("Eukaryota;TSAR;Alveolata;;Ciliophora")
     @test p.ladder === :pr2
-    @test at_rank(p, :domain)      == "Eukaryota"
-    @test at_rank(p, :division)    == "Alveolata"
+    @test at_rank(p, :domain) == "Eukaryota"
+    @test at_rank(p, :division) == "Alveolata"
     @test at_rank(p, :subdivision) === nothing   # blank is not a claim
-    @test at_rank(p, :class)       == "Ciliophora"
-    @test at_rank(p, :genus)       === nothing   # not reached
-    @test at_rank(p, :phylum)      === nothing   # not on the PR2 ladder
+    @test at_rank(p, :class) == "Ciliophora"
+    @test at_rank(p, :genus) === nothing   # not reached
+    @test at_rank(p, :phylum) === nothing   # not on the PR2 ladder
 
     @test truncate_to(p, :division) == TaxPath("Eukaryota;TSAR;Alveolata")
 

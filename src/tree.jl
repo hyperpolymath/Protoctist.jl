@@ -17,8 +17,14 @@ module Tree
 
 using ..Types
 
-export TaxonomyTree, TaxNode, NodeAnnot,
-       build_taxonomy_tree, rollup_counts, annotate_newick, nodecount, leaves
+export TaxonomyTree,
+    TaxNode,
+    NodeAnnot,
+    build_taxonomy_tree,
+    rollup_counts,
+    annotate_newick,
+    nodecount,
+    leaves
 
 """
     TaxNode
@@ -45,6 +51,9 @@ single post-order pass.
 struct TaxonomyTree
     nodes::Vector{TaxNode}
     ladder::Symbol
+
+    # See Warrant in types.jl: explicit inner constructor, no convert().
+    TaxonomyTree(nodes::Vector{TaxNode}, ladder::Symbol) = new(nodes, ladder)
 end
 
 nodecount(t::TaxonomyTree) = length(t.nodes)
@@ -71,8 +80,11 @@ function build_taxonomy_tree(paths; ladder::Symbol = :pr2)
     tps = TaxPath[]
     for p in paths
         tp = p isa TaxPath ? p : TaxPath(p; ladder = ladder)
-        tp.ladder === ladder || throw(ArgumentError(
-            "path ladder :$(tp.ladder) does not match tree ladder :$(ladder)"))
+        tp.ladder === ladder || throw(
+            ArgumentError(
+                "path ladder :$(tp.ladder) does not match tree ladder :$(ladder)",
+            ),
+        )
         push!(tps, tp)
     end
 
@@ -80,8 +92,10 @@ function build_taxonomy_tree(paths; ladder::Symbol = :pr2)
         cur = 1
         for (i, lab) in enumerate(tp.labels)
             isempty(lab) && continue       # unfilled rank; the lineage continues
-            j = findfirst(c -> nodes[c].label == lab && nodes[c].rank == ranks[i],
-                          nodes[cur].children)
+            j = findfirst(
+                c -> nodes[c].label == lab && nodes[c].rank == ranks[i],
+                nodes[cur].children,
+            )
             if j === nothing
                 push!(nodes, TaxNode(lab, ranks[i], cur, Int[]))
                 push!(nodes[cur].children, length(nodes))
@@ -113,8 +127,15 @@ struct NodeAnnot
     contam::Vector{Int}
 end
 
-NodeAnnot(n::Integer) = NodeAnnot(zeros(Int, n), zeros(Int, n), zeros(Int, n),
-                                  zeros(Int, n), zeros(Int, n), zeros(Int, n), zeros(Int, n))
+NodeAnnot(n::Integer) = NodeAnnot(
+    zeros(Int, n),
+    zeros(Int, n),
+    zeros(Int, n),
+    zeros(Int, n),
+    zeros(Int, n),
+    zeros(Int, n),
+    zeros(Int, n),
+)
 
 """
     rollup_counts(tree, rows) -> NodeAnnot
@@ -136,16 +157,18 @@ function rollup_counts(tree::TaxonomyTree, rows)
     ranks = Types.ranks_for(tree.ladder)
 
     for row in rows
-        tp     = _rowpath(row)
-        c      = _rowcount(row)
-        st     = _rowstatus(row)
-        resid  = _rowresidual(row)
+        tp = _rowpath(row)
+        c = _rowcount(row)
+        st = _rowstatus(row)
+        resid = _rowresidual(row)
 
         cur = 1
         for (i, lab) in enumerate(tp.labels)
             isempty(lab) && continue
-            j = findfirst(k -> tree.nodes[k].label == lab && tree.nodes[k].rank == ranks[i],
-                          tree.nodes[cur].children)
+            j = findfirst(
+                k -> tree.nodes[k].label == lab && tree.nodes[k].rank == ranks[i],
+                tree.nodes[cur].children,
+            )
             j === nothing && break         # deepest ancestor present wins
             cur = tree.nodes[cur].children[j]
         end
@@ -157,9 +180,9 @@ function rollup_counts(tree::TaxonomyTree, rows)
             a.b[cur] += c
         end
         if resid !== nothing
-            resid.named_candidates > 0 && (a.res[cur]    += c)
-            resid.novel_ok             && (a.novel[cur]  += c)
-            resid.contaminated         && (a.contam[cur] += c)
+            resid.named_candidates > 0 && (a.res[cur] += c)
+            resid.novel_ok && (a.novel[cur] += c)
+            resid.contaminated && (a.contam[cur] += c)
         end
     end
 
@@ -181,22 +204,23 @@ function _accumulate!(tree::TaxonomyTree, a::NodeAnnot)
         a.cum[v] += a.counts[v]
         p = tree.nodes[v].parent
         if p != 0
-            a.cum[p]    += a.cum[v]
-            a.f[p]      += a.f[v]
-            a.b[p]      += a.b[v]
-            a.res[p]    += a.res[v]
-            a.novel[p]  += a.novel[v]
+            a.cum[p] += a.cum[v]
+            a.f[p] += a.f[v]
+            a.b[p] += a.b[v]
+            a.res[p] += a.res[v]
+            a.novel[p] += a.novel[v]
             a.contam[p] += a.contam[v]
         end
     end
     return a
 end
 
-_rowpath(r) = r isa TaxPath ? r :
-              hasproperty(r, :path) ? getproperty(r, :path) :
-              throw(ArgumentError("row has no `path` field"))
-_rowcount(r)  = hasproperty(r, :count)    ? Int(getproperty(r, :count)) : 1
-_rowstatus(r) = hasproperty(r, :status)   ? getproperty(r, :status)     : nothing
+_rowpath(r) =
+    r isa TaxPath ? r :
+    hasproperty(r, :path) ? getproperty(r, :path) :
+    throw(ArgumentError("row has no `path` field"))
+_rowcount(r) = hasproperty(r, :count) ? Int(getproperty(r, :count)) : 1
+_rowstatus(r) = hasproperty(r, :status) ? getproperty(r, :status) : nothing
 _rowresidual(r) = hasproperty(r, :residual) ? getproperty(r, :residual) : nothing
 
 """
@@ -211,15 +235,24 @@ the dataset files `export_itol_bundle` writes.
 Labels are quoted when they contain a character Newick reserves, so a taxon
 name with a space or a comma round-trips instead of corrupting the string.
 """
-function annotate_newick(tree::TaxonomyTree, annot::Union{NodeAnnot,Nothing} = nothing;
-                         tags::Bool = true)
+function annotate_newick(
+    tree::TaxonomyTree,
+    annot::Union{NodeAnnot,Nothing} = nothing;
+    tags::Bool = true,
+)
     io = IOBuffer()
     _emit(io, tree, 1, annot, tags)
     print(io, ";")
     return String(take!(io))
 end
 
-function _emit(io, tree, v, annot, tags)
+function _emit(
+    io::IO,
+    tree::TaxonomyTree,
+    v::Int,
+    annot::Union{Nothing,NodeAnnot},
+    tags::Bool,
+)
     kids = tree.nodes[v].children
     if !isempty(kids)
         print(io, "(")
@@ -231,16 +264,27 @@ function _emit(io, tree, v, annot, tags)
     end
     print(io, _newick_label(tree.nodes[v].label))
     if tags && annot !== nothing
-        print(io, "[&&NHX",
-              ":rank=",   tree.nodes[v].rank,
-              ":count=",  annot.counts[v],
-              ":cum=",    annot.cum[v],
-              ":f=",      annot.f[v],
-              ":b=",      annot.b[v],
-              ":res=",    annot.res[v],
-              ":novel=",  annot.novel[v],
-              ":contam=", annot.contam[v],
-              "]")
+        print(
+            io,
+            "[&&NHX",
+            ":rank=",
+            tree.nodes[v].rank,
+            ":count=",
+            annot.counts[v],
+            ":cum=",
+            annot.cum[v],
+            ":f=",
+            annot.f[v],
+            ":b=",
+            annot.b[v],
+            ":res=",
+            annot.res[v],
+            ":novel=",
+            annot.novel[v],
+            ":contam=",
+            annot.contam[v],
+            "]",
+        )
     end
     return io
 end
@@ -249,8 +293,19 @@ const _NEWICK_RESERVED = (' ', '\t', '(', ')', '[', ']', ',', ':', ';', '\'')
 
 function _newick_label(s::AbstractString)
     isempty(s) && return ""
-    any(c -> c in _NEWICK_RESERVED, s) || return s
-    return "'" * replace(s, "'" => "''") * "'"
+    any(c -> c in _NEWICK_RESERVED, s) || return String(s)
+    # Manual escape rather than `"'" * replace(s, "'" => "''") * "'"`: the
+    # three-argument `*` with an AbstractString middle widens under abstract
+    # interpretation to unions Base's Regex concatenation cannot satisfy,
+    # and the buffer loop is concrete at every step.
+    buf = IOBuffer()
+    print(buf, "'")
+    for c in s
+        print(buf, c)
+        c == '\'' && print(buf, c)
+    end
+    print(buf, "'")
+    return String(take!(buf))
 end
 
 end # module Tree

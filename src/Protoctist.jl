@@ -51,10 +51,22 @@ using .Manifest
 # --- public API ----------------------------------------------------------
 
 export Types, Tree, IO, Manifest
-export TaxPath, EvidenceReceipt, EpiStatus, ResidualInfo,
-       Standpoint, Warrant, ProjectionY,
-       PR2_RANKS, SILVA_RANKS, ranks_for, at_rank, truncate_to,
-       FACTIVE, BELIEF, COLLAPSED, SANS_FIBRE
+export TaxPath,
+    EvidenceReceipt,
+    EpiStatus,
+    ResidualInfo,
+    Standpoint,
+    Warrant,
+    ProjectionY,
+    PR2_RANKS,
+    SILVA_RANKS,
+    ranks_for,
+    at_rank,
+    truncate_to,
+    FACTIVE,
+    BELIEF,
+    COLLAPSED,
+    SANS_FIBRE
 export TaxonomyTree, NodeAnnot, build_taxonomy_tree, rollup_counts, annotate_newick
 export build_manifest, validate_merge, MergeVerdict
 export ProtistRun, load_protist_run, clade_cumulus, export_iqtree_annotated
@@ -72,9 +84,16 @@ struct ProtistRun
     ladder::Symbol
 end
 
-Base.show(io::Base.IO, r::ProtistRun) = print(io,
-    "ProtistRun(", length(r.table), " rows, ",
-    Tree.nodecount(r.tree), " taxa, ladder=:", r.ladder, ")")
+Base.show(io::Base.IO, r::ProtistRun) = print(
+    io,
+    "ProtistRun(",
+    length(r.table),
+    " rows, ",
+    Tree.nodecount(r.tree),
+    " taxa, ladder=:",
+    r.ladder,
+    ")",
+)
 
 """
     load_protist_run(path; ladder = :pr2, lineage = nothing, count = nothing, sep = ',') -> ProtistRun
@@ -90,20 +109,32 @@ an error, not a guess. A count that is not a whole number — blank, `NA`,
 `12.5` — is also an error naming the row: reading it as zero would drop
 reads without saying so. Integral floats such as `12.0` are accepted.
 """
-function load_protist_run(path::AbstractString; ladder::Symbol = :pr2,
-                          lineage = nothing, count = nothing, sep::Char = ',')
+function load_protist_run(
+    path::AbstractString;
+    ladder::Symbol = :pr2,
+    lineage = nothing,
+    count = nothing,
+    sep::Char = ',',
+)
     t = IO.read_ecsv(path; sep = sep)
-    lincol = lineage === nothing ? _detect(t, ("lineage", "taxonomy", "taxpath", "taxon")) : String(lineage)
-    lincol === nothing && throw(ArgumentError(
-        "$path: no lineage column found among $(t.names); pass `lineage=` explicitly"))
-    cntcol = count === nothing ? _detect(t, ("count", "abundance", "reads", "n")) : String(count)
+    lincol =
+        lineage === nothing ? _detect(t, ("lineage", "taxonomy", "taxpath", "taxon")) :
+        String(lineage)
+    lincol === nothing && throw(
+        ArgumentError(
+            "$path: no lineage column found among $(t.names); pass `lineage=` explicitly",
+        ),
+    )
+    cntcol =
+        count === nothing ? _detect(t, ("count", "abundance", "reads", "n")) : String(count)
 
     lins = t[lincol]
     paths = [TaxPath(s; ladder = ladder) for s in lins]
     tree = build_taxonomy_tree(paths; ladder = ladder)
 
-    counts = cntcol === nothing ? fill(1, length(paths)) :
-             [_parsecount(s, i, cntcol, path) for (i, s) in enumerate(t[cntcol])]
+    counts =
+        cntcol === nothing ? fill(1, length(paths)) :
+        [_parsecount(s, i, cntcol, path) for (i, s) in enumerate(t[cntcol])]
     rows = [(path = paths[i], count = counts[i]) for i in eachindex(paths)]
 
     return ProtistRun(t, tree, rollup_counts(tree, rows), ladder)
@@ -114,8 +145,12 @@ function _parsecount(s::AbstractString, row::Int, col::AbstractString, path::Abs
     v === nothing || return v
     f = tryparse(Float64, strip(s))
     (f !== nothing && isfinite(f) && isinteger(f)) && return Int(f)
-    throw(ArgumentError("$path: row $row of column \"$col\" is $(repr(s)), " *
-                        "not a whole-number count"))
+    throw(
+        ArgumentError(
+            "$path: row $row of column \"$col\" is $(repr(s)), " *
+            "not a whole-number count",
+        ),
+    )
 end
 
 function _detect(t::IO.ECSVTable, candidates)
