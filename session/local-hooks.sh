@@ -20,4 +20,7 @@ case "$verb $object" in
   "close urgent")
     echo "urgent hook: prioritize EMERGENCY-CHECKPOINT.md generation" >> "$log_file"
     ;;
+  *)
+    # Unrecognised hook pair: no specific action.
+    ;;
 esac

@@ -28,11 +28,11 @@ SCRATCH="${SCRATCH:-$(mktemp -d /tmp/julia-mint-test.XXXXXX)}"
 trap 'rm -rf "$SCRATCH"' EXIT
 
 PASS=0; FAIL=0
-ok()   { echo "  PASS: $1"; PASS=$((PASS+1)); }
-bad()  { echo "  FAIL: $1"; FAIL=$((FAIL+1)); }
+ok()   { echo "  PASS: $1"; PASS=$((PASS+1)); return "$?"; }
+bad()  { echo "  FAIL: $1"; FAIL=$((FAIL+1)); return "$?"; }
 
 command -v "$JULIA" >/dev/null 2>&1 || { echo "SKIP: no julia binary (JULIA_BIN)"; exit 0; }
-[ -d "$OVERLAY" ] || { echo "FAIL: overlay not found at $OVERLAY"; exit 1; }
+[[ -d "$OVERLAY" ]] || { echo "FAIL: overlay not found at $OVERLAY"; exit 1; }
 
 cd "$SCRATCH"
 
@@ -64,13 +64,13 @@ done
 
 # ── 3. rename rule (patch hunk B) ──────────────────────────────────────
 TOML_FILE=Project.toml
-[ -f "$TOML_FILE" ] || TOML_FILE=Project.toml.in
-if [ -f src/PACKAGE.jl.in ] && [ -f "$TOML_FILE" ]; then
+[[ -f "$TOML_FILE" ]] || TOML_FILE=Project.toml.in
+if [[ -f src/PACKAGE.jl.in ]] && [[ -f "$TOML_FILE" ]]; then
     PKG_NAME=$(sed -n 's/^name = "\([^"]*\)".*/\1/p' "$TOML_FILE" | head -1)
-    [ -n "$PKG_NAME" ] && [ "$PKG_NAME" != "UNASSIGNED" ] && mv "src/PACKAGE.jl.in" "src/${PKG_NAME}.jl"
+    [[ -n "$PKG_NAME" ]] && [[ "$PKG_NAME" != "UNASSIGNED" ]] && mv "src/PACKAGE.jl.in" "src/${PKG_NAME}.jl"
 fi
 for f in Project.toml.in .github/workflows/julia-ci.yml.in .github/workflows/julia-docs.yml.in; do
-    [ -f "$f" ] && mv "$f" "${f%.in}"
+    [[ -f "$f" ]] && mv "$f" "${f%.in}"
 done
 
 # ── 4. placeholder gate (roster only — GHA ${{ }} is not a token) ─────
@@ -118,8 +118,8 @@ assert uuid.UUID(minted).version == 5
 PY
 then ok "package uuid is the derived v5"; else bad "package uuid derivation"; fi
 RE_MINT=$(python3 -c "import uuid; print(uuid.uuid5(uuid.UUID('${REPO_UUID}'), 'julia:${REPO}'))")
-[ "$RE_MINT" = "$MINTED_UUID" ] && ok "re-mint derives the same uuid (stable identity)" || bad "uuid not stable across re-mints"
+[[ "$RE_MINT" = "$MINTED_UUID" ]] && ok "re-mint derives the same uuid (stable identity)" || bad "uuid not stable across re-mints"
 
 echo
 echo "julia mint test: $PASS passed, $FAIL failed"
-[ "$FAIL" -eq 0 ]
+[[ "$FAIL" -eq 0 ]]

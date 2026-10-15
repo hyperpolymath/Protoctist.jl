@@ -27,15 +27,15 @@ set -uo pipefail
 WWW="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FORBIDDEN_DIRS="dns tls security_headers webservers profiles schemas tests runbooks"
 FAIL=0
-bad() { echo "BOUNDARY FAIL: $*" >&2; FAIL=1; }
-ok()  { echo "ok: $*"; }
+bad() { echo "BOUNDARY FAIL: $*" >&2; FAIL=1; return "$?"; }
+ok()  { echo "ok: $*"; return 0; }
 
 # ── stage scanner ────────────────────────────────────────────────────────────
 scan_stage() { # $1 = staged dir; returns 1 on any violation (messages to stderr)
     local root="$1" v f base found=0
-    [ -d "$root" ] || { echo "stage scan: $root is not a directory" >&2; return 1; }
+    [[ -d "$root" ]] || { echo "stage scan: $root is not a directory" >&2; return 1; }
     for v in $FORBIDDEN_DIRS; do
-        if [ -e "$root/$v" ]; then
+        if [[ -e "$root/$v" ]]; then
             echo "stage scan: operational category present: $v/" >&2; found=1
         fi
     done
@@ -46,6 +46,7 @@ scan_stage() { # $1 = staged dir; returns 1 on any violation (messages to stderr
             named.conf*|rndc.conf*|tsig*|*.zone|*.journal|*.pid|*.log)
                 echo "stage scan: operational/secret material present: ${f#"$root"/}" >&2
                 found=1 ;;
+            *) : ;; # any other staged file is publishable material
         esac
     done < <(find "$root" -type f)
     return "$found"
@@ -56,12 +57,13 @@ scan_config() { # $1 = server config; returns 1 if it could publish the bundle
     local f="$1" r found=0 v
     # Document-root directives must not point at the bundle or into it.
     while IFS= read -r r; do
-        [ -n "$r" ] || continue
+        [[ -n "$r" ]] || continue
         case "$r" in
             */www|*/www/|*/www/*|www|www/)
                 echo "config scan: document root points into the www/ bundle: $r" >&2; found=1 ;;
             *dns*|*tls*|*security_headers*|*webservers*|*profiles*|*schemas*|*tests*|*runbooks*)
                 echo "config scan: document root points at operational material: $r" >&2; found=1 ;;
+            *) : ;; # a document root outside the bundle is what the boundary requires
         esac
     done < <(sed -nE 's/^[[:space:]]*root[[:space:]]+\*[[:space:]]*([^;[:space:]]+).*$/\1/p
                       s/^[[:space:]]*root[[:space:]]+([^;[:space:]]+).*$/\1/p
@@ -77,8 +79,8 @@ scan_config() { # $1 = server config; returns 1 if it could publish the bundle
 }
 
 # ── --stage mode ─────────────────────────────────────────────────────────────
-if [ "${1:-}" = "--stage" ]; then
-    [ -n "${2:-}" ] || { echo "usage: $0 --stage <dir>" >&2; exit 2; }
+if [[ "${1:-}" = "--stage" ]]; then
+    [[ -n "${2:-}" ]] || { echo "usage: $0 --stage <dir>" >&2; exit 2; }
     if scan_stage "$2"; then
         echo "publication boundary: stage $2 is clean"
         exit 0
@@ -97,7 +99,7 @@ fi
 # This is the guard whose absence planted three failing checks into every
 # swept repository measured on 2026-09-18. `--stage <dir>` mode above is
 # unaffected: it is invoked by the deploy runbook against a real stage.
-if [ ! -f "$WWW/schemas/publishable-paths.txt" ] && [ ! -d "$WWW/webservers" ]; then
+if [[ ! -f "$WWW/schemas/publishable-paths.txt" ]] && [[ ! -d "$WWW/webservers" ]]; then
     echo "SKIP: this repository publishes nothing (no www/schemas/ and no"
     echo "SKIP:   www/webservers/) — the publication boundary does not apply"
     exit 77
@@ -105,12 +107,12 @@ fi
 
 # ── A. declaration ───────────────────────────────────────────────────────────
 DECL="$WWW/schemas/publishable-paths.txt"
-if [ ! -f "$DECL" ]; then
+if [[ ! -f "$DECL" ]]; then
     bad "schemas/publishable-paths.txt missing"
 else
     declared="$(grep -v '^#' "$DECL" | grep -v '^[[:space:]]*$' | sort)"
     expected="$(printf 'www/.well-known/\nwww/public/')"
-    if [ "$declared" = "$expected" ]; then
+    if [[ "$declared" = "$expected" ]]; then
         ok "publishable-paths.txt declares exactly www/public/ + www/.well-known/"
     else
         bad "publishable-paths.txt must declare exactly the two publishable categories; found: $(echo "$declared" | tr '\n' ' ')"

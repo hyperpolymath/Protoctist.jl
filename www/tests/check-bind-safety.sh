@@ -22,8 +22,8 @@ set -uo pipefail
 WWW="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DNS="$WWW/dns"
 FAIL=0
-bad() { echo "BIND SAFETY FAIL: $*" >&2; FAIL=1; }
-ok()  { echo "ok: $*"; }
+bad() { echo "BIND SAFETY FAIL: $*" >&2; FAIL=1; return "$?"; }
+ok()  { echo "ok: $*"; return 0; }
 
 posture_assert() { # $1 = named.conf file; returns 1 on any violation
     local f="$1" v=0 z
@@ -59,6 +59,7 @@ secret_file_scan() { # no key/journal/runtime material under www/dns/
         case "${f##*/}" in
             *.key|*.private|*.jnl|*.journal|*.rndc|*.jbk|tsig*|K*+*+*.key|K*+*+*.private)
                 echo "  secret/runtime file under dns/: $f" >&2; found=1 ;;
+            *) : ;; # any other file under dns/ is not secret/runtime material
         esac
     done < <(find "$DNS" -type f)
     return "$found"
@@ -67,7 +68,7 @@ secret_file_scan() { # no key/journal/runtime material under www/dns/
 # ── shipped examples must pass posture + real validators when available ─────
 shopt -s nullglob
 for conf in "$DNS"/bind9/named.conf*; do
-    case "${conf##*/}" in *.control) continue ;; esac
+    case "${conf##*/}" in *.control) continue ;; *) : ;; esac # non-controls are scanned below
     if posture_assert "$conf" 2>/dev/null; then
         ok "posture: ${conf#"$WWW"/}"
     else
@@ -84,7 +85,7 @@ fi
 
 if command -v named-checkconf >/dev/null 2>&1; then
     for conf in "$DNS"/bind9/named.conf*; do
-        case "${conf##*/}" in *.control) continue ;; esac
+        case "${conf##*/}" in *.control) continue ;; *) : ;; esac # non-controls are scanned below
         jail="$(mktemp -d)"; mkdir -p "$jail/zones" "$jail/run"
         sed -e "s|directory  \"/var/cache/bind\";|directory \"$jail\";|" \
             -e "s|pid-file   \"/run/named/named.pid\";|pid-file \"$jail/run/named.pid\";|" \
@@ -104,7 +105,7 @@ fi
 if command -v named-checkzone >/dev/null 2>&1; then
     for zone in "$DNS"/records/*.zone; do
         origin="$(basename "$zone" .zone)"
-        [ "$origin" = "2.0.192.in-addr.arpa" ] || origin="${origin%.zone}"
+        [[ "$origin" = "2.0.192.in-addr.arpa" ]] || origin="${origin%.zone}"
         if named-checkzone "$origin" "$zone" >/dev/null 2>&1; then
             ok "named-checkzone: records/$(basename "$zone")"
         else
@@ -117,7 +118,7 @@ fi
 
 # ── planted controls MUST be rejected ────────────────────────────────────────
 for ctl in "$WWW"/tests/controls/named.conf*.control; do
-    [ -f "$ctl" ] || continue
+    [[ -f "$ctl" ]] || continue
     if posture_assert "$ctl" 2>/dev/null; then
         bad "planted open-recursion control was NOT rejected: ${ctl#"$WWW"/}"
     else

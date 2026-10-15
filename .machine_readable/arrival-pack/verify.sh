@@ -11,13 +11,13 @@ ROOT="$(git rev-parse --show-toplevel)"
 AP="$ROOT/.machine_readable/arrival-pack"
 TARGET="$ROOT/CLAUDE.md"
 
-[ -f "$TARGET" ] || { echo "DRIFT: CLAUDE.md missing — run \`just claude-md\`"; exit 1; }
+[[ -f "$TARGET" ]] || { echo "DRIFT: CLAUDE.md missing — run \`just claude-md\`"; exit 1; }
 
 bash "$AP/extract.sh" "$ROOT/.machine_readable/descriptiles" > "$AP/claude-md-data.json"
 fresh="$(nickel export --format raw "$AP/arrival-pack.ncl")"
 committed="$(awk '/<!-- ARRIVAL-PACK:BEGIN/{f=1} f{print} /ARRIVAL-PACK:END/{f=0}' "$TARGET")"
 
-if [ "$fresh" = "$committed" ]; then
+if [[ "$fresh" = "$committed" ]]; then
   echo "OK: CLAUDE.md arrival pack is in sync with a2ml."
 else
   echo "DRIFT: CLAUDE.md arrival-pack region is stale or hand-edited."

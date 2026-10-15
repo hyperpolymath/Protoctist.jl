@@ -40,13 +40,13 @@ REPO_ROOT_HYPHEN="${REPO_ROOT}/machine-readable/root-allow.txt"
 
 # Both spellings are estate contract. Resolve whichever exists; if BOTH exist
 # that is itself drift (two sources of truth) and is refused.
-if [ -f "$REPO_ROOT_DOTTED" ] && [ -f "$REPO_ROOT_HYPHEN" ]; then
+if [[ -f "$REPO_ROOT_DOTTED" ]] && [[ -f "$REPO_ROOT_HYPHEN" ]]; then
     echo "ERROR: both .machine_readable/ and machine-readable/ carry a root-allow.txt;" >&2
     echo "       pick one spelling — two allowlists cannot both be canonical." >&2
     exit 2
-elif [ -f "$REPO_ROOT_DOTTED" ]; then
+elif [[ -f "$REPO_ROOT_DOTTED" ]]; then
     ALLOW_FILE="$REPO_ROOT_DOTTED"
-elif [ -f "$REPO_ROOT_HYPHEN" ]; then
+elif [[ -f "$REPO_ROOT_HYPHEN" ]]; then
     ALLOW_FILE="$REPO_ROOT_HYPHEN"
 else
     echo "ERROR: allowlist not found at either $REPO_ROOT_DOTTED or $REPO_ROOT_HYPHEN" >&2
@@ -110,7 +110,7 @@ done
 # Direction 1 — present at root but not permitted.
 EXTRAS=()
 for entry in "${ACTUAL[@]}"; do
-    if [ -z "${ALLOW_SET[$entry]+x}" ]; then
+    if [[ -z "${ALLOW_SET[$entry]+x}" ]]; then
         EXTRAS+=("$entry")
     fi
 done
@@ -118,21 +118,21 @@ done
 # Direction 2 — required by the allowlist but not present.
 MISSING=()
 for entry in "${REQUIRED[@]}"; do
-    if [ -z "${ACTUAL_SET[$entry]+x}" ]; then
+    if [[ -z "${ACTUAL_SET[$entry]+x}" ]]; then
         MISSING+=("$entry")
     fi
 done
 
-if [ ${#EXTRAS[@]} -eq 0 ] && [ ${#MISSING[@]} -eq 0 ]; then
+if [[ ${#EXTRAS[@]} -eq 0 ]] && [[ ${#MISSING[@]} -eq 0 ]]; then
     OPTIONAL_COUNT=$(( ${#ALLOW[@]} - ${#REQUIRED[@]} ))
     echo "PASS: root matches allowlist (${#ACTUAL[@]} entries; ${#REQUIRED[@]} required, ${OPTIONAL_COUNT} optional)"
     exit 0
 fi
 
-if [ ${#EXTRAS[@]} -gt 0 ]; then
+if [[ ${#EXTRAS[@]} -gt 0 ]]; then
     echo "FAIL: ${#EXTRAS[@]} root entries are not on the allowlist:" >&2
     for e in "${EXTRAS[@]}"; do
-        if [ -d "$REPO_ROOT/$e" ]; then
+        if [[ -d "$REPO_ROOT/$e" ]]; then
             echo "  - $e/  (directory)" >&2
         else
             echo "  - $e" >&2
@@ -143,7 +143,7 @@ if [ ${#EXTRAS[@]} -gt 0 ]; then
     echo "entry to ${ALLOW_FILE#"$REPO_ROOT"/}." >&2
 fi
 
-if [ ${#MISSING[@]} -gt 0 ]; then
+if [[ ${#MISSING[@]} -gt 0 ]]; then
     echo "FAIL: ${#MISSING[@]} allowlist entries are required but absent:" >&2
     for e in "${MISSING[@]}"; do
         echo "  - $e" >&2

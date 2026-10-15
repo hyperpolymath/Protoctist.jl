@@ -24,7 +24,7 @@ TEST_PROJECT_NAME="Test Project"
 TEST_DESCRIPTION="A test project instantiated from the RSR template"
 TEST_PRIMARY_LANGUAGE="Rust"
 
-if [ ! -d "$TEMPLATE_ROOT/archetypes" ]; then
+if [[ ! -d "$TEMPLATE_ROOT/archetypes" ]]; then
     echo "Self-skipping: archetypes/ not found (repo is already instantiated)."
     exit 0
 fi
@@ -35,31 +35,37 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+BAR='═══════════════════════════════════════════════════════════════════════════════'
 
 # Helper functions
 log_step() {
     echo ""
     echo -e "${BLUE}→${NC} $*"
+    return 0
 }
 
 log_pass() {
     echo -e "${GREEN}✓${NC} $*"
+    return 0
 }
 
 log_error() {
     echo -e "${RED}✗${NC} $*" >&2
+    return 0
 }
 
 log_warn() {
     echo -e "${YELLOW}!${NC} $*" >&2
+    return 0
 }
 
 cleanup() {
-    if [ -d "$TEST_DIR" ]; then
+    if [[ -d "$TEST_DIR" ]]; then
         log_step "Cleaning up test directory: $TEST_DIR"
         rm -rf "$TEST_DIR"
         log_pass "Cleanup complete"
     fi
+    return "$?"
 }
 
 trap cleanup EXIT
@@ -69,9 +75,9 @@ trap cleanup EXIT
 #==============================================================================
 
 echo ""
-echo "═══════════════════════════════════════════════════════════════════════════════"
+echo "$BAR"
 echo "E2E TEST: Template Instantiation"
-echo "═══════════════════════════════════════════════════════════════════════════════"
+echo "$BAR"
 echo ""
 
 log_step "Creating test directory: $TEST_DIR"
@@ -111,7 +117,7 @@ rm -rf "$TEST_REPO_PATH/.claude"
 # The origin is set to the INSTANTIATED name deliberately, for the same reason
 # the check below clears GITHUB_REPOSITORY: we want the checker to judge this as
 # a real minted repo, not to exempt itself as a template.
-if [ -d "$TEST_REPO_PATH/.git" ]; then
+if [[ -d "$TEST_REPO_PATH/.git" ]]; then
     rm -rf "$TEST_REPO_PATH/.git"
     log_pass ".git directory removed (fresh clone)"
 fi
@@ -187,7 +193,7 @@ INIT_ANSWERS=(
 # therefore asked three questions this test had no answers for, `read` hit
 # EOF, and the recipe exited 1. The clone is complete here, so the mismatch
 # is invisible on a tree missing build/ and unavoidable on one that has it.
-if [ -d "$TEST_REPO_PATH/build/container" ]; then
+if [[ -d "$TEST_REPO_PATH/build/container" ]]; then
     INIT_ANSWERS+=("" "" "")    # service name, port, registry -> defaults
 fi
 INIT_ANSWERS+=("Y")             # Proceed?
@@ -207,7 +213,7 @@ log_pass "just repo-init completed"
 log_step "Checking rendered Guix package identity"
 
 for guix_file in build/guix.scm; do
-    if [ ! -f "$TEST_REPO_PATH/$guix_file" ]; then
+    if [[ ! -f "$TEST_REPO_PATH/$guix_file" ]]; then
         log_error "$guix_file is missing after instantiation"
         exit 1
     fi
@@ -266,7 +272,7 @@ log_step "Checking for un-deleted template instruction blocks"
 LEFTOVER=$(grep -rl 'TEMPLATE INSTRUCTIONS' "$TEST_REPO_PATH" \
     --exclude-dir=.git 2>/dev/null \
     | grep -vE '/(scripts/strip-instruction-blocks\.rs|build/just/repo-init\.just|tests/e2e/template_instantiation_test\.sh|tests/workflows/mint_cleanup_test\.sh)$' || true)
-if [ -n "$LEFTOVER" ]; then
+if [[ -n "$LEFTOVER" ]]; then
     log_error "just repo-init left a TEMPLATE INSTRUCTIONS block in:"
     echo "$LEFTOVER" | sed 's/^/    /' >&2
     exit 1
@@ -281,7 +287,7 @@ log_pass "No template instruction blocks survived instantiation"
 log_step "Validating instantiated repository structure"
 
 # Run validation script on the instantiated repo
-if [ -f "$TEMPLATE_ROOT/scripts/validate-template.sh" ]; then
+if [[ -f "$TEMPLATE_ROOT/scripts/validate-template.sh" ]]; then
     bash "$TEMPLATE_ROOT/scripts/validate-template.sh" "$TEST_REPO_PATH" 0
     log_pass "Repository structure validation passed"
 else
@@ -295,7 +301,7 @@ fi
 
 log_step "Verifying build system works after instantiation"
 
-if [ -f "$TEST_REPO_PATH/src/interface/ffi/build.zig" ]; then
+if [[ -f "$TEST_REPO_PATH/src/interface/ffi/build.zig" ]]; then
     if command -v zig &> /dev/null; then
         cd "$TEST_REPO_PATH/src/interface/ffi"
         if ZIG_GLOBAL_CACHE_DIR="$TEST_DIR/zig-global-cache" \
@@ -332,10 +338,10 @@ CRITICAL_FILES=(
 )
 
 for file in "${CRITICAL_FILES[@]}"; do
-    if [ -f "$TEST_REPO_PATH/$file" ]; then
+    if [[ -f "$TEST_REPO_PATH/$file" ]]; then
         # Check that it's not just a template (contains some actual content)
         if grep -q "$TEST_PROJECT_NAME\|$TEST_AUTHOR\|$TEST_REPO_NAME" "$TEST_REPO_PATH/$file" 2>/dev/null || \
-           [ $(wc -l < "$TEST_REPO_PATH/$file") -gt 10 ]; then
+           [[ $(wc -l < "$TEST_REPO_PATH/$file") -gt 10 ]]; then
             log_pass "File instantiated: $file"
         else
             log_error "File appears to be a template: $file"
@@ -359,7 +365,7 @@ METADATA_FILES=(
 )
 
 for file in "${METADATA_FILES[@]}"; do
-    if [ -f "$TEST_REPO_PATH/$file" ]; then
+    if [[ -f "$TEST_REPO_PATH/$file" ]]; then
         log_pass "Metadata file exists: $file"
     else
         log_error "Metadata file missing: $file"
@@ -372,7 +378,7 @@ done
 #==============================================================================
 
 # The mint must carry the bundle, and the legacy root location must be gone.
-if [ -d "$TEST_REPO_PATH/.well-known" ]; then
+if [[ -d "$TEST_REPO_PATH/.well-known" ]]; then
     log_error "minted repo still has root .well-known/ — canonical location is www/.well-known/"
     exit 1
 fi
@@ -385,7 +391,7 @@ WWW_FILES=(
     "tests/run-all.sh"
 )
 for file in "${WWW_FILES[@]}"; do
-    if [ -f "$TEST_REPO_PATH/www/$file" ]; then
+    if [[ -f "$TEST_REPO_PATH/www/$file" ]]; then
         log_pass "www bundle file exists: www/$file"
     else
         log_error "www bundle file missing: www/$file"
@@ -406,9 +412,9 @@ fi
 #==============================================================================
 
 echo ""
-echo "═══════════════════════════════════════════════════════════════════════════════"
+echo "$BAR"
 echo -e "${GREEN}✓ E2E TEMPLATE INSTANTIATION TEST PASSED${NC}"
-echo "═══════════════════════════════════════════════════════════════════════════════"
+echo "$BAR"
 echo ""
 echo "Summary:"
 echo "  - Template cloned successfully"

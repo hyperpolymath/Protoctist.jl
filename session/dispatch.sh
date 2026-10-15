@@ -3,7 +3,7 @@
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 set -euo pipefail
 
-if [ "$#" -lt 3 ]; then
+if [[ "$#" -lt 3 ]]; then
   cat >&2 <<'USAGE'
 Usage: ./session/dispatch.sh <verb> <object> <repo-path>
 
@@ -29,7 +29,7 @@ object="$2"
 repo_path="$3"
 cmd_pair="$verb $object"
 
-if [ ! -d "$repo_path" ]; then
+if [[ ! -d "$repo_path" ]]; then
   echo "error: repository path '$repo_path' does not exist" >&2
   exit 2
 fi
@@ -38,10 +38,10 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/.." && pwd)"
 
 standards_dir="${SESSION_STANDARDS_DIR:-}"
-if [ -z "$standards_dir" ]; then
-  if [ -d "$repo_root/../standards/3-practice/session-management-standards" ]; then
+if [[ -z "$standards_dir" ]]; then
+  if [[ -d "$repo_root/../standards/3-practice/session-management-standards" ]]; then
     standards_dir="$repo_root/../standards/3-practice/session-management-standards"
-  elif [ -d "$repo_root/standards/3-practice/session-management-standards" ]; then
+  elif [[ -d "$repo_root/standards/3-practice/session-management-standards" ]]; then
     standards_dir="$repo_root/standards/3-practice/session-management-standards"
   fi
 fi
@@ -118,7 +118,7 @@ cat > "$command_record" <<RECORD
 - Recommended next protocol:
 RECORD
 
-if [ -n "$standards_dir" ] && [ -d "$standards_dir/$protocol_rel" ]; then
+if [[ -n "$standards_dir" ]] && [[ -d "$standards_dir/$protocol_rel" ]]; then
   echo "canonical: $cmd_pair $repo_path"
   echo "standard: $standards_dir/$protocol_rel"
   echo "checklist: $standards_dir/$protocol_rel/CHECKLIST.adoc"
@@ -132,7 +132,7 @@ else
 fi
 
 hooks="$script_dir/local-hooks.sh"
-if [ -x "$hooks" ]; then
+if [[ -x "$hooks" ]]; then
   "$hooks" "$verb" "$object" "$repo_path"
 fi
 

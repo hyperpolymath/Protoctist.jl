@@ -37,11 +37,14 @@ ORDER=(intend must trust adjust dust bust)
 
 for v in "${ORDER[@]}"; do
   f="$DIR/${XFILE[$v]}"
-  [ -f "$f" ] || { echo "extract-clauses.sh: missing Xfile: $f" >&2; exit 2; }
+  [[ -f "$f" ]] || { echo "extract-clauses.sh: missing Xfile: $f" >&2; exit 2; }
 done
 
 # short content hash (drift provenance), matches arrival-pack extract.sh
-sh() { sha256sum "$1" | cut -c1-12; }
+sh() {
+  local file="$1"
+  sha256sum "$file" | cut -c1-12
+}
 
 # Emit TSV rows: verb \t slug \t description \t severity \t status \t tolerance \t has_probe
 atomise() {

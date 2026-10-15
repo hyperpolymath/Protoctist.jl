@@ -28,7 +28,8 @@ dangerous=0
 
 # Blank comment content while preserving line count (so grep -n stays accurate).
 strip_comments() {
-  local ext="${1##*.}" lc bo bc
+  local file="$1" lc bo bc
+  local ext="${file##*.}"
   case "$ext" in
     idr|lean|agda) lc='--'; bo='{-'; bc='-}' ;;   # line + block comments
     v)             lc='';   bo='(*'; bc='*)' ;;   # Coq block comments only
@@ -51,13 +52,13 @@ strip_comments() {
         }
       }
       print out
-    }' "$1"
+    }' "$file"
 }
 
 while IFS= read -r f; do
-  [ -z "$f" ] && continue
+  [[ -z "$f" ]] && continue
   matches="$(strip_comments "$f" | grep -nE "$PATTERNS" || true)"
-  if [ -n "$matches" ]; then
+  if [[ -n "$matches" ]]; then
     echo "  DANGEROUS (used in code): $f"
     printf '%s\n' "$matches" | sed 's/^/    /'
     dangerous=$((dangerous + 1))
@@ -67,7 +68,7 @@ done < <(find verification/proofs \
            -not -path '*/build/*' 2>/dev/null | sort)
 
 echo
-if [ "$dangerous" -gt 0 ]; then
+if [[ "$dangerous" -gt 0 ]]; then
   echo "FAIL: $dangerous file(s) use dangerous constructs in proof CODE (not comments)"
   exit 1
 fi

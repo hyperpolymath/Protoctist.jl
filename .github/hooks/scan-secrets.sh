@@ -52,7 +52,7 @@ ZERO="0000000000000000000000000000000000000000"
 # must still block, so verification buys only false-positive reduction at the
 # cost of egress. Opt in with K9_SECRETS_VERIFY=1.
 VERIFY_ARGS=(--no-verification)
-if [ "${K9_SECRETS_VERIFY:-0}" = "1" ]; then VERIFY_ARGS=(); fi
+if [[ "${K9_SECRETS_VERIFY:-0}" = "1" ]]; then VERIFY_ARGS=(); fi
 
 # ── The SonarCloud detector must be excluded, and why ───────────────────────
 # TruffleHog's SonarCloud detector matches ANY bare 40-hex string. This estate
@@ -78,7 +78,10 @@ DETECTOR_ARGS=(--exclude-detectors SonarCloud)
 # PATH, answers `command -v` happily, and fails every actual invocation with
 # "No version is set for shim". Installed is not invokable. Each candidate is
 # therefore probed with `--version` and only accepted on exit 0.
-probe() { [ -n "${1:-}" ] && [ -x "$1" ] && "$1" --version >/dev/null 2>&1; }
+probe() {
+  local bin="${1:-}"
+  [[ -n "$bin" ]] && [[ -x "$bin" ]] && "$bin" --version >/dev/null 2>&1
+}
 
 TH=""
 if probe "${TRUFFLEHOG:-}"; then
@@ -95,7 +98,7 @@ else
              -path '*trufflehog*' 2>/dev/null | sort -rV)
 fi
 
-if [ -z "$TH" ]; then
+if [[ -z "$TH" ]]; then
   cat >&2 <<'HINT'
 [scan-secrets] BLOCKED: TruffleHog is not installed, or is a dead shim.
 
@@ -147,12 +150,12 @@ scan() {
   "$TH" git "file://$REPO_ROOT" "$@" "${VERIFY_ARGS[@]}" "${DETECTOR_ARGS[@]}" \
       --fail --no-update >"$out" 2>&1 || rc=$?
   scanned=$((scanned + 1))
-  if [ "$rc" -eq 183 ]; then
+  if [[ "$rc" -eq 183 ]]; then
     echo "[scan-secrets] FINDINGS while scanning $label:" >&2
     cat "$out" >&2
     found=1
     status=1
-  elif [ "$rc" -ne 0 ]; then
+  elif [[ "$rc" -ne 0 ]]; then
     echo "[scan-secrets] SCANNER ERROR (exit $rc) while scanning $label —" >&2
     echo "[scan-secrets] this is a failure to scan, NOT a detected secret:" >&2
     cat "$out" >&2
@@ -161,11 +164,11 @@ scan() {
   fi
 }
 
-if [ -n "${K9_PUSH_RANGES:-}" ]; then
+if [[ -n "${K9_PUSH_RANGES:-}" ]]; then
   while read -r local_ref local_sha remote_ref remote_sha; do
-    [ -z "${local_sha:-}" ] && continue
-    [ "$local_sha" = "$ZERO" ] && continue                 # branch deletion
-    if [ "${remote_sha:-$ZERO}" = "$ZERO" ]; then
+    [[ -z "${local_sha:-}" ]] && continue
+    [[ "$local_sha" = "$ZERO" ]] && continue                 # branch deletion
+    if [[ "${remote_sha:-$ZERO}" = "$ZERO" ]]; then
       scan "new branch ${local_ref:-HEAD} (last $MAX_DEPTH commits)" \
            --branch "$local_sha" --max-depth "$MAX_DEPTH"
     else
@@ -178,17 +181,17 @@ fi
 # No ranges (hook invoked directly, or an empty push): scan the bounded tail of
 # HEAD rather than reporting a pass over nothing. A gate that reports success
 # having examined zero commits is the vacuity this estate keeps re-learning.
-if [ "$scanned" -eq 0 ]; then
+if [[ "$scanned" -eq 0 ]]; then
   scan "HEAD (no push ranges; last $MAX_DEPTH commits)" --max-depth "$MAX_DEPTH"
 fi
 
-if [ "$found" -ne 0 ]; then
+if [[ "$found" -ne 0 ]]; then
   echo "[scan-secrets] Secrets detected in the commits being pushed." >&2
   echo "[scan-secrets] Remove them and rewrite the offending commits." >&2
   echo "[scan-secrets] Override (only if these are false positives): git push --no-verify" >&2
 fi
 
-if [ "$errored" -ne 0 ]; then
+if [[ "$errored" -ne 0 ]]; then
   echo "[scan-secrets] TruffleHog could not complete the scan (see above)." >&2
   echo "[scan-secrets] BLOCKED because an unscanned push is an unvetted push." >&2
   echo "[scan-secrets] Common cause: a broken local ref. Check with:  git fsck" >&2
@@ -196,7 +199,7 @@ if [ "$errored" -ne 0 ]; then
   echo "[scan-secrets]     git push --no-verify" >&2
 fi
 
-if [ "$status" -ne 0 ]; then
+if [[ "$status" -ne 0 ]]; then
   exit 1
 fi
 

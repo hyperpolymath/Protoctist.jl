@@ -37,7 +37,7 @@ set -euo pipefail
 
 REPO_ROOT="${1:-.}"
 
-if [ ! -d "$REPO_ROOT" ]; then
+if [[ ! -d "$REPO_ROOT" ]]; then
     echo "usage: $0 [repo-root]" >&2
     exit 2
 fi
@@ -57,7 +57,7 @@ fi
 # identity key with a real value — `name`/`private` cannot be inherited by a
 # child repo without being wrong (see the header of .github/settings.yml).
 SETTINGS="$REPO_ROOT/.github/settings.yml"
-if [ -f "$SETTINGS" ]; then
+if [[ -f "$SETTINGS" ]]; then
     settings_fail=0
 
     # Comment-aware: the file's own header documents the incident and has to be
@@ -65,7 +65,7 @@ if [ -f "$SETTINGS" ]; then
     # the same distinction META_TOKENS draws below. Line numbers are preserved
     # by filtering `grep -n` output rather than the file.
     settings_tokens="$(grep -nE '\{\{' "$SETTINGS" | grep -vE '^[0-9]+:[[:space:]]*#' || true)"
-    if [ -n "$settings_tokens" ]; then
+    if [[ -n "$settings_tokens" ]]; then
         echo "FAIL: .github/settings.yml contains an unrendered {{ token." >&2
         printf '%s\n' "$settings_tokens" | sed 's/^/  /' >&2
         settings_fail=1
@@ -80,7 +80,7 @@ if [ -f "$SETTINGS" ]; then
         settings_fail=1
     fi
 
-    if [ "$settings_fail" -ne 0 ]; then
+    if [[ "$settings_fail" -ne 0 ]]; then
         echo "" >&2
         echo "probot/settings applies this file on every push to the default branch," >&2
         echo "so these keys are enforced, not described. Repository identity and" >&2
@@ -106,16 +106,18 @@ fi
 # The remote URL is the repo's actual identity and survives all of that. The
 # basename remains as the last fallback for a checkout with no remote.
 REPO_NAME="${GITHUB_REPOSITORY:-}"
-if [ -z "$REPO_NAME" ]; then
+if [[ -z "$REPO_NAME" ]]; then
     REPO_NAME="$(git -C "$REPO_ROOT" config --get remote.origin.url 2>/dev/null \
                  | sed -E 's#(\.git)?/?$##; s#^.*[:/]([^/]+/[^/]+)$#\1#')"
 fi
-[ -z "$REPO_NAME" ] && REPO_NAME="$(cd "$REPO_ROOT" && basename "$(pwd)")"
+[[ -z "$REPO_NAME" ]] && REPO_NAME="$(cd "$REPO_ROOT" && basename "$(pwd)")"
 case "$REPO_NAME" in
     *-template-repo)
         echo "PASS: $REPO_NAME is a template repo — unfilled tokens are intentional"
         echo "      (.github/settings.yml identity guard above still applied)"
         exit 0
+        ;;
+    *)  # any other name is an instantiation — checked in full below
         ;;
 esac
 
@@ -130,13 +132,15 @@ ALLOWED=(
 is_allowed() {
     local rel="$1"
     for a in "${ALLOWED[@]}"; do
-        [ "$rel" = "$a" ] && return 0
+        [[ "$rel" = "$a" ]] && return 0
     done
     # just owns brace tokens inside justfiles — an ARGS token there is
     # interpolation, not a placeholder. Justfiles are not only at the root:
     # the contractiles ship one too.
     case "$rel" in
         Justfile|justfile|*/Justfile|*/justfile|*.just) return 0 ;;
+        *)  # any other file is not exempt — fall through to the rejection
+            ;;
     esac
     return 1
 }
@@ -159,7 +163,7 @@ while IFS= read -r hit; do
 done < <(grep -rlE '\{\{[A-Z][A-Z0-9_]*\}\}' "$REPO_ROOT" \
              --exclude-dir=.git --binary-files=without-match 2>/dev/null | sort)
 
-if [ ${#LEAKS[@]} -eq 0 ]; then
+if [[ ${#LEAKS[@]} -eq 0 ]]; then
     echo "PASS: no unfilled {{PLACEHOLDER}} tokens"
     exit 0
 fi

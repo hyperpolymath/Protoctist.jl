@@ -15,8 +15,8 @@ set -uo pipefail
 WWW="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO="$(cd "$WWW/.." && pwd)"
 FAIL=0
-bad() { echo "PROFILE FAIL: $*" >&2; FAIL=1; }
-ok()  { echo "ok: $*"; }
+bad() { echo "PROFILE FAIL: $*" >&2; FAIL=1; return "$?"; }
+ok()  { echo "ok: $*"; return 0; }
 
 assert_profile() { # $1 = profile toml; returns 1 on any violation
     local f="$1" v=0 prof c
@@ -38,18 +38,21 @@ assert_profile() { # $1 = profile toml; returns 1 on any violation
         consent-aware-web|full-expert)
             grep -Eq '^enforcement_http_430 = false$' "$f" \
                 || { echo "  $prof must carry enforcement_http_430 = false explicitly" >&2; v=1; } ;;
+        *) : ;; # other roles state no 430 stance that must be pinned false
     esac
     case "$prof" in
         authoritative-dns|full-expert)
             grep -Eq '^auto_start_daemon = false$' "$f" \
                 || { echo "  $prof must carry auto_start_daemon = false explicitly" >&2; v=1; } ;;
+        *) : ;; # other roles run no daemon, so no auto_start stance is required
     esac
     case "$prof" in
         *rogue*|*control*) : ;;  # planted controls need not satisfy role rules beyond the flags
+        *) : ;; # real profiles satisfy the role rules above
     esac
 
     # full-expert composes EXACTLY the four, explicitly.
-    if [ "$prof" = "full-expert" ]; then
+    if [[ "$prof" = "full-expert" ]]; then
         local inc; inc="$(sed -nE 's/^includes = \[(.*)\].*/\1/p' "$f")"
         for want in baseline-site consent-aware-web authoritative-dns privacy-enhanced; do
             case "$inc" in *"$want"*) : ;; *) echo "  full-expert.includes omits $want" >&2; v=1 ;; esac
@@ -60,15 +63,15 @@ assert_profile() { # $1 = profile toml; returns 1 on any violation
     # Process substitution (not a pipe) so violations set v in THIS shell;
     # `|| true` around grep so an empty array is not a pipefail "failure".
     while IFS= read -r c; do
-        [ -n "$c" ] || continue
-        [ -e "$REPO/$c" ] || { echo "  component path does not exist: $c" >&2; v=1; }
+        [[ -n "$c" ]] || continue
+        [[ -e "$REPO/$c" ]] || { echo "  component path does not exist: $c" >&2; v=1; }
     done < <(sed -nE 's/^components = \[(.*)\].*/\1/p' "$f" | { grep -o '"[^"]*"' || true; } | tr -d '"')
 
     # requires/includes must resolve to sibling profile files.
     for key in requires includes; do
         while IFS= read -r c; do
-            [ -n "$c" ] || continue
-            [ -f "$WWW/profiles/$c.toml" ] || { echo "  $key references missing profile: $c" >&2; v=1; }
+            [[ -n "$c" ]] || continue
+            [[ -f "$WWW/profiles/$c.toml" ]] || { echo "  $key references missing profile: $c" >&2; v=1; }
         done < <(sed -nE "s/^$key = \[(.*)\].*/\1/p" "$f" | { grep -o '"[^"]*"' || true; } | tr -d '"')
     done
     return "$v"

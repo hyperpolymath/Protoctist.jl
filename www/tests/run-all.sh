@@ -22,7 +22,7 @@ fail=0
 ran=0
 skipped=0
 for check in "$here"/check-*.sh; do
-    [ -f "$check" ] || continue
+    [[ -f "$check" ]] || continue
     ran=$((ran + 1))
     name="$(basename "$check")"
     out="$(mktemp)"
@@ -32,9 +32,9 @@ for check in "$here"/check-*.sh; do
         rc=$?
     fi
     cat "$out"
-    if [ "$rc" -eq 0 ]; then
+    if [[ "$rc" -eq 0 ]]; then
         echo "PASS  $name"
-    elif [ "$rc" -eq 77 ] && grep -q '^SKIP:' "$out"; then
+    elif [[ "$rc" -eq 77 ]] && grep -q '^SKIP:' "$out"; then
         echo "SKIP  $name"
         skipped=$((skipped + 1))
     else
@@ -45,8 +45,8 @@ for check in "$here"/check-*.sh; do
 done
 
 echo "www/tests: ran $ran check(s), $fail failure(s), $skipped skipped"
-if [ "$skipped" -gt 0 ]; then
+if [[ "$skipped" -gt 0 ]]; then
     echo "www/tests: $skipped check(s) did not apply here — see the SKIP lines above."
     echo "www/tests: this is not full coverage of the bundle."
 fi
-[ "$fail" -eq 0 ]
+[[ "$fail" -eq 0 ]]

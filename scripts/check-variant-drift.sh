@@ -20,7 +20,7 @@ PARENT_DIR="${1:?usage: check-variant-drift.sh <parent-checkout-dir> [self-dir]}
 SELF_DIR="${2:-.}"
 CONTRACT="$SELF_DIR/.machine_readable/descriptiles/VARIANT.a2ml"
 
-[ -f "$CONTRACT" ] || { echo "FAIL: contract not found: $CONTRACT"; exit 1; }
+[[ -f "$CONTRACT" ]] || { echo "FAIL: contract not found: $CONTRACT"; exit 1; }
 
 SELF_NAME=$(sed -n 's/^project = "\(.*\)"/\1/p' "$CONTRACT" | head -1)
 PARENT_SLUG=$(sed -n 's/^parent = "\(.*\)"/\1/p' "$CONTRACT" | head -1)
@@ -29,7 +29,8 @@ PIN=$(sed -n 's/^parent-pin = "\([0-9a-f]*\)".*/\1/p' "$CONTRACT" | head -1)
 
 # Extract the paths array of one [paths.<section>] block.
 section_paths() {
-  awk -v sec="[paths.$1]" '
+  local section="$1"
+  awk -v sec="[paths.$section]" '
     $0 == sec { insec = 1; next }
     insec && /^\[/ { insec = 0 }
     insec && /^ *"/ {
@@ -47,14 +48,17 @@ SKIP=$(printf '%s\n' "$(section_paths diverged)" \
                      "$(section_paths operational-state)")
 
 in_list() { # $1 = path, $2 = newline list (entries ending in / are prefixes)
-  local p="$1" e
+  local p="$1" e list="$2"
   while IFS= read -r e; do
-    [ -z "$e" ] && continue
+    [[ -z "$e" ]] && continue
     case "$e" in
-      */) case "$p" in "$e"*) return 0;; esac ;;
-      *)  [ "$p" = "$e" ] && return 0 ;;
+      */) case "$p" in
+            "$e"*) return 0 ;;
+            *) ;; # no prefix match — keep checking
+          esac ;;
+      *)  [[ "$p" = "$e" ]] && return 0 ;;
     esac
-  done <<< "$2"
+  done <<< "$list"
   return 1
 }
 
@@ -64,23 +68,24 @@ in_list() { # $1 = path, $2 = newline list (entries ending in / are prefixes)
 # sides keeps inherited files that legitimately mention the parent by name
 # convergent, while still matching self-identity substitutions.
 normalise() { # $1 = file
+  local f="$1"
   sed -E -e 's/@[0-9a-f]{40}[^ ]*( # v[^ ]*)?/@PIN/g' \
-         -e "s/$SELF_NAME/SELF/g" -e "s/$PARENT_NAME/SELF/g" "$1"
+         -e "s/$SELF_NAME/SELF/g" -e "s/$PARENT_NAME/SELF/g" "$f"
 }
 
 DRIFT=0
 report() { DRIFT=1; echo "DRIFT: $*"; }
 
-if [ -n "$PIN" ] && [ -d "$PARENT_DIR/.git" ]; then
+if [[ -n "$PIN" ]] && [[ -d "$PARENT_DIR/.git" ]]; then
   ACTUAL=$(git -C "$PARENT_DIR" rev-parse HEAD)
-  [ "$ACTUAL" = "$PIN" ] || echo "WARN: parent checkout is $ACTUAL, contract pins $PIN"
+  [[ "$ACTUAL" = "$PIN" ]] || echo "WARN: parent checkout is $ACTUAL, contract pins $PIN"
 fi
 
 # 1. Spine files must match, modulo normalisation.
 while IFS= read -r f; do
   in_list "$f" "$ADDED" && continue
   in_list "$f" "$SKIP" && continue
-  if [ ! -f "$PARENT_DIR/$f" ]; then
+  if [[ ! -f "$PARENT_DIR/$f" ]]; then
     report "$f exists here but not in parent (declare in paths.added or remove)"
     continue
   fi
@@ -92,7 +97,7 @@ done < <(git -C "$SELF_DIR" ls-files)
 
 # 2. Parent files absent here must be declared removed.
 while IFS= read -r f; do
-  [ -f "$SELF_DIR/$f" ] && continue
+  [[ -f "$SELF_DIR/$f" ]] && continue
   in_list "$f" "$REMOVED" && continue
   in_list "$f" "$SKIP" && continue
   report "parent has $f but it is absent here (declare in paths.removed)"
@@ -100,21 +105,21 @@ done < <(git -C "$PARENT_DIR" ls-files)
 
 # 3. Declared additions must exist (and not silently exist in parent).
 while IFS= read -r e; do
-  [ -z "$e" ] && continue
+  [[ -z "$e" ]] && continue
   case "$e" in
-    */) [ -d "$SELF_DIR/$e" ] || report "declared-added directory $e is missing" ;;
-    *)  [ -f "$SELF_DIR/$e" ] || report "declared-added file $e is missing"
-        [ -e "$PARENT_DIR/$e" ] && report "declared-added $e also exists in parent (not an addition)" ;;
+    */) [[ -d "$SELF_DIR/$e" ]] || report "declared-added directory $e is missing" ;;
+    *)  [[ -f "$SELF_DIR/$e" ]] || report "declared-added file $e is missing"
+        [[ -e "$PARENT_DIR/$e" ]] && report "declared-added $e also exists in parent (not an addition)" ;;
   esac
 done <<< "$ADDED"
 
 # 4. Declared removals must still exist in the parent.
 while IFS= read -r e; do
-  [ -z "$e" ] && continue
-  [ -e "$PARENT_DIR/$e" ] || report "declared-removed $e no longer exists in parent (stale entry)"
+  [[ -z "$e" ]] && continue
+  [[ -e "$PARENT_DIR/$e" ]] || report "declared-removed $e no longer exists in parent (stale entry)"
 done <<< "$REMOVED"
 
-if [ "$DRIFT" -eq 0 ]; then
+if [[ "$DRIFT" -eq 0 ]]; then
   echo "PASS: spine convergent with $PARENT_SLUG@${PIN:0:12} (modulo declared variant paths)"
 else
   echo "FAIL: undeclared drift against $PARENT_SLUG@${PIN:0:12} — update VARIANT.a2ml or re-converge"

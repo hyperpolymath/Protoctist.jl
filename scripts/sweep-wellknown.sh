@@ -98,23 +98,23 @@ note() { echo "sweep: $*"; }
 
 POSITIONAL=()
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
-        --owner)        [ $# -ge 2 ] || die "--owner requires a value"; OWNER="$2"; shift 2 ;;
-        --repos-file)   [ $# -ge 2 ] || die "--repos-file requires a path"; REPOS_FILE="$2"; shift 2 ;;
-        --batch)        [ $# -ge 2 ] || die "--batch requires a number"; BATCH="$2"; shift 2 ;;
-        --batch-size)   [ $# -ge 2 ] || die "--batch-size requires a number"; BATCH_SIZE="$2"; shift 2 ;;
-        --limit)        [ $# -ge 2 ] || die "--limit requires a number"; LIMIT="$2"; shift 2 ;;
+        --owner)        [[ $# -ge 2 ]] || die "--owner requires a value"; OWNER="$2"; shift 2 ;;
+        --repos-file)   [[ $# -ge 2 ]] || die "--repos-file requires a path"; REPOS_FILE="$2"; shift 2 ;;
+        --batch)        [[ $# -ge 2 ]] || die "--batch requires a number"; BATCH="$2"; shift 2 ;;
+        --batch-size)   [[ $# -ge 2 ]] || die "--batch-size requires a number"; BATCH_SIZE="$2"; shift 2 ;;
+        --limit)        [[ $# -ge 2 ]] || die "--limit requires a number"; LIMIT="$2"; shift 2 ;;
         --classify-only) CLASSIFY_ONLY=1; shift ;;
         --include-review) INCLUDE_REVIEW=1; shift ;;
         --no-auth)      NO_AUTH=1; shift ;;
-        --trees-dir)    [ $# -ge 2 ] || die "--trees-dir requires a path"; TREES_DIR="$2"; shift 2 ;;
+        --trees-dir)    [[ $# -ge 2 ]] || die "--trees-dir requires a path"; TREES_DIR="$2"; shift 2 ;;
         --dry-run)      DRY_RUN=1; shift ;;
         --push)         PUSH=1; shift ;;
         --allow-conflicts) ALLOW_CONFLICTS=1; shift ;;
-        --branch)       [ $# -ge 2 ] || die "--branch requires a value"; BRANCH="$2"; shift 2 ;;
-        --work-dir)     [ $# -ge 2 ] || die "--work-dir requires a path"; WORK="$2"; shift 2 ;;
-        --migrator)     [ $# -ge 2 ] || die "--migrator requires a path"; MIGRATOR="$2"; shift 2 ;;
+        --branch)       [[ $# -ge 2 ]] || die "--branch requires a value"; BRANCH="$2"; shift 2 ;;
+        --work-dir)     [[ $# -ge 2 ]] || die "--work-dir requires a path"; WORK="$2"; shift 2 ;;
+        --migrator)     [[ $# -ge 2 ]] || die "--migrator requires a path"; MIGRATOR="$2"; shift 2 ;;
         -h|--help)      usage; exit 0 ;;
         -*)             die "unknown option: $1" ;;
         *)              POSITIONAL+=("$1"); shift ;;
@@ -128,7 +128,7 @@ done
 # Fail before cloning anything: discovering on repo 200 of 270 that commits
 # cannot be made wastes the whole run and leaves 199 half-swept checkouts.
 # `git var` honours config and GIT_COMMITTER_* alike, so either setup passes.
-if [ "$CLASSIFY_ONLY" -eq 0 ] && [ "$DRY_RUN" -eq 0 ]; then
+if [[ "$CLASSIFY_ONLY" -eq 0 ]] && [[ "$DRY_RUN" -eq 0 ]]; then
     if ! git var GIT_COMMITTER_IDENT >/dev/null 2>&1; then
         die "git cannot determine a committer identity, and the sweep commits. Either:
   git config --global user.name  \"Your Name\"
@@ -139,18 +139,18 @@ fi
 
 # ── token ───────────────────────────────────────────────────────────────────
 TOKEN="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
-if [ -z "$TOKEN" ] && command -v gh >/dev/null 2>&1; then
+if [[ -z "$TOKEN" ]] && command -v gh >/dev/null 2>&1; then
     TOKEN="$(gh auth token 2>/dev/null || true)"
 fi
-if [ -z "$TOKEN" ]; then
-    if [ "$NO_AUTH" -eq 0 ]; then
+if [[ -z "$TOKEN" ]]; then
+    if [[ "$NO_AUTH" -eq 0 ]]; then
         die "no token: set GITHUB_TOKEN (repo scope), sign in with gh, or pass --no-auth to run read-only"
     fi
     note "no token available; running unauthenticated (--no-auth) — push unavailable"
-    [ -n "$TREES_DIR" ] || die "--no-auth requires --trees-dir (unauthenticated API is 60 req/hour)"
-    [ -d "$TREES_DIR" ] || die "trees dir not found: $TREES_DIR"
+    [[ -n "$TREES_DIR" ]] || die "--no-auth requires --trees-dir (unauthenticated API is 60 req/hour)"
+    [[ -d "$TREES_DIR" ]] || die "trees dir not found: $TREES_DIR"
 fi
-if [ "$PUSH" -eq 1 ] && [ -z "$TOKEN" ]; then
+if [[ "$PUSH" -eq 1 ]] && [[ -z "$TOKEN" ]]; then
     die "--push requires a token; re-run with GITHUB_TOKEN set"
 fi
 
@@ -159,12 +159,12 @@ fi
 # template checkout, from a copy on $PATH, or from an unrelated directory, and
 # each of those puts the scripts/ directory somewhere different.
 resolve_migrator() {
-    if [ -n "$MIGRATOR" ]; then printf '%s' "$MIGRATOR"; return; fi
+    if [[ -n "$MIGRATOR" ]]; then printf '%s' "$MIGRATOR"; return; fi
     local c
     for c in "$(git rev-parse --show-toplevel 2>/dev/null || true)" \
              "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)" \
              "$PWD"; do
-        if [ -n "$c" ] && [ -f "$c/scripts/migrate-wellknown-to-www.sh" ]; then
+        if [[ -n "$c" ]] && [[ -f "$c/scripts/migrate-wellknown-to-www.sh" ]]; then
             printf '%s' "$c/scripts/migrate-wellknown-to-www.sh"
             return
         fi
@@ -172,9 +172,9 @@ resolve_migrator() {
     printf ''
 }
 MIGRATOR="$(resolve_migrator)"
-[ -n "$MIGRATOR" ] || die "migrator not found; pass --migrator /path/to/migrate-wellknown-to-www.sh"
+[[ -n "$MIGRATOR" ]] || die "migrator not found; pass --migrator /path/to/migrate-wellknown-to-www.sh"
 
-if [ -z "$WORK" ]; then
+if [[ -z "$WORK" ]]; then
     WORK="$(mktemp -d "${TMPDIR:-/tmp}/wellknown-sweep.XXXXXX")"
 else
     mkdir -p "$WORK"
@@ -188,27 +188,27 @@ printf 'repo,classification,status,detail\n' > "$RESULT_CSV"
 
 # ── repository list ─────────────────────────────────────────────────────────
 REPOS=()
-if [ -n "$REPOS_FILE" ]; then
-    [ -f "$REPOS_FILE" ] || die "repos file not found: $REPOS_FILE"
+if [[ -n "$REPOS_FILE" ]]; then
+    [[ -f "$REPOS_FILE" ]] || die "repos file not found: $REPOS_FILE"
     while IFS= read -r line; do
         line="${line%%#*}"
         line="$(printf '%s' "$line" | tr -d '[:space:]')"
-        [ -n "$line" ] && REPOS+=("$line")
+        [[ -n "$line" ]] && REPOS+=("$line")
     done < "$REPOS_FILE"
 fi
 REPOS+=(${POSITIONAL[@]+"${POSITIONAL[@]}"})
 
-if [ ${#REPOS[@]} -eq 0 ]; then
+if [[ ${#REPOS[@]} -eq 0 ]]; then
     die "no repositories selected: pass --repos-file FILE or names as arguments"
 fi
 
-if [ -n "$BATCH" ]; then
+if [[ -n "$BATCH" ]]; then
     start=$(( (BATCH - 1) * BATCH_SIZE ))
     REPOS=(${REPOS[@]:$start:$BATCH_SIZE})
-    [ ${#REPOS[@]} -gt 0 ] || die "batch $BATCH is empty"
+    [[ ${#REPOS[@]} -gt 0 ]] || die "batch $BATCH is empty"
     note "batch $BATCH of size $BATCH_SIZE: ${#REPOS[@]} repository(ies)"
 fi
-if [ -n "$LIMIT" ] && [ "$LIMIT" -lt ${#REPOS[@]} ]; then
+if [[ -n "$LIMIT" ]] && [[ "$LIMIT" -lt ${#REPOS[@]} ]]; then
     REPOS=(${REPOS[@]:0:$LIMIT})
 fi
 note "selected ${#REPOS[@]} repository(ies) from $OWNER; work dir $WORK"
@@ -229,17 +229,17 @@ classify_repo() { # repo -> "class|root_wk|www_wk|notes"; paths cached in $WORK/
 
     # A cached tree listing is the same data the API would return, so prefer
     # it: unauthenticated classification is capped at 60 requests/hour.
-    if [ -n "$TREES_DIR" ] && [ -f "$TREES_DIR/$repo" ]; then
+    if [[ -n "$TREES_DIR" ]] && [[ -f "$TREES_DIR/$repo" ]]; then
         paths="$(cat "$TREES_DIR/$repo")"
     fi
-    if [ -n "$paths" ]; then
+    if [[ -n "$paths" ]]; then
         printf '%s\n' "$paths" > "$WORK/trees/$repo"
     else
         if ! json="$(gh_api "https://api.github.com/repos/$OWNER/$repo/git/trees/HEAD?recursive=1" 2>/dev/null)"; then
             printf 'unknown|?|?|API error (missing/empty/private, or rate limited)\n'
             return 0
         fi
-        if [ "$(printf '%s' "$json" | jq -r '.truncated // false')" = "true" ]; then
+        if [[ "$(printf '%s' "$json" | jq -r '.truncated // false')" = "true" ]]; then
             printf 'review-other|?|?|tree truncated by API — classify by hand\n'
             return 0
         fi
@@ -286,15 +286,15 @@ classify_repo() { # repo -> "class|root_wk|www_wk|notes"; paths cached in $WORK/
     done
 
     local class
-    if [ "$pages" = yes ]; then
+    if [[ "$pages" = yes ]]; then
         class=review-pages
-    elif [ "$rsr" = yes ]; then
+    elif [[ "$rsr" = yes ]]; then
         class=sweep
     else
         class=review-other
         notes="${notes:+$notes; }no RSR marker found"
     fi
-    [ -n "$marker" ] && notes="${notes:+$notes; }marker: $marker"
+    [[ -n "$marker" ]] && notes="${notes:+$notes; }marker: $marker"
     printf '%s|%s|%s|%s\n' "$class" "$root_wk" "$www_wk" "$notes"
 }
 
@@ -304,7 +304,7 @@ sweep_repo() { # repo class -> appends to RESULT_CSV
     local dir="$WORK/repos/$repo"
     rm -rf "$dir"
 
-    if [ "$CLASSIFY_ONLY" -eq 1 ]; then
+    if [[ "$CLASSIFY_ONLY" -eq 1 ]]; then
         printf '%s,%s,skipped,classify-only\n' "$repo" "$class" >> "$RESULT_CSV"
         return 0
     fi
@@ -313,27 +313,27 @@ sweep_repo() { # repo class -> appends to RESULT_CSV
     # Public repositories clone fine over plain https; the token only buys
     # push access (and a higher rate limit), so do not require it to read.
     local clone_url="https://github.com/${OWNER}/${repo}.git"
-    [ -n "$TOKEN" ] && clone_url="https://x-access-token:${TOKEN}@github.com/${OWNER}/${repo}.git"
+    [[ -n "$TOKEN" ]] && clone_url="https://x-access-token:${TOKEN}@github.com/${OWNER}/${repo}.git"
     if ! git clone --depth 1 -q "$clone_url" "$dir" 2>"$WORK/reports/$repo.clone.log"; then
         printf '%s,%s,failed,clone failed (see %s)\n' "$repo" "$class" "$WORK/reports/$repo.clone.log" >> "$RESULT_CSV"
         return 0
     fi
 
-    if [ ! -d "$dir/.well-known" ]; then
+    if [[ ! -d "$dir/.well-known" ]]; then
         printf '%s,%s,clean,no root .well-known/ (already migrated or never had one)\n' "$repo" "$class" >> "$RESULT_CSV"
         return 0
     fi
 
     local report="$WORK/reports/$repo.tsv"
     local migflags=()
-    [ "$DRY_RUN" -eq 1 ] && migflags+=(--dry-run)
+    [[ "$DRY_RUN" -eq 1 ]] && migflags+=(--dry-run)
 
     local status=migrated detail=""
     if (cd "$dir" && bash "$MIGRATOR" "${migflags[@]}" --report "$report") >"$WORK/reports/$repo.migrate.log" 2>&1; then
-        if [ "$DRY_RUN" -eq 1 ]; then
+        if [[ "$DRY_RUN" -eq 1 ]]; then
             status=would-migrate
         fi
-        if [ -f "$report" ] && grep -qP '^quarantined\t' "$report"; then
+        if [[ -f "$report" ]] && grep -qP '^quarantined\t' "$report"; then
             status=quarantined
             detail="$(grep -cP '^quarantined\t' "$report") divergent file(s) quarantined — needs a human"
         fi
@@ -343,7 +343,7 @@ sweep_repo() { # repo class -> appends to RESULT_CSV
     fi
 
     # Post-migration suite: only meaningful where the repo carries the bundle.
-    if [ -f "$dir/www/tests/run-all.sh" ]; then
+    if [[ -f "$dir/www/tests/run-all.sh" ]]; then
         if ! (cd "$dir" && bash www/tests/run-all.sh) >"$WORK/reports/$repo.tests.log" 2>&1; then
             status=failed
             detail="${detail:+$detail; }www/tests/run-all.sh failed (see $WORK/reports/$repo.tests.log)"
@@ -352,12 +352,12 @@ sweep_repo() { # repo class -> appends to RESULT_CSV
         detail="${detail:+$detail; }no www/tests bundle — run the RSR update mechanism first"
     fi
 
-    if [ "$DRY_RUN" -eq 0 ] && [ "$status" != failed ]; then
-        if [ -n "$(cd "$dir" && git status --porcelain)" ]; then
+    if [[ "$DRY_RUN" -eq 0 ]] && [[ "$status" != failed ]]; then
+        if [[ -n "$(cd "$dir" && git status --porcelain)" ]]; then
             # A commit failure is recorded, never fatal: one repository with an
             # unusual hook or an unwritable ref must not abandon the batch.
             if (cd "$dir" && git add -A && git commit -qm "chore(www): migrate root .well-known/ to www/.well-known/ (Protoctist.jl#119)"); then
-                if [ "$PUSH" -eq 1 ]; then
+                if [[ "$PUSH" -eq 1 ]]; then
                     (cd "$dir" && git push -q origin "HEAD:$BRANCH") \
                         || detail="${detail:+$detail; }push failed"
                 fi
@@ -366,7 +366,7 @@ sweep_repo() { # repo class -> appends to RESULT_CSV
                 detail="${detail:+$detail; }commit failed"
             fi
         else
-            [ "$status" = migrated ] && status=clean
+            [[ "$status" = migrated ]] && status=clean
         fi
     fi
 
@@ -382,7 +382,7 @@ for repo in "${REPOS[@]}"; do
     printf '%s,%s,%s,%s,%s\n' "$repo" "$class" "$root_wk" "$www_wk" "$notes" >> "$CLASS_CSV"
     printf '  %-40s %s\n' "$repo" "$class${notes:+ — $notes}"
 
-    if [ "$class" = sweep ] || [ "$INCLUDE_REVIEW" -eq 1 ]; then
+    if [[ "$class" = sweep ]] || [[ "$INCLUDE_REVIEW" -eq 1 ]]; then
         swept+=1
         # Belt and braces: sweep_repo records its own failures and returns 0,
         # but an unexpected abort must still not take the batch down with it.
@@ -405,13 +405,13 @@ tail -n +2 "$RESULT_CSV" | cut -d, -f3 | sort | uniq -c | sort -rn
 failed=$(tail -n +2 "$RESULT_CSV" | grep -c ',failed,' || true)
 quarantined=$(tail -n +2 "$RESULT_CSV" | grep -c ',quarantined,' || true)
 
-if [ "$failed" -gt 0 ]; then
+if [[ "$failed" -gt 0 ]]; then
     echo
     echo "sweep: $failed repository(ies) FAILED:" >&2
     grep ',failed,' "$RESULT_CSV" >&2
     exit 1
 fi
-if [ "$quarantined" -gt 0 ] && [ "$ALLOW_CONFLICTS" -eq 0 ]; then
+if [[ "$quarantined" -gt 0 ]] && [[ "$ALLOW_CONFLICTS" -eq 0 ]]; then
     echo
     echo "sweep: $quarantined repository(ies) quarantined divergent content — resolve before merging." >&2
     grep ',quarantined,' "$RESULT_CSV" >&2

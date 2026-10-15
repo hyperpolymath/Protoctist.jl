@@ -34,7 +34,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
       - name: Rhodibot — detect drift (no mutations)
@@ -56,7 +56,7 @@ jobs:
           done
           # would-RENAME: legacy manifest name (a repo deed at root is the
           # deed-era equivalent — standards#837)
-          if [ -f "AI.a2ml" ] && [ ! -f "0-AI-MANIFEST.a2ml" ] && ! ls *_chora.deed >/dev/null 2>&1; then
+          if [ -f "AI.a2ml" ] && [ ! -f "0-AI-MANIFEST.a2ml" ] && ! ls ./*_chora.deed >/dev/null 2>&1; then
             warn "AI.a2ml present without 0-AI-MANIFEST.a2ml or a repo deed (would be renamed)"
           fi
           # would-DELETE: duplicate community files
@@ -75,7 +75,7 @@ jobs:
           [ -f "CONTRIBUTING.md" ] || [ -f ".github/CONTRIBUTING.md" ] || warn "no CONTRIBUTING.md (would be created)"
 
           # --- unfixable compliance gaps (also drift) ---
-          [ -f "0-AI-MANIFEST.a2ml" ] || [ -f "AI.a2ml" ] || ls *_chora.deed >/dev/null 2>&1 || warn "missing AI manifest (0-AI-MANIFEST.a2ml or repo deed *_chora.deed)"
+          [ -f "0-AI-MANIFEST.a2ml" ] || [ -f "AI.a2ml" ] || ls ./*_chora.deed >/dev/null 2>&1 || warn "missing AI manifest (0-AI-MANIFEST.a2ml or repo deed *_chora.deed)"
           [ -f "LICENSE" ] || [ -f "LICENSE.md" ] || [ -f "LICENSE.txt" ] || warn "missing LICENSE file"
           [ -f "README.adoc" ] || [ -f "README.md" ] || warn "missing README"
 

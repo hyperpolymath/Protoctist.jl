@@ -22,15 +22,20 @@ MIGRATOR="$REPO_ROOT/scripts/migrate-wellknown-to-www.sh"
 # nothing for it to do and no business carrying it. A repository without it has
 # nothing to test, so this is a SKIP, not a failure. Shipping a check that
 # fails in every repository it reaches is how a suite stops being read.
-if [ ! -f "$MIGRATOR" ]; then
+if [[ ! -f "$MIGRATOR" ]]; then
     echo "SKIP: scripts/migrate-wellknown-to-www.sh absent here — this check tests"
     echo "SKIP:   the template-side migrator, which this repository does not carry"
     exit 77
 fi
 
 fail=0
-ok()   { echo "ok: $1"; }
-bad()  { echo "FAIL: $1" >&2; fail=1; }
+ok()   { local msg="$1"; echo "ok: $msg"; return 0; }
+bad()  { local msg="$1"; echo "FAIL: $msg" >&2; fail=1; return "$?"; }
+
+# Fixture content reused across scenarios.
+OLD_CONTACT_LINE=$'Contact: mailto:old@example.invalid\n'
+NEW_CONTACT_LINE=$'Contact: mailto:new@example.invalid\n'
+UA_STAR_LINE=$'User-Agent: *\n'
 
 scenario() { # name -> fresh git repo path on stdout
     local dir; dir="$(mktemp -d)"
@@ -38,12 +43,13 @@ scenario() { # name -> fresh git repo path on stdout
     git -C "$dir" config user.email t@example.invalid
     git -C "$dir" config user.name t
     echo "$dir"
+    return 0
 }
-commit_all() { git -C "$1" add -A >/dev/null && git -C "$1" commit -qm fixture; }
+commit_all() { local dir="$1"; git -C "$dir" add -A >/dev/null && git -C "$dir" commit -qm fixture; return "$?"; }
 
 # The quarantine directory is named for the UTC date, so a scenario must read
 # the same clock the migrator will.
-qdir() { echo "www/.legacy-well-known-$(date -u +%Y%m%d)"; }
+qdir() { echo "www/.legacy-well-known-$(date -u +%Y%m%d)"; return 0; }
 
 # ── 1. identical copies: root removed, www kept, exit 0 ─────────────────────
 d="$(scenario)"
@@ -51,7 +57,7 @@ mkdir -p "$d/.well-known" "$d/www/.well-known"
 printf 'Contact: mailto:s@example.invalid\n' | tee "$d/.well-known/security.txt" > "$d/www/.well-known/security.txt"
 commit_all "$d"
 if (cd "$d" && bash "$MIGRATOR" >/dev/null); then
-    if [ ! -e "$d/.well-known/security.txt" ] && [ -f "$d/www/.well-known/security.txt" ]; then
+    if [[ ! -e "$d/.well-known/security.txt" ]] && [[ -f "$d/www/.well-known/security.txt" ]]; then
         ok "identical -> root removed, www kept"
     else
         bad "identical scenario left wrong tree"
@@ -65,11 +71,11 @@ rm -rf "$d"
 d="$(scenario)"
 mkdir -p "$d/.well-known/groove"
 printf '{"service_id":"x"}\n' > "$d/.well-known/groove/manifest.json"
-printf 'User-Agent: *\n' > "$d/.well-known/ai.txt"
+printf '%s' "$UA_STAR_LINE" > "$d/.well-known/ai.txt"
 commit_all "$d"
 if (cd "$d" && bash "$MIGRATOR" >/dev/null); then
-    if [ -f "$d/www/.well-known/groove/manifest.json" ] && [ -f "$d/www/.well-known/ai.txt" ] \
-       && [ ! -d "$d/.well-known" ]; then
+    if [[ -f "$d/www/.well-known/groove/manifest.json" ]] && [[ -f "$d/www/.well-known/ai.txt" ]] \
+       && [[ ! -d "$d/.well-known" ]]; then
         ok "root-only -> moved (nested dirs too)"
     else
         bad "root-only move incomplete"
@@ -84,7 +90,7 @@ d="$(scenario)"
 mkdir -p "$d/www/.well-known"
 printf 'Contact: mailto:s@example.invalid\n' > "$d/www/.well-known/security.txt"
 commit_all "$d"
-if (cd "$d" && bash "$MIGRATOR" >/dev/null) && [ -f "$d/www/.well-known/security.txt" ]; then
+if (cd "$d" && bash "$MIGRATOR" >/dev/null) && [[ -f "$d/www/.well-known/security.txt" ]]; then
     ok "www-only -> no-op"
 else
     bad "www-only scenario damaged tree or exited non-zero"
@@ -96,14 +102,14 @@ rm -rf "$d"
 # report names every quarantined file.
 d="$(scenario)"
 mkdir -p "$d/.well-known" "$d/www/.well-known"
-printf 'Contact: mailto:old@example.invalid\n' > "$d/.well-known/security.txt"
-printf 'Contact: mailto:new@example.invalid\n' > "$d/www/.well-known/security.txt"
+printf '%s' "$OLD_CONTACT_LINE" > "$d/.well-known/security.txt"
+printf '%s' "$NEW_CONTACT_LINE" > "$d/www/.well-known/security.txt"
 commit_all "$d"
 if (cd "$d" && bash "$MIGRATOR" >/dev/null 2>&1); then
     Q="$d/$(qdir)"
-    if [ -f "$Q/security.txt" ] && grep -q old "$Q/security.txt" \
-       && [ -f "$d/www/.well-known/security.txt" ] && grep -q new "$d/www/.well-known/security.txt" \
-       && [ ! -e "$d/.well-known/security.txt" ]; then
+    if [[ -f "$Q/security.txt" ]] && grep -q old "$Q/security.txt" \
+       && [[ -f "$d/www/.well-known/security.txt" ]] && grep -q new "$d/www/.well-known/security.txt" \
+       && [[ ! -e "$d/.well-known/security.txt" ]]; then
         ok "divergent -> root copy quarantined, www copy untouched, exit 0"
     else
         bad "divergent scenario lost, overwrote or misplaced content"
@@ -117,13 +123,13 @@ rm -rf "$d"
 # The pre-stage-5 contract, kept for hand resolution.
 d="$(scenario)"
 mkdir -p "$d/.well-known" "$d/www/.well-known"
-printf 'Contact: mailto:old@example.invalid\n' > "$d/.well-known/security.txt"
-printf 'Contact: mailto:new@example.invalid\n' > "$d/www/.well-known/security.txt"
+printf '%s' "$OLD_CONTACT_LINE" > "$d/.well-known/security.txt"
+printf '%s' "$NEW_CONTACT_LINE" > "$d/www/.well-known/security.txt"
 commit_all "$d"
 if (cd "$d" && bash "$MIGRATOR" --in-place >/dev/null 2>&1); then
     bad "divergent --in-place must exit non-zero"
 else
-    if [ -f "$d/.well-known/security.txt" ] && [ -f "$d/www/.well-known/security.txt" ] \
+    if [[ -f "$d/.well-known/security.txt" ]] && [[ -f "$d/www/.well-known/security.txt" ]] \
        && grep -q old "$d/.well-known/security.txt" && grep -q new "$d/www/.well-known/security.txt"; then
         ok "divergent --in-place -> both preserved, non-zero exit"
     else
@@ -135,13 +141,13 @@ rm -rf "$d"
 # ── 6. divergent, --strict: quarantined AND non-zero exit ────────────────────
 d="$(scenario)"
 mkdir -p "$d/.well-known" "$d/www/.well-known"
-printf 'Contact: mailto:old@example.invalid\n' > "$d/.well-known/security.txt"
-printf 'Contact: mailto:new@example.invalid\n' > "$d/www/.well-known/security.txt"
+printf '%s' "$OLD_CONTACT_LINE" > "$d/.well-known/security.txt"
+printf '%s' "$NEW_CONTACT_LINE" > "$d/www/.well-known/security.txt"
 commit_all "$d"
 if (cd "$d" && bash "$MIGRATOR" --strict >/dev/null 2>&1); then
     bad "divergent --strict must exit non-zero"
 else
-    if [ -f "$d/$(qdir)/security.txt" ] && [ ! -e "$d/.well-known/security.txt" ]; then
+    if [[ -f "$d/$(qdir)/security.txt" ]] && [[ ! -e "$d/.well-known/security.txt" ]]; then
         ok "divergent --strict -> quarantined and non-zero exit"
     else
         bad "divergent --strict did not quarantine"
@@ -152,14 +158,14 @@ rm -rf "$d"
 # ── 7. --dry-run: reports, changes nothing, exit 0 ───────────────────────────
 d="$(scenario)"
 mkdir -p "$d/.well-known" "$d/www/.well-known"
-printf 'Contact: mailto:old@example.invalid\n' > "$d/.well-known/security.txt"
-printf 'Contact: mailto:new@example.invalid\n' > "$d/www/.well-known/security.txt"
+printf '%s' "$OLD_CONTACT_LINE" > "$d/.well-known/security.txt"
+printf '%s' "$NEW_CONTACT_LINE" > "$d/www/.well-known/security.txt"
 commit_all "$d"
 before="$(cd "$d" && git status --porcelain | sort)"
 if (cd "$d" && bash "$MIGRATOR" --dry-run >/dev/null 2>&1); then
     after="$(cd "$d" && git status --porcelain | sort)"
-    if [ "$before" = "$after" ] && [ -f "$d/.well-known/security.txt" ] \
-       && [ ! -d "$d/$(qdir)" ]; then
+    if [[ "$before" = "$after" ]] && [[ -f "$d/.well-known/security.txt" ]] \
+       && [[ ! -d "$d/$(qdir)" ]]; then
         ok "--dry-run -> nothing written"
     else
         bad "--dry-run mutated the tree"
@@ -172,13 +178,13 @@ rm -rf "$d"
 # ── 8. quarantine never overwrites: a taken name gets the next free suffix ───
 d="$(scenario)"
 mkdir -p "$d/.well-known" "$d/www/.well-known" "$d/$(qdir)"
-printf 'Contact: mailto:old@example.invalid\n' > "$d/.well-known/security.txt"
-printf 'Contact: mailto:new@example.invalid\n' > "$d/www/.well-known/security.txt"
+printf '%s' "$OLD_CONTACT_LINE" > "$d/.well-known/security.txt"
+printf '%s' "$NEW_CONTACT_LINE" > "$d/www/.well-known/security.txt"
 printf 'PRIOR QUARANTINE — must survive\n' > "$d/$(qdir)/security.txt"
 commit_all "$d"
 if (cd "$d" && bash "$MIGRATOR" >/dev/null 2>&1); then
     if grep -q 'PRIOR QUARANTINE' "$d/$(qdir)/security.txt" \
-       && [ -f "$d/$(qdir)/security.txt.1" ] && grep -q old "$d/$(qdir)/security.txt.1"; then
+       && [[ -f "$d/$(qdir)/security.txt.1" ]] && grep -q old "$d/$(qdir)/security.txt.1"; then
         ok "quarantine collision -> prior file preserved, new one suffixed .1"
     else
         bad "quarantine collision overwrote an existing file"
@@ -191,14 +197,14 @@ rm -rf "$d"
 # ── 9. --report: machine-readable TSV for batch drivers ──────────────────────
 d="$(scenario)"
 mkdir -p "$d/.well-known" "$d/www/.well-known"
-printf 'Contact: mailto:old@example.invalid\n' > "$d/.well-known/security.txt"      # divergent -> quarantined
-printf 'Contact: mailto:new@example.invalid\n' > "$d/www/.well-known/security.txt"
-printf 'User-Agent: *\n' > "$d/.well-known/ai.txt"                                   # root-only -> moved
-printf 'User-Agent: *\n' > "$d/www/.well-known/humans.txt"                           # identical -> deduped
-printf 'User-Agent: *\n' > "$d/.well-known/humans.txt"
+printf '%s' "$OLD_CONTACT_LINE" > "$d/.well-known/security.txt"      # divergent -> quarantined
+printf '%s' "$NEW_CONTACT_LINE" > "$d/www/.well-known/security.txt"
+printf '%s' "$UA_STAR_LINE" > "$d/.well-known/ai.txt"                                   # root-only -> moved
+printf '%s' "$UA_STAR_LINE" > "$d/www/.well-known/humans.txt"                           # identical -> deduped
+printf '%s' "$UA_STAR_LINE" > "$d/.well-known/humans.txt"
 commit_all "$d"
 if (cd "$d" && bash "$MIGRATOR" --report migrate.tsv >/dev/null 2>&1); then
-    if [ -f "$d/migrate.tsv" ] \
+    if [[ -f "$d/migrate.tsv" ]] \
        && grep -qP '^quarantined\tsecurity.txt\t' "$d/migrate.tsv" \
        && grep -qP '^moved\tai.txt\t' "$d/migrate.tsv" \
        && grep -qP '^deduped\thumans.txt\t' "$d/migrate.tsv"; then

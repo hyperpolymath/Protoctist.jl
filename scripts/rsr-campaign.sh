@@ -100,10 +100,10 @@ BATCH=""; BATCH_SIZE=25; PUSH=0; APPLY=0; BRANCH=""; REPORT=""; BASE_REF=""
 ALLOW_TOKENS=0; SUBSTITUTE=1; QUIET=0
 
 die() { printf '%s: %s\n' "$PROG" "$1" >&2; exit 2; }
-note() { [ "$QUIET" -eq 1 ] || printf '%s\n' "$*"; }
-hr() { [ "$QUIET" -eq 1 ] || printf -- '------------------------------------------------------------\n'; }
+note() { [[ "$QUIET" -eq 1 ]] || printf '%s\n' "$*"; }
+hr() { [[ "$QUIET" -eq 1 ]] || printf -- '------------------------------------------------------------\n'; }
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
         --manifest)    MANIFEST="${2:?}"; shift 2 ;;
         --repos-file)  REPOS_FILE="${2:?}"; shift 2 ;;
@@ -124,18 +124,18 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-[ -n "$MANIFEST" ]   || die "missing --manifest"
-[ -n "$REPOS_FILE" ] || die "missing --repos-file"
-[ -f "$MANIFEST" ]   || die "manifest not found: $MANIFEST"
-[ -f "$REPOS_FILE" ] || die "repos file not found: $REPOS_FILE"
+[[ -n "$MANIFEST" ]]   || die "missing --manifest"
+[[ -n "$REPOS_FILE" ]] || die "missing --repos-file"
+[[ -f "$MANIFEST" ]]   || die "manifest not found: $MANIFEST"
+[[ -f "$REPOS_FILE" ]] || die "repos file not found: $REPOS_FILE"
 
 # The spine is the source of truth. Default to the checkout this script lives in.
-if [ -z "$SPINE" ]; then
+if [[ -z "$SPINE" ]]; then
     SPINE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 fi
-[ -d "$SPINE/.git" ] || die "spine is not a git checkout: $SPINE"
+[[ -d "$SPINE/.git" ]] || die "spine is not a git checkout: $SPINE"
 
-if [ -z "$WORK_DIR" ]; then
+if [[ -z "$WORK_DIR" ]]; then
     WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/rsr-campaign.XXXXXX")"
 fi
 mkdir -p "$WORK_DIR"
@@ -151,13 +151,14 @@ CAMP_NAME="${MANIFEST##*/}"; CAMP_NAME="${CAMP_NAME%.campaign}"
 CAMP_DESC=""
 PATHS=(); EXCLUDES=()
 
-while IFS= read -r line || [ -n "$line" ]; do
+while IFS= read -r line || [[ -n "$line" ]]; do
     # strip comments and surrounding space
     line="${line%%#*}"
     line="$(printf '%s' "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-    [ -z "$line" ] && continue
+    [[ -z "$line" ]] && continue
     case "$line" in
         \[*\]) MANIFEST_SECTION="$(printf '%s' "$line" | tr -d '[]')"; continue ;;
+        *)     ;; # not a section header — dispatched on $MANIFEST_SECTION below
     esac
     case "$MANIFEST_SECTION" in
         meta)
@@ -165,8 +166,9 @@ while IFS= read -r line || [ -n "$line" ]; do
             key="$(printf '%s' "$key" | tr -d '[:space:]')"
             val="$(printf '%s' "$val" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
             case "$key" in
-                name)        [ -n "$val" ] && CAMP_NAME="$val" ;;
+                name)        [[ -n "$val" ]] && CAMP_NAME="$val" ;;
                 description) CAMP_DESC="$val" ;;
+                *)           ;; # unknown meta keys are ignored
             esac
             ;;
         paths)    PATHS+=("$line") ;;
@@ -175,19 +177,19 @@ while IFS= read -r line || [ -n "$line" ]; do
     esac
 done < "$MANIFEST"
 
-[ "${#PATHS[@]}" -gt 0 ] || die "manifest declares no [paths]: $MANIFEST"
-[ -n "$BRANCH" ] || BRANCH="$CAMP_NAME"
+[[ "${#PATHS[@]}" -gt 0 ]] || die "manifest declares no [paths]: $MANIFEST"
+[[ -n "$BRANCH" ]] || BRANCH="$CAMP_NAME"
 
 note "campaign: $CAMP_NAME"
-[ -n "$CAMP_DESC" ] && note "  $CAMP_DESC"
+[[ -n "$CAMP_DESC" ]] && note "  $CAMP_DESC"
 note "  spine:    $SPINE"
 note "  manifest: $MANIFEST"
 note "  paths:    ${#PATHS[@]} declared, ${#EXCLUDES[@]} excluded"
 note "  branch:   $BRANCH"
-[ -n "$BASE_REF" ] && note "  stacked on: $BASE_REF"
-if [ "$PUSH" -eq 1 ]; then
+[[ -n "$BASE_REF" ]] && note "  stacked on: $BASE_REF"
+if [[ "$PUSH" -eq 1 ]]; then
     note "  mode:     PUSH (commit and push each repository)"
-elif [ "$APPLY" -eq 1 ]; then
+elif [[ "$APPLY" -eq 1 ]]; then
     note "  mode:     apply (write locally, do not push)"
 else
     note "  mode:     dry-run (nothing written)"
@@ -200,12 +202,12 @@ hr
 # ---------------------------------------------------------------------------
 mapfile -t ALL_REPOS < <(grep -vE '^\s*(#|$)' "$REPOS_FILE" | sed -e 's/[[:space:]]*$//')
 TOTAL=${#ALL_REPOS[@]}
-[ "$TOTAL" -gt 0 ] || die "no repositories in $REPOS_FILE"
+[[ "$TOTAL" -gt 0 ]] || die "no repositories in $REPOS_FILE"
 
-if [ -n "$BATCH" ]; then
+if [[ -n "$BATCH" ]]; then
     start=$(( (BATCH - 1) * BATCH_SIZE ))
     end=$(( start + BATCH_SIZE ))
-    [ "$start" -lt "$TOTAL" ] || die "batch $BATCH is past the end ($TOTAL repositories)"
+    [[ "$start" -lt "$TOTAL" ]] || die "batch $BATCH is past the end ($TOTAL repositories)"
     SELECTED=("${ALL_REPOS[@]:start:end-start}")
     note "batch $BATCH of size $BATCH_SIZE: ${#SELECTED[@]} of $TOTAL repositories"
 else
@@ -232,7 +234,7 @@ META_TOKENS='PLACEHOLDER|ANYTHING|TOKEN|UPPER_SNAKE'
 SPINE_NAME="$(basename "$SPINE")"
 substitute() { # src-file repo-name -> stdout
     local f="$1" repo="$2"
-    if [ "$SUBSTITUTE" -eq 1 ] && [ "$repo" != "$SPINE_NAME" ]; then
+    if [[ "$SUBSTITUTE" -eq 1 ]] && [[ "$repo" != "$SPINE_NAME" ]]; then
         sed "s/\b${SPINE_NAME}\b/${repo}/g" "$f"
     else
         cat "$f"
@@ -247,14 +249,17 @@ substitute() { # src-file repo-name -> stdout
 # a decision. Matches check-variant-drift.sh's in_list semantics, including the
 # 'dir/' prefix form.
 declared_diverged() { # repo-path path -> 0 if declared diverged
-    local dir="$1" want="$2" contract="$1/.machine_readable/descriptiles/VARIANT.a2ml"
-    [ -f "$contract" ] || return 1
+    local want="$2" contract="$1/.machine_readable/descriptiles/VARIANT.a2ml"
+    [[ -f "$contract" ]] || return 1
     local e
     while IFS= read -r e; do
-        [ -z "$e" ] && continue
+        [[ -z "$e" ]] && continue
         case "$e" in
-            */) case "$want" in "$e"*) return 0 ;; esac ;;
-            *)  [ "$want" = "$e" ] && return 0 ;;
+            */) case "$want" in
+                    "$e"*) return 0 ;;
+                    *) ;; # no prefix match — keep looking
+                esac ;;
+            *)  [[ "$want" = "$e" ]] && return 0 ;;
         esac
     done < <(awk '
         $0 == "[paths.diverged]" || $0 == "[paths.diverged-pending-upstream]" ||
@@ -269,8 +274,11 @@ excluded() { # path -> 0 if excluded by the manifest
     local want="$1" e
     for e in ${EXCLUDES+"${EXCLUDES[@]}"}; do
         case "$e" in
-            */) case "$want" in "$e"*) return 0 ;; esac ;;
-            *)  [ "$want" = "$e" ] && return 0 ;;
+            */) case "$want" in
+                    "$e"*) return 0 ;;
+                    *) ;; # no prefix match — keep looking
+                esac ;;
+            *)  [[ "$want" = "$e" ]] && return 0 ;;
         esac
     done
     return 1
@@ -285,7 +293,7 @@ printf 'repo\tpath\toutcome\tdetail\n' > "$REPORT"
 ADDED=0; UPDATED=0; UNCHANGED=0; SKIPPED=0; REFUSED=0; NOCHANGE=0; FAILED=0
 
 for repo in "${SELECTED[@]}"; do
-    [ -z "$repo" ] && continue
+    [[ -z "$repo" ]] && continue
     dir="$WORK_DIR/repos/$repo"
     rm -rf "$dir"
     mkdir -p "$WORK_DIR/repos"
@@ -301,9 +309,9 @@ for repo in "${SELECTED[@]}"; do
     # the campaign branches from the default branch, which is the honest
     # default: a campaign should not silently depend on an unmerged branch.
     clone_args=(-q --depth 1)
-    [ -n "$BASE_REF" ] && clone_args+=(-b "$BASE_REF")
+    [[ -n "$BASE_REF" ]] && clone_args+=(-b "$BASE_REF")
     if ! git clone "${clone_args[@]}" "https://github.com/$slug.git" "$dir" 2>/dev/null; then
-        if [ -n "$BASE_REF" ]; then
+        if [[ -n "$BASE_REF" ]]; then
             printf '%s\t-\tCLONE-FAIL\tbase ref %s not found\n' "$repo" "$BASE_REF" >> "$REPORT"
             note "  $repo: CLONE-FAIL (no $BASE_REF)"
         else
@@ -318,9 +326,10 @@ for repo in "${SELECTED[@]}"; do
 
     # Collect the spine's file list for the declared paths.
     while IFS= read -r rel; do
-        [ -z "$rel" ] && continue
+        [[ -z "$rel" ]] && continue
         case "$rel" in
             *.gitkeep|*/.gitkeep) continue ;;
+            *)                   ;; # everything else is a propagation candidate
         esac
         if excluded "$rel"; then
             printf '%s\t%s\tEXCLUDED\tmanifest exclude\n' "$repo" "$rel" >> "$REPORT"
@@ -333,15 +342,15 @@ for repo in "${SELECTED[@]}"; do
 
         src="$SPINE/$rel"
         dst="$dir/$rel"
-        [ -f "$src" ] || continue
+        [[ -f "$src" ]] || continue
 
-        if [ "$ALLOW_TOKENS" -eq 0 ]; then
+        if [[ "$ALLOW_TOKENS" -eq 0 ]]; then
             # Name the actual tokens. A report that says "carries {{TOKEN}}"
             # whatever it found is a claim wider than its evidence, which is
             # the specific failure mode this estate keeps auditing itself for.
             toks="$(grep -ohE '\{\{[A-Z_]+\}\}' "$src" 2>/dev/null \
                     | grep -vE "^\{\{($META_TOKENS)\}\}$" | sort -u | tr '\n' ' ')"
-            if [ -n "$toks" ]; then
+            if [[ -n "$toks" ]]; then
                 # shellcheck disable=SC2086  # deliberate word split for -n
                 printf '%s\t%s\tREFUSED\tcarries unfilled token(s): %s\n' \
                     "$repo" "$rel" "${toks% }" >> "$REPORT"
@@ -352,10 +361,10 @@ for repo in "${SELECTED[@]}"; do
         tmp="$(mktemp)"
         substitute "$src" "${repo##*/}" > "$tmp"
 
-        if [ ! -f "$dst" ]; then
+        if [[ ! -f "$dst" ]]; then
             printf '%s\t%s\tADDED\t-\n' "$repo" "$rel" >> "$REPORT"
             repo_added=$((repo_added+1)); repo_changed=1
-            if [ "$APPLY" -eq 1 ] || [ "$PUSH" -eq 1 ]; then
+            if [[ "$APPLY" -eq 1 ]] || [[ "$PUSH" -eq 1 ]]; then
                 mkdir -p "$(dirname "$dst")"; cp "$tmp" "$dst"
             fi
         elif cmp -s "$tmp" "$dst"; then
@@ -363,7 +372,7 @@ for repo in "${SELECTED[@]}"; do
         else
             printf '%s\t%s\tUPDATED\t-\n' "$repo" "$rel" >> "$REPORT"
             repo_updated=$((repo_updated+1)); repo_changed=1
-            if [ "$APPLY" -eq 1 ] || [ "$PUSH" -eq 1 ]; then
+            if [[ "$APPLY" -eq 1 ]] || [[ "$PUSH" -eq 1 ]]; then
                 cp "$tmp" "$dst"
             fi
         fi
@@ -373,19 +382,19 @@ for repo in "${SELECTED[@]}"; do
     ADDED=$((ADDED+repo_added)); UPDATED=$((UPDATED+repo_updated))
     SKIPPED=$((SKIPPED+repo_skipped)); REFUSED=$((REFUSED+repo_refused))
 
-    if [ "$repo_changed" -eq 0 ]; then
+    if [[ "$repo_changed" -eq 0 ]]; then
         note "  $repo: no change ($repo_skipped skipped, $repo_refused refused)"
         NOCHANGE=$((NOCHANGE+1))
         continue
     fi
 
     detail="+$repo_added ~$repo_updated"
-    if [ "$APPLY" -eq 0 ] && [ "$PUSH" -eq 0 ]; then
+    if [[ "$APPLY" -eq 0 ]] && [[ "$PUSH" -eq 0 ]]; then
         note "  $repo: would change ($detail$([ "$repo_skipped" -gt 0 ] && printf ', %s skipped' "$repo_skipped"))"
         continue
     fi
 
-    if [ "$PUSH" -eq 1 ]; then
+    if [[ "$PUSH" -eq 1 ]]; then
         ( cd "$dir" \
           && git checkout -q -b "$BRANCH" \
           && git add -A -- . \
@@ -412,4 +421,4 @@ note "  paths REFUSED:   $REFUSED (carried an unfilled placeholder)"
 note "  repos unchanged: $NOCHANGE"
 note "  repos failed:    $FAILED"
 note "  report:          $REPORT"
-[ "$FAILED" -eq 0 ] || exit 1
+[[ "$FAILED" -eq 0 ]] || exit 1

@@ -8,7 +8,7 @@ fixture_root="$(mktemp -d)"   # TMPDIR-respecting; Hypatia hardcoded_tmp (alerts
 # existing absolute directory (the exact path mktemp -d just created).
 cleanup() {
   case "$fixture_root" in
-    /*) [ -d "$fixture_root" ] && rm -rf -- "$fixture_root" ;;
+    /*) [[ -d "$fixture_root" ]] && rm -rf -- "$fixture_root" ;;
     *) echo "refusing unsafe cleanup target: $fixture_root" >&2 ;;
   esac
 }
