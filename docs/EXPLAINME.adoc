@@ -361,7 +361,9 @@ confirmed to fail on the defective code.
 
 == Applications in practice
 
-The worked case is a reference-tree session in MetaManifold: lineages come
+The worked case is a reference-tree session in MetaManifold
+(https://github.com/JoshuaJewell/MetaManifold-WebUI/blob/52feb60/src/pipeline/phylogeny.jl[src/pipeline/phylogeny.jl],
+pinned on `main` at 52feb60): lineages come
 from PR2 or SILVA ladders, placements from RAxML-EPA through gappa, and the
 analyst wants an annotated Newick or iTOL dataset at the end. The practical
 value of doing the ladder and placement work here rather than ad hoc: the
