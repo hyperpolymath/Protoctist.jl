@@ -30,7 +30,7 @@ cd "$REPO_ROOT"
 ALLOW=".machine_readable/root-allow.txt"
 OUT="docs/architecture/REPOSITORY-MAP.adoc"
 
-[ -f "$ALLOW" ] || { echo "ERROR: $ALLOW not found" >&2; exit 2; }
+[[ -f "$ALLOW" ]] || { echo "ERROR: $ALLOW not found" >&2; exit 2; }
 mkdir -p "$(dirname "$OUT")"
 
 # Root entries, tracked shape only (mirrors check-root-shape.sh).
@@ -42,8 +42,8 @@ while IFS= read -r line; do
     [[ "$line" =~ ^[[:space:]]*# ]] && continue
     [[ -z "${line// }" ]] && continue
     raw="${line%%#*}"; raw="$(echo "$raw" | xargs || true)"
-    [ -z "$raw" ] && continue
-    comment="${line#*#}"; [ "$comment" = "$line" ] && comment=""
+    [[ -z "$raw" ]] && continue
+    comment="${line#*#}"; [[ "$comment" = "$line" ]] && comment=""
     comment="$(echo "$comment" | xargs || true)"
     key="${raw%/}"
     if [[ "$key" == '?'* ]]; then key="${key#\?}"; OPTIONAL["$key"]=1; fi
@@ -62,7 +62,7 @@ declared_only() {
     local d="$1" n
     n=$(git ls-files "$d" | awk -F/ '{print $NF}' \
         | grep -vxE 'README\.adoc|\.gitkeep' | wc -l)
-    [ "$n" -eq 0 ]
+    [[ "$n" -eq 0 ]]
 }
 
 {
@@ -86,10 +86,10 @@ declared_only() {
   echo "| Path | Required | What it is, and who reads it"
   echo
   for e in "${ENTRIES[@]}"; do
-      [ -d "$e" ] && disp="\`$e/\`" || disp="\`$e\`"
-      req="yes"; [ -n "${OPTIONAL[$e]+x}" ] && req="optional"
+      [[ -d "$e" ]] && disp="\`$e/\`" || disp="\`$e\`"
+      req="yes"; [[ -n "${OPTIONAL[$e]+x}" ]] && req="optional"
       note="${NOTE[$e]:-}"
-      [ -z "$note" ] && note="-"
+      [[ -z "$note" ]] && note="-"
       echo "| $disp"
       echo "| $req"
       echo "| $note"
@@ -108,11 +108,11 @@ declared_only() {
   first=1
   for d in $(git ls-files | grep '/' | sed 's|/[^/]*$||' | sort -u); do
       if declared_only "$d"; then
-          [ $first -eq 1 ] && { echo "[cols=\"1\"]"; echo '|==='; first=0; }
+          [[ $first -eq 1 ]] && { echo "[cols=\"1\"]"; echo '|==='; first=0; }
           echo "| \`$d/\`"
       fi
   done
-  [ $first -eq 0 ] && echo '|==='
+  [[ $first -eq 0 ]] && echo '|==='
   echo
   echo "== Where things are enforced"
   echo

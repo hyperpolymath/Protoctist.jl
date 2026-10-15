@@ -17,13 +17,13 @@
 set -euo pipefail
 
 name="${1:-}"
-[ -n "$name" ] || { echo "rust-tool: usage: rust-tool.sh <tool-name> [args...]" >&2; exit 2; }
+[[ -n "$name" ]] || { echo "rust-tool: usage: rust-tool.sh <tool-name> [args...]" >&2; exit 2; }
 shift
 
 scripts_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 src="$scripts_dir/$name.rs"
 
-[ -f "$src" ] || { echo "rust-tool: no such tool: $src" >&2; exit 2; }
+[[ -f "$src" ]] || { echo "rust-tool: no such tool: $src" >&2; exit 2; }
 
 cache="${RSR_MINT_TOOL_CACHE:-${TMPDIR:-/tmp}/rsr-mint-tools}"
 mkdir -p "$cache"
@@ -31,7 +31,7 @@ bin="$cache/$name"
 
 # Recompile only when the binary is missing or older than its source, so the
 # common case is a straight exec.
-if [ ! -x "$bin" ] || [ "$src" -nt "$bin" ]; then
+if [[ ! -x "$bin" ]] || [[ "$src" -nt "$bin" ]]; then
     # The toolchain is needed to BUILD, not to RUN. Checking for rustc up
     # front made a cached binary unusable on a machine without one, which is
     # the common case in CI: the run is a straight exec. Only ask for rustc

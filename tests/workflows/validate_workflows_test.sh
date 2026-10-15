@@ -37,7 +37,7 @@ log_info() {
 }
 
 # Verify workflows directory exists
-if [ ! -d "$WORKFLOWS_DIR" ]; then
+if [[ ! -d "$WORKFLOWS_DIR" ]]; then
     log_error "Workflows directory not found: $WORKFLOWS_DIR"
     exit 1
 fi
@@ -52,7 +52,7 @@ echo ""
 
 WORKFLOW_COUNT=0
 while IFS= read -r workflow_file; do
-    [ -z "$workflow_file" ] && continue
+    [[ -z "$workflow_file" ]] && continue
     WORKFLOW_COUNT=$((WORKFLOW_COUNT + 1))
 done < <(find "$WORKFLOWS_DIR" \( -name "*.yml" -o -name "*.yaml" \) 2>/dev/null | sort)
 
@@ -60,7 +60,7 @@ echo "Found $WORKFLOW_COUNT workflow file(s)"
 echo ""
 
 while IFS= read -r workflow_file; do
-    [ -z "$workflow_file" ] && continue
+    [[ -z "$workflow_file" ]] && continue
 
     WORKFLOW_NAME=$(basename "$workflow_file")
 
@@ -108,7 +108,7 @@ REQUIRED_WORKFLOWS=(
 
 FOUND_COUNT=0
 for required in "${REQUIRED_WORKFLOWS[@]}"; do
-    if [ -f "$WORKFLOWS_DIR/$required" ]; then
+    if [[ -f "$WORKFLOWS_DIR/$required" ]]; then
         log_pass "Found: $required"
         FOUND_COUNT=$((FOUND_COUNT + 1))
     else
@@ -133,9 +133,9 @@ echo -e "Errors:   ${RED}${ERRORS}${NC}"
 echo -e "Warnings: ${YELLOW}${WARNINGS}${NC}"
 echo ""
 
-if [ "$ERRORS" -eq 0 ]; then
+if [[ "$ERRORS" -eq 0 ]]; then
     echo -e "${GREEN}✓ Workflow validation PASSED${NC}"
-    [ "$WARNINGS" -gt 0 ] && echo -e "  (with $WARNINGS recommendations)"
+    [[ "$WARNINGS" -gt 0 ]] && echo -e "  (with $WARNINGS recommendations)"
     exit 0
 else
     echo -e "${RED}✗ Workflow validation FAILED${NC}"

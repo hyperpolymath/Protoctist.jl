@@ -55,9 +55,9 @@ strip_comments() {
 }
 
 while IFS= read -r f; do
-  [ -z "$f" ] && continue
+  [[ -z "$f" ]] && continue
   matches="$(strip_comments "$f" | grep -nE "$PATTERNS" || true)"
-  if [ -n "$matches" ]; then
+  if [[ -n "$matches" ]]; then
     echo "  DANGEROUS (used in code): $f"
     printf '%s\n' "$matches" | sed 's/^/    /'
     dangerous=$((dangerous + 1))
@@ -67,7 +67,7 @@ done < <(find verification/proofs \
            -not -path '*/build/*' 2>/dev/null | sort)
 
 echo
-if [ "$dangerous" -gt 0 ]; then
+if [[ "$dangerous" -gt 0 ]]; then
   echo "FAIL: $dangerous file(s) use dangerous constructs in proof CODE (not comments)"
   exit 1
 fi

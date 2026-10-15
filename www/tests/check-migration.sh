@@ -22,7 +22,7 @@ MIGRATOR="$REPO_ROOT/scripts/migrate-wellknown-to-www.sh"
 # nothing for it to do and no business carrying it. A repository without it has
 # nothing to test, so this is a SKIP, not a failure. Shipping a check that
 # fails in every repository it reaches is how a suite stops being read.
-if [ ! -f "$MIGRATOR" ]; then
+if [[ ! -f "$MIGRATOR" ]]; then
     echo "SKIP: scripts/migrate-wellknown-to-www.sh absent here — this check tests"
     echo "SKIP:   the template-side migrator, which this repository does not carry"
     exit 77
@@ -51,7 +51,7 @@ mkdir -p "$d/.well-known" "$d/www/.well-known"
 printf 'Contact: mailto:s@example.invalid\n' | tee "$d/.well-known/security.txt" > "$d/www/.well-known/security.txt"
 commit_all "$d"
 if (cd "$d" && bash "$MIGRATOR" >/dev/null); then
-    if [ ! -e "$d/.well-known/security.txt" ] && [ -f "$d/www/.well-known/security.txt" ]; then
+    if [[ ! -e "$d/.well-known/security.txt" ]] && [[ -f "$d/www/.well-known/security.txt" ]]; then
         ok "identical -> root removed, www kept"
     else
         bad "identical scenario left wrong tree"
@@ -68,8 +68,8 @@ printf '{"service_id":"x"}\n' > "$d/.well-known/groove/manifest.json"
 printf 'User-Agent: *\n' > "$d/.well-known/ai.txt"
 commit_all "$d"
 if (cd "$d" && bash "$MIGRATOR" >/dev/null); then
-    if [ -f "$d/www/.well-known/groove/manifest.json" ] && [ -f "$d/www/.well-known/ai.txt" ] \
-       && [ ! -d "$d/.well-known" ]; then
+    if [[ -f "$d/www/.well-known/groove/manifest.json" ]] && [[ -f "$d/www/.well-known/ai.txt" ]] \
+       && [[ ! -d "$d/.well-known" ]]; then
         ok "root-only -> moved (nested dirs too)"
     else
         bad "root-only move incomplete"
@@ -84,7 +84,7 @@ d="$(scenario)"
 mkdir -p "$d/www/.well-known"
 printf 'Contact: mailto:s@example.invalid\n' > "$d/www/.well-known/security.txt"
 commit_all "$d"
-if (cd "$d" && bash "$MIGRATOR" >/dev/null) && [ -f "$d/www/.well-known/security.txt" ]; then
+if (cd "$d" && bash "$MIGRATOR" >/dev/null) && [[ -f "$d/www/.well-known/security.txt" ]]; then
     ok "www-only -> no-op"
 else
     bad "www-only scenario damaged tree or exited non-zero"
@@ -101,9 +101,9 @@ printf 'Contact: mailto:new@example.invalid\n' > "$d/www/.well-known/security.tx
 commit_all "$d"
 if (cd "$d" && bash "$MIGRATOR" >/dev/null 2>&1); then
     Q="$d/$(qdir)"
-    if [ -f "$Q/security.txt" ] && grep -q old "$Q/security.txt" \
-       && [ -f "$d/www/.well-known/security.txt" ] && grep -q new "$d/www/.well-known/security.txt" \
-       && [ ! -e "$d/.well-known/security.txt" ]; then
+    if [[ -f "$Q/security.txt" ]] && grep -q old "$Q/security.txt" \
+       && [[ -f "$d/www/.well-known/security.txt" ]] && grep -q new "$d/www/.well-known/security.txt" \
+       && [[ ! -e "$d/.well-known/security.txt" ]]; then
         ok "divergent -> root copy quarantined, www copy untouched, exit 0"
     else
         bad "divergent scenario lost, overwrote or misplaced content"
@@ -123,7 +123,7 @@ commit_all "$d"
 if (cd "$d" && bash "$MIGRATOR" --in-place >/dev/null 2>&1); then
     bad "divergent --in-place must exit non-zero"
 else
-    if [ -f "$d/.well-known/security.txt" ] && [ -f "$d/www/.well-known/security.txt" ] \
+    if [[ -f "$d/.well-known/security.txt" ]] && [[ -f "$d/www/.well-known/security.txt" ]] \
        && grep -q old "$d/.well-known/security.txt" && grep -q new "$d/www/.well-known/security.txt"; then
         ok "divergent --in-place -> both preserved, non-zero exit"
     else
@@ -141,7 +141,7 @@ commit_all "$d"
 if (cd "$d" && bash "$MIGRATOR" --strict >/dev/null 2>&1); then
     bad "divergent --strict must exit non-zero"
 else
-    if [ -f "$d/$(qdir)/security.txt" ] && [ ! -e "$d/.well-known/security.txt" ]; then
+    if [[ -f "$d/$(qdir)/security.txt" ]] && [[ ! -e "$d/.well-known/security.txt" ]]; then
         ok "divergent --strict -> quarantined and non-zero exit"
     else
         bad "divergent --strict did not quarantine"
@@ -158,8 +158,8 @@ commit_all "$d"
 before="$(cd "$d" && git status --porcelain | sort)"
 if (cd "$d" && bash "$MIGRATOR" --dry-run >/dev/null 2>&1); then
     after="$(cd "$d" && git status --porcelain | sort)"
-    if [ "$before" = "$after" ] && [ -f "$d/.well-known/security.txt" ] \
-       && [ ! -d "$d/$(qdir)" ]; then
+    if [[ "$before" = "$after" ]] && [[ -f "$d/.well-known/security.txt" ]] \
+       && [[ ! -d "$d/$(qdir)" ]]; then
         ok "--dry-run -> nothing written"
     else
         bad "--dry-run mutated the tree"
@@ -178,7 +178,7 @@ printf 'PRIOR QUARANTINE — must survive\n' > "$d/$(qdir)/security.txt"
 commit_all "$d"
 if (cd "$d" && bash "$MIGRATOR" >/dev/null 2>&1); then
     if grep -q 'PRIOR QUARANTINE' "$d/$(qdir)/security.txt" \
-       && [ -f "$d/$(qdir)/security.txt.1" ] && grep -q old "$d/$(qdir)/security.txt.1"; then
+       && [[ -f "$d/$(qdir)/security.txt.1" ]] && grep -q old "$d/$(qdir)/security.txt.1"; then
         ok "quarantine collision -> prior file preserved, new one suffixed .1"
     else
         bad "quarantine collision overwrote an existing file"
@@ -198,7 +198,7 @@ printf 'User-Agent: *\n' > "$d/www/.well-known/humans.txt"                      
 printf 'User-Agent: *\n' > "$d/.well-known/humans.txt"
 commit_all "$d"
 if (cd "$d" && bash "$MIGRATOR" --report migrate.tsv >/dev/null 2>&1); then
-    if [ -f "$d/migrate.tsv" ] \
+    if [[ -f "$d/migrate.tsv" ]] \
        && grep -qP '^quarantined\tsecurity.txt\t' "$d/migrate.tsv" \
        && grep -qP '^moved\tai.txt\t' "$d/migrate.tsv" \
        && grep -qP '^deduped\thumans.txt\t' "$d/migrate.tsv"; then

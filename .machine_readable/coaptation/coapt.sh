@@ -42,7 +42,7 @@ case "$MODE" in
     : # SITREP only — decides nothing.
     ;;
   --reanchor)
-    if [ "$band" = "red" ]; then
+    if [[ "$band" = "red" ]]; then
       basis="$CO/receipts/reanchor-basis.a2ml"
       # repo name from the CLADE descriptile, not a hardcoded literal — this
       # script is shared verbatim by every repo instantiated from

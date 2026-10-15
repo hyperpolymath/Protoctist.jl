@@ -9,10 +9,10 @@ set -euo pipefail
 
 echo "=== RSR Toolchain Installer ==="
 
-if [ -f "build/guix.scm" ] && command -v guix &>/dev/null; then
+if [[ -f "build/guix.scm" ]] && command -v guix &>/dev/null; then
     echo "Guix detected. Verifying development shell..."
     guix shell -f build/guix.scm -- true && echo "Guix shell verified."
-elif [ -f ".tool-versions" ] && command -v asdf &>/dev/null; then
+elif [[ -f ".tool-versions" ]] && command -v asdf &>/dev/null; then
     echo "asdf detected. Installing plugins and tools..."
     while read -r line; do
         plugin=$(echo "$line" | awk '{print $1}')

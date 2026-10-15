@@ -32,7 +32,7 @@ ALLOWED=("docs/recovered/DESIGN-SPEC-recovered.md")
 # directories are allow-listed rather than the files.
 ALLOWED_DIRS=("docs/berrywiki/" "docs/wikis/")
 
-if [ ! -d "$DOCS_DIR" ]; then
+if [[ ! -d "$DOCS_DIR" ]]; then
     echo "PASS: no docs/ directory (nothing to check)"
     exit 0
 fi
@@ -44,15 +44,15 @@ for hit in "${HITS[@]}"; do
     rel="${hit#"$REPO_ROOT/"}"
     skip=0
     for allowed in "${ALLOWED[@]}"; do
-        if [ "$rel" = "$allowed" ]; then skip=1; break; fi
+        if [[ "$rel" = "$allowed" ]]; then skip=1; break; fi
     done
     for allowed_dir in "${ALLOWED_DIRS[@]}"; do
         if [[ "$rel" == "$allowed_dir"* ]]; then skip=1; break; fi
     done
-    if [ $skip -eq 0 ]; then EXTRAS+=("$rel"); fi
+    if [[ $skip -eq 0 ]]; then EXTRAS+=("$rel"); fi
 done
 
-if [ ${#EXTRAS[@]} -eq 0 ]; then
+if [[ ${#EXTRAS[@]} -eq 0 ]]; then
     echo "PASS: no .md files under docs/ (${#HITS[@]} total found, ${#ALLOWED[@]} allow-listed)"
     exit 0
 fi

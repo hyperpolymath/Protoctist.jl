@@ -19,7 +19,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 GEN="$ROOT/scripts/gen-repo-map.sh"
 MAP="$ROOT/docs/architecture/REPOSITORY-MAP.adoc"
 
-[ -x "$GEN" ] || [ -f "$GEN" ] || { echo "FAIL: generator not found at $GEN" >&2; exit 1; }
+[[ -x "$GEN" ]] || [[ -f "$GEN" ]] || { echo "FAIL: generator not found at $GEN" >&2; exit 1; }
 
 ORIGINAL=$(mktemp); trap 'cp "$ORIGINAL" "$MAP" 2>/dev/null; rm -f "$ORIGINAL"' EXIT
 cp "$MAP" "$ORIGINAL"
@@ -29,7 +29,7 @@ for loc in C en_US.UTF-8 C.UTF-8 POSIX; do
     LC_ALL="$loc" bash "$GEN" "$ROOT" >/dev/null 2>&1 || {
         echo "FAIL: generator errored under LC_ALL=$loc" >&2; exit 1; }
     sum=$(sha256sum "$MAP" | cut -d' ' -f1)
-    if [ -n "$prev" ] && [ "$sum" != "$prev" ]; then
+    if [[ -n "$prev" ]] && [[ "$sum" != "$prev" ]]; then
         echo "FAIL: map differs under LC_ALL=$loc — the generator is locale-dependent." >&2
         echo "      Sort with LC_ALL=C (or export it) so output is byte-identical everywhere." >&2
         exit 1

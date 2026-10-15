@@ -23,7 +23,7 @@
 set -euo pipefail
 
 REPO_ROOT="${1:-.}"
-if [ ! -d "$REPO_ROOT" ]; then
+if [[ ! -d "$REPO_ROOT" ]]; then
     echo "ERROR: repository path does not exist: $REPO_ROOT" >&2
     exit 2
 fi
@@ -51,7 +51,7 @@ fi
 # An empty subject list is a PASS, not a failure. This is a TEMPLATE: a stripped
 # mint may legitimately carry no .adoc yet, and the house idiom for an absent
 # subject is check-no-md-in-docs.sh's "no docs/ directory (nothing to check)".
-if [ "${#FILES[@]}" -eq 0 ]; then
+if [[ "${#FILES[@]}" -eq 0 ]]; then
     echo "PASS: no tracked .adoc (nothing to check)"
     exit 0
 fi
@@ -63,15 +63,15 @@ for f in "${FILES[@]}"; do
     err="$(asciidoctor --failure-level=WARN --backend=html5 -o /dev/null "$f" 2>&1 >/dev/null)"
     rc=$?
     set -e
-    if [ "$rc" -ne 0 ] || [ -n "$err" ]; then
+    if [[ "$rc" -ne 0 ]] || [[ -n "$err" ]]; then
         FAILED=$((FAILED + 1))
         first="$(printf '%s\n' "$err" | sed -n '1p')"
-        [ -n "$first" ] || first="(no diagnostic; exit $rc)"
+        [[ -n "$first" ]] || first="(no diagnostic; exit $rc)"
         FINDINGS="${FINDINGS}  ${f#"$REPO_ROOT"/}: ${first}"$'\n'
     fi
 done
 
-if [ "$FAILED" -eq 0 ]; then
+if [[ "$FAILED" -eq 0 ]]; then
     echo "PASS: all ${#FILES[@]} tracked .adoc file(s) render clean"
     exit 0
 fi
