@@ -5,7 +5,7 @@
 # Refs resolved 2026-09-19 against the estate estate-pins:
 #   actions/checkout@v7.0.1        = 3d3c42e5aac5ba805825da76410c181273ba90b1
 #   julia-actions/setup-julia@v3.0.2 = fa02766e078afaaf09b14210362cee14137e6a32
-#   julia-actions/cache@v2         = a7bed9df697e5d7309d68afe7542a87621a8b6c8
+#   julia-actions/cache@v3          = 9353db09a0f2bbbdec6f41791918c75d37391b36
 # Regenerate the lock in the SAME PR as any uses: change (estate MUST).
 
 name: Julia CI
@@ -14,6 +14,9 @@ on:
   push:
     branches: [main, master]
   pull_request:
+
+permissions:
+  contents: read
 
 # No `continue-on-error` on a MUST check (R1–R9): a red job is the gate
 # working. Coverage (R4) is reported by the estate's standard coverage
