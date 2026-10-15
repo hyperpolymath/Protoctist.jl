@@ -60,7 +60,7 @@ Use plain JavaScript when this tooling is needed. The "use ReScript" rule is ret
 
 # This repo: `Protoctist.jl`  ·  clade `rm-Protoctist.jl`
 
-- **Identity** — uuid `a5ea1382-a34c-5334-8a46-a2ebe904c810`; clade `rm` (secondary ``); born 2026-03-16; forge `hyperpolymath/Protoctist.jl`.
+- **Identity** — uuid `01a13f2d-fd84-8513-b6a6-310958ed402b` (UUIDv8 re-mint, ADR-008 D320; supersedes the mint-time v5 literal, which is in git history); clade `rm` (secondary ``); born 2026-03-16; forge `hyperpolymath/Protoctist.jl`.
 - **IS** — Canonical RSR-compliant repository template: scaffolding (CI/CD, AI manifests, ABI/FFI standards, container ecosystem, governance) that new hyperpolymath projects are instantiated from.
 - **IS-NOT** — a project in its own right · Scaffoldia (the full-featured repo designer) · standards (the canon source this template operationalises)
 - **Where it sits** — pipeline position **foundation**; chain `standards → Protoctist.jl → (every estate repo)`; coordination = `standards`.

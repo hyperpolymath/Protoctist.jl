@@ -6,10 +6,11 @@
 # package's own uuid is re-minted as version 8, not exempted, where the
 # package is not registered in General), minted with the estate generator
 # (standards' scripts/uuid-v8.js, profile T) on 2026-10-15. It supersedes
-# the original mint-time UUIDv5 over the repo identity
-# (ba28c840-aa2f-57ee-a1bd-b1699a90df0b), which the strict UUIDv8 gate
-# rejects; the package is unregistered, so no registry identity moves.
-# Do not hand-edit, and do not "restore" the v5 literal.
+# the original mint-time UUIDv5 over the repo identity (that literal is
+# recorded in git history and is deliberately not spelled out here: the
+# estate's strict UUIDv8 scanner reads any hyphenated literal in this file,
+# comments included). The package is unregistered, so no registry identity
+# moves. Do not hand-edit, and do not "restore" the v5 literal.
 
 name = "Protoctist"
 uuid = "01a13f1b-39a3-8594-91b8-10e6f6e3533e"

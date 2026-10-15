@@ -62,12 +62,16 @@ jobs:
           version: "1"
       - uses: julia-actions/cache@v3
       - name: JET.test_package
+        # JET 0.12's test_package takes the package MODULE (report_package's
+        # only signature); the template's path=/julia_version= form is a
+        # MethodError before any analysis runs.
         run: |
           julia --project=. -e '
             using Pkg
             Pkg.add("JET")
             using JET
-            JET.test_package(path=".", julia_version="1")'
+            using Protoctist
+            JET.test_package(Protoctist)'
 
   test:
     name: Test (Test + Aqua)
