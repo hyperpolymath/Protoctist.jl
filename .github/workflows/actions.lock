@@ -4,7 +4,7 @@
 #
 # Regenerated 2026-10-15 to close every dangling edge (the startup_failure cause)
 # and onboard all 36 workflows. Verified with scripts/check-lock-sync.sh locally.
-version: 'v0.0.2'
+version: 'v0.0.3'
 workflows:
     '.github/workflows/build-notification.yml':
         - 'actions/checkout@v7.0.1'
@@ -34,13 +34,13 @@ workflows:
     '.github/workflows/estate-rules.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/governance.yml':
-        - 'hyperpolymath/standards@da2c748aad55c1a1dcba00b60fe4a35017bc6540'
+        - 'hyperpolymath/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3'
     '.github/workflows/groove-check.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/guix-policy.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/hypatia-scan.yml':
-        - 'hyperpolymath/standards@da2c748aad55c1a1dcba00b60fe4a35017bc6540'
+        - 'hyperpolymath/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3'
     '.github/workflows/julia-ci.yml':
         - 'actions/checkout@v7.0.1'
         - 'julia-actions/cache@v3'
@@ -54,7 +54,7 @@ workflows:
     '.github/workflows/main-estate-audit.yml':
         - 'hyperpolymath/cicd-suite@55556cf5ba71ba744695861503c13148d3915a5d'
     '.github/workflows/mirror.yml':
-        - 'hyperpolymath/standards@da2c748aad55c1a1dcba00b60fe4a35017bc6540'
+        - 'hyperpolymath/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3'
     '.github/workflows/ossf-best-practices.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/pages.yml':
@@ -79,11 +79,11 @@ workflows:
     '.github/workflows/runtime-policy.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/rust-ci.yml':
-        - 'hyperpolymath/standards@da2c748aad55c1a1dcba00b60fe4a35017bc6540'
+        - 'hyperpolymath/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3'
     '.github/workflows/scorecard.yml':
-        - 'hyperpolymath/standards@da2c748aad55c1a1dcba00b60fe4a35017bc6540'
+        - 'hyperpolymath/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3'
     '.github/workflows/secret-scanner.yml':
-        - 'hyperpolymath/standards@da2c748aad55c1a1dcba00b60fe4a35017bc6540'
+        - 'hyperpolymath/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3'
     '.github/workflows/security-policy.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/sonarqube.yml':
@@ -202,9 +202,9 @@ dependencies:
         commit: 'sha1-c1c9fa07992a02c1fd3d67a0dc1b08cccb852aef'
         owner_id: 6759885
         repo_id: 1352485172
-    'hyperpolymath/standards@da2c748aad55c1a1dcba00b60fe4a35017bc6540':
-        ref: 'da2c748aad55c1a1dcba00b60fe4a35017bc6540'
-        commit: 'sha1-da2c748aad55c1a1dcba00b60fe4a35017bc6540'
+    'hyperpolymath/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3':
+        ref: '94572e612a7bf11f8e6343d19adadf17ef2a3de3'
+        commit: 'sha1-94572e612a7bf11f8e6343d19adadf17ef2a3de3'
         owner_id: 6759885
         repo_id: 1116521501
     'julia-actions/cache@v3':
