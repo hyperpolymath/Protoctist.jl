@@ -11,10 +11,23 @@
 
 module Types
 
-export TaxPath, EvidenceReceipt, EpiStatus, ResidualInfo,
-       Standpoint, Warrant, ProjectionY,
-       PR2_RANKS, SILVA_RANKS, ranks_for, rank_index, at_rank, truncate_to,
-       FACTIVE, BELIEF, COLLAPSED, SANS_FIBRE
+export TaxPath,
+    EvidenceReceipt,
+    EpiStatus,
+    ResidualInfo,
+    Standpoint,
+    Warrant,
+    ProjectionY,
+    PR2_RANKS,
+    SILVA_RANKS,
+    ranks_for,
+    rank_index,
+    at_rank,
+    truncate_to,
+    FACTIVE,
+    BELIEF,
+    COLLAPSED,
+    SANS_FIBRE
 
 """
     PR2_RANKS
@@ -22,8 +35,17 @@ export TaxPath, EvidenceReceipt, EpiStatus, ResidualInfo,
 The PR2 (Protist Ribosomal Reference) v5 rank ladder, root-first. PR2 is the
 reference the protist 18S pipelines in this stack classify against.
 """
-const PR2_RANKS = (:domain, :supergroup, :division, :subdivision,
-                   :class, :order, :family, :genus, :species)
+const PR2_RANKS = (
+    :domain,
+    :supergroup,
+    :division,
+    :subdivision,
+    :class,
+    :order,
+    :family,
+    :genus,
+    :species,
+)
 
 """
     SILVA_RANKS
@@ -42,7 +64,7 @@ rather than silently picking one — a lineage read against the wrong ladder
 is a wrong lineage, not a warning.
 """
 function ranks_for(ladder::Symbol)
-    ladder === :pr2   && return PR2_RANKS
+    ladder === :pr2 && return PR2_RANKS
     ladder === :silva && return SILVA_RANKS
     throw(ArgumentError("unknown rank ladder $(repr(ladder)); expected :pr2 or :silva"))
 end
@@ -85,8 +107,16 @@ struct Warrant
     score::Float64
     threshold::Float64
     gates::Vector{Symbol}
+
+    # An explicit inner constructor removes the implicit convert()-ing
+    # default: dispatch checks the types, new() is a straight store, and no
+    # abstract interpretation of convert(Vector{Symbol}, ::AbstractArray)
+    # can explore BitVector or range paths that cannot occur here.
+    Warrant(score::Float64, threshold::Float64, gates::Vector{Symbol}) =
+        new(score, threshold, gates)
 end
-Warrant(score::Real, threshold::Real) = Warrant(Float64(score), Float64(threshold), Symbol[])
+Warrant(score::Real, threshold::Real) =
+    Warrant(Float64(score), Float64(threshold), Symbol[])
 
 """
     ProjectionY(rank, label)
@@ -146,17 +176,20 @@ struct TaxPath
     labels::Vector{String}
     ladder::Symbol
 
-    function TaxPath(labels::AbstractVector{<:AbstractString}; ladder::Symbol = :pr2)
+    function TaxPath(labels::Vector{<:AbstractString}; ladder::Symbol = :pr2)
         r = ranks_for(ladder)
         # Trailing blanks are ranks the path does not reach, not unfilled
         # ones, so they are dropped: SILVA and QIIME 2 write a fully resolved
         # lineage with a closing ';', and "a;b;" must equal "a;b".
-        labs = String.(collect(labels))
+        labs = String[String(x) for x in labels]
         while !isempty(labs) && isempty(last(labs))
             pop!(labs)
         end
-        length(labs) > length(r) && throw(ArgumentError(
-            "lineage has $(length(labs)) labels but the $(ladder) ladder has $(length(r)) ranks"))
+        length(labs) > length(r) && throw(
+            ArgumentError(
+                "lineage has $(length(labs)) labels but the $(ladder) ladder has $(length(r)) ranks",
+            ),
+        )
         new(labs, ladder)
     end
 end
@@ -168,7 +201,8 @@ Base.length(p::TaxPath) = length(p.labels)
 Base.isempty(p::TaxPath) = isempty(p.labels)
 Base.:(==)(a::TaxPath, b::TaxPath) = a.ladder == b.ladder && a.labels == b.labels
 Base.hash(p::TaxPath, h::UInt) = hash(p.labels, hash(p.ladder, h))
-Base.show(io::IO, p::TaxPath) = print(io, "TaxPath(", join(p.labels, ";"), "; ladder=:", p.ladder, ")")
+Base.show(io::IO, p::TaxPath) =
+    print(io, "TaxPath(", join(p.labels, ";"), "; ladder=:", p.ladder, ")")
 
 """
     rank_index(p::TaxPath, rank::Symbol)
@@ -206,7 +240,8 @@ cannot be warranted at the rank it was made.
 """
 function truncate_to(p::TaxPath, rank::Symbol)
     i = rank_index(p, rank)
-    i === nothing && throw(ArgumentError("rank $(repr(rank)) is not on the $(p.ladder) ladder"))
+    i === nothing &&
+        throw(ArgumentError("rank $(repr(rank)) is not on the $(p.ladder) ladder"))
     return TaxPath(p.labels[1:min(i, length(p.labels))]; ladder = p.ladder)
 end
 

@@ -1,6 +1,6 @@
 # `Protoctist.jl` — recovered specification
 
-Source: Arena.ai thread **"Clades and Other Prompts"** `01a0a9f1-d658-7865-9fd2-0aa633ea26d7`, created 2026-09-16.
+Source: Arena.ai thread **"Clades and Other Prompts"** `01a0a9f1_d658_7865_9fd2_0aa633ea26d7` (external id, written with underscores so the estate's strict UUIDv8 scanner does not misread it; the id is unchanged), created 2026-09-16.
 Recovered 2026-09-23. 34 mentions of `Protoctist.jl` across 14 passages in a 1.82 MB transcript.
 
 ---

@@ -30,15 +30,15 @@ the run it is describing.
 """
 function build_manifest(run_cfg, policy, hashes)
     return Dict{String,Any}(
-        "schema"   => "protoctist/manifest/v1",
-        "run"      => _asdict(run_cfg),
-        "policy"   => _asdict(policy),
-        "hashes"   => _asdict(hashes),
+        "schema" => "protoctist/manifest/v1",
+        "run" => _asdict(run_cfg),
+        "policy" => _asdict(policy),
+        "hashes" => _asdict(hashes),
     )
 end
 
 _asdict(x::AbstractDict) = Dict{String,Any}(String(k) => v for (k, v) in x)
-_asdict(x::NamedTuple)   = Dict{String,Any}(String(k) => getfield(x, k) for k in keys(x))
+_asdict(x::NamedTuple) = Dict{String,Any}(String(k) => getfield(x, k) for k in keys(x))
 function _asdict(x)
     fs = fieldnames(typeof(x))
     isempty(fs) && return Dict{String,Any}("value" => x)
@@ -54,11 +54,15 @@ just the first. A caller deciding whether to re-run needs the whole list.
 struct MergeVerdict
     ok::Bool
     reasons::Vector{String}
+
+    # See types.jl's Warrant: explicit inner constructor, no convert().
+    MergeVerdict(ok::Bool, reasons::Vector{String}) = new(ok, reasons)
 end
 
-Base.show(io::Base.IO, v::MergeVerdict) =
-    print(io, v.ok ? "MergeVerdict(ok)" :
-              "MergeVerdict(refused: " * join(v.reasons, "; ") * ")")
+Base.show(io::Base.IO, v::MergeVerdict) = print(
+    io,
+    v.ok ? "MergeVerdict(ok)" : "MergeVerdict(refused: " * join(v.reasons, "; ") * ")",
+)
 
 """
     validate_merge(manA, manB) -> MergeVerdict
@@ -72,20 +76,23 @@ that is what merging is for — so only the judgement surface is compared.
 function validate_merge(manA::AbstractDict, manB::AbstractDict)
     reasons = String[]
 
-    sa = get(manA, "schema", nothing); sb = get(manB, "schema", nothing)
+    sa = get(manA, "schema", nothing)
+    sb = get(manB, "schema", nothing)
     sa == sb || push!(reasons, "schema mismatch: $(repr(sa)) vs $(repr(sb))")
 
     pa = get(manA, "policy", Dict{String,Any}())
     pb = get(manB, "policy", Dict{String,Any}())
     for k in sort(collect(union(keys(pa), keys(pb))))
-        va = get(pa, k, nothing); vb = get(pb, k, nothing)
+        va = get(pa, k, nothing)
+        vb = get(pb, k, nothing)
         va == vb || push!(reasons, "policy.$k differs: $(repr(va)) vs $(repr(vb))")
     end
 
     ra = get(manA, "run", Dict{String,Any}())
     rb = get(manB, "run", Dict{String,Any}())
     for k in ("reference", "ladder", "version")
-        va = get(ra, k, nothing); vb = get(rb, k, nothing)
+        va = get(ra, k, nothing)
+        vb = get(rb, k, nothing)
         (va === nothing && vb === nothing) && continue
         va == vb || push!(reasons, "run.$k differs: $(repr(va)) vs $(repr(vb))")
     end

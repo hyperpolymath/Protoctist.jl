@@ -1,31 +1,47 @@
 @testset "taxonomy tree — build, blanks, rollup" begin
-    paths = ["Eukaryota;TSAR;Alveolata;;Ciliophora",
-             "Eukaryota;TSAR;Rhizaria;;Cercozoa",
-             "Eukaryota;Excavata;Metamonada;;Fornicata;Diplomonadida;Giardia"]
+    paths = [
+        "Eukaryota;TSAR;Alveolata;;Ciliophora",
+        "Eukaryota;TSAR;Rhizaria;;Cercozoa",
+        "Eukaryota;Excavata;Metamonada;;Fornicata;Diplomonadida;Giardia",
+    ]
     t = build_taxonomy_tree(paths)
 
     labs = [n.label for n in t.nodes]
     # A blank interior rank must NOT truncate the lineage: the labels below
     # it are still placed, each at its own rank.
     @test "Cercozoa" in labs
-    @test "Giardia"  in labs
+    @test "Giardia" in labs
     @test "Ciliophora" in labs
 
     # shared prefixes merge — one Eukaryota, one TSAR
     @test count(==("Eukaryota"), labs) == 1
     @test count(==("TSAR"), labs) == 1
 
-    rows = [(path = TaxPath(p), count = 3, status = FACTIVE,
-             residual = ResidualInfo(1, false, false)) for p in paths]
+    rows = [
+        (
+            path = TaxPath(p),
+            count = 3,
+            status = FACTIVE,
+            residual = ResidualInfo(1, false, false),
+        ) for p in paths
+    ]
     a = rollup_counts(t, rows)
     @test a.cum[1] == 9                 # root carries every read
-    @test a.f[1]   == 9                 # all factive
+    @test a.f[1] == 9                 # all factive
     @test a.contam[1] == 0
 
     # A row whose lineage leaves the tree is counted at the deepest node the
     # tree contains — never dropped.
-    lost = rollup_counts(t, [(path = TaxPath("Eukaryota;TSAR;Alveolata;;Ciliophora;Spirotrichea"), count = 5),
-                             (path = TaxPath("Eukaryota;Amorphea"), count = 2)])
+    lost = rollup_counts(
+        t,
+        [
+            (
+                path = TaxPath("Eukaryota;TSAR;Alveolata;;Ciliophora;Spirotrichea"),
+                count = 5,
+            ),
+            (path = TaxPath("Eukaryota;Amorphea"), count = 2),
+        ],
+    )
     cil = findfirst(n -> n.label == "Ciliophora", t.nodes)
     euk = findfirst(n -> n.label == "Eukaryota", t.nodes)
     @test lost.counts[cil] == 5
@@ -34,7 +50,9 @@
 
     # mixing ladders in one tree is refused, not coerced
     @test_throws ArgumentError build_taxonomy_tree(
-        [TaxPath("Bacteria;Proteobacteria"; ladder = :silva)]; ladder = :pr2)
+        [TaxPath("Bacteria;Proteobacteria"; ladder = :silva)];
+        ladder = :pr2,
+    )
 end
 
 @testset "annotated Extended Newick" begin

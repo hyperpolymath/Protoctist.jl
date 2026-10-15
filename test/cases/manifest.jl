@@ -1,8 +1,8 @@
 @testset "manifest + merge check" begin
-    cfg    = (reference = "PR2", ladder = "pr2", version = "5.0.0")
+    cfg = (reference = "PR2", ladder = "pr2", version = "5.0.0")
     policy = (factive = 0.95, belief = 0.70)
-    man_a  = build_manifest(cfg, policy, Dict("input.fasta" => "abc123"))
-    man_b  = build_manifest(cfg, policy, Dict("input.fasta" => "def456"))
+    man_a = build_manifest(cfg, policy, Dict("input.fasta" => "abc123"))
+    man_b = build_manifest(cfg, policy, Dict("input.fasta" => "def456"))
 
     @test man_a["schema"] == "protoctist/manifest/v1"
     # differing INPUTS must still merge — that is what merging is for
@@ -17,8 +17,11 @@
     @test any(r -> occursin("policy.factive", r), v2.reasons)
 
     # a differing reference must not merge either
-    man_d = build_manifest((reference = "SILVA", ladder = "silva", version = "138"),
-                           policy, Dict{String,String}())
+    man_d = build_manifest(
+        (reference = "SILVA", ladder = "silva", version = "138"),
+        policy,
+        Dict{String,String}(),
+    )
     v3 = validate_merge(man_a, man_d)
     @test !v3.ok
     @test length(v3.reasons) >= 2      # every reason, not just the first
