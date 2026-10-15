@@ -9,21 +9,20 @@
 
 FROM cgr.dev/chainguard/wolfi-base:latest
 
-# Install common development tools
+# Install common development tools, then create the non-root dev user
+# (matches devcontainer.json remoteUser).
 RUN apk update && apk add --no-cache \
     bash \
+    build-base \
+    ca-certificates \
     curl \
     git \
     openssh-client \
-    ca-certificates \
-    build-base \
     posix-libc-utils \
     shadow \
-    && rm -rf /var/cache/apk/*
-
-# Create non-root dev user (matches devcontainer.json remoteUser)
-RUN groupadd -g 1000 nonroot || true \
-    && useradd -m -u 1000 -g 1000 -s /bin/bash nonroot || true
+    && rm -rf /var/cache/apk/* \
+    && (groupadd -g 1000 nonroot || true) \
+    && (useradd -m -u 1000 -g 1000 -s /bin/bash nonroot || true)
 
 # Set workspace directory
 WORKDIR /workspaces/Protoctist.jl
