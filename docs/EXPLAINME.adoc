@@ -358,3 +358,15 @@ tests that pin each decision are:
 Where a decision fixed an earlier defect (D2's trailing separator, D4's count
 parsing, D11's placement handling, D13's quoting), the test was first
 confirmed to fail on the defective code.
+
+== Applications in practice
+
+The worked case is a reference-tree session in MetaManifold: lineages come
+from PR2 or SILVA ladders, placements from RAxML-EPA through gappa, and the
+analyst wants an annotated Newick or iTOL dataset at the end. The practical
+value of doing the ladder and placement work here rather than ad hoc: the
+aggregation is evidence-aware -- reads and the evidence behind them
+aggregate together, so an iTOL ring can carry provenance alongside
+abundance. Combined with EpistemicTypes' receipts, the export answers the
+reviewer's question -- "this node says 'present': present *according to
+whom, against which reference?* -- as data rather than as a footnote.
