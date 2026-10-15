@@ -35,23 +35,28 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+BAR='═══════════════════════════════════════════════════════════════════════════════'
 
 # Helper functions
 log_step() {
     echo ""
     echo -e "${BLUE}→${NC} $*"
+    return 0
 }
 
 log_pass() {
     echo -e "${GREEN}✓${NC} $*"
+    return 0
 }
 
 log_error() {
     echo -e "${RED}✗${NC} $*" >&2
+    return 0
 }
 
 log_warn() {
     echo -e "${YELLOW}!${NC} $*" >&2
+    return 0
 }
 
 cleanup() {
@@ -60,6 +65,7 @@ cleanup() {
         rm -rf "$TEST_DIR"
         log_pass "Cleanup complete"
     fi
+    return "$?"
 }
 
 trap cleanup EXIT
@@ -69,9 +75,9 @@ trap cleanup EXIT
 #==============================================================================
 
 echo ""
-echo "═══════════════════════════════════════════════════════════════════════════════"
+echo "$BAR"
 echo "E2E TEST: Template Instantiation"
-echo "═══════════════════════════════════════════════════════════════════════════════"
+echo "$BAR"
 echo ""
 
 log_step "Creating test directory: $TEST_DIR"
@@ -406,9 +412,9 @@ fi
 #==============================================================================
 
 echo ""
-echo "═══════════════════════════════════════════════════════════════════════════════"
+echo "$BAR"
 echo -e "${GREEN}✓ E2E TEMPLATE INSTANTIATION TEST PASSED${NC}"
-echo "═══════════════════════════════════════════════════════════════════════════════"
+echo "$BAR"
 echo ""
 echo "Summary:"
 echo "  - Template cloned successfully"

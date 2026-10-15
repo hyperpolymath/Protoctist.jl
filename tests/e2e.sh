@@ -28,6 +28,7 @@ green() { printf '\033[32m%s\033[0m\n' "$*"; }
 red()   { printf '\033[31m%s\033[0m\n' "$*"; }
 yellow(){ printf '\033[33m%s\033[0m\n' "$*"; }
 bold()  { printf '\033[1m%s\033[0m\n' "$*"; }
+BAR='═══════════════════════════════════════════════════════════════'
 
 # ─── Assertion helpers ───────────────────────────────────────────────
 
@@ -57,13 +58,14 @@ check_status() {
 
 # skip <label> <reason>
 skip_test() {
-    yellow "  SKIP: $1 ($2)"
+    local name="$1" reason="$2"
+    yellow "  SKIP: $name ($reason)"
     SKIP=$((SKIP + 1))
 }
 
-echo "═══════════════════════════════════════════════════════════════"
+echo "$BAR"
 echo "  PROTOCTIST.JL — End-to-End Tests"
-echo "═══════════════════════════════════════════════════════════════"
+echo "$BAR"
 echo ""
 
 # ─── Preflight ───────────────────────────────────────────────────────
@@ -155,13 +157,13 @@ fi
 # Summary
 # ═══════════════════════════════════════════════════════════════════════
 echo ""
-echo "═══════════════════════════════════════════════════════════════"
+echo "$BAR"
 printf "  Results: "
 green "PASS=$PASS" | tr -d '\n'
 echo -n "  "
 if [[ "$FAIL" -gt 0 ]]; then red "FAIL=$FAIL" | tr -d '\n'; else echo -n "FAIL=0"; fi
 echo -n "  "
 if [[ "$SKIP" -gt 0 ]]; then yellow "SKIP=$SKIP"; else echo "SKIP=0"; fi
-echo "═══════════════════════════════════════════════════════════════"
+echo "$BAR"
 
 exit "$FAIL"

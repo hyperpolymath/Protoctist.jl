@@ -15,8 +15,8 @@ set -uo pipefail
 WWW="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO="$(cd "$WWW/.." && pwd)"
 FAIL=0
-bad() { echo "PROFILE FAIL: $*" >&2; FAIL=1; }
-ok()  { echo "ok: $*"; }
+bad() { echo "PROFILE FAIL: $*" >&2; FAIL=1; return "$?"; }
+ok()  { echo "ok: $*"; return 0; }
 
 assert_profile() { # $1 = profile toml; returns 1 on any violation
     local f="$1" v=0 prof c
@@ -38,14 +38,17 @@ assert_profile() { # $1 = profile toml; returns 1 on any violation
         consent-aware-web|full-expert)
             grep -Eq '^enforcement_http_430 = false$' "$f" \
                 || { echo "  $prof must carry enforcement_http_430 = false explicitly" >&2; v=1; } ;;
+        *) : ;; # other roles state no 430 stance that must be pinned false
     esac
     case "$prof" in
         authoritative-dns|full-expert)
             grep -Eq '^auto_start_daemon = false$' "$f" \
                 || { echo "  $prof must carry auto_start_daemon = false explicitly" >&2; v=1; } ;;
+        *) : ;; # other roles run no daemon, so no auto_start stance is required
     esac
     case "$prof" in
         *rogue*|*control*) : ;;  # planted controls need not satisfy role rules beyond the flags
+        *) : ;; # real profiles satisfy the role rules above
     esac
 
     # full-expert composes EXACTLY the four, explicitly.

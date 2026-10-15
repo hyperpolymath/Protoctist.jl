@@ -33,14 +33,15 @@ green() { printf '\033[32m%s\033[0m\n' "$*"; }
 red()   { printf '\033[31m%s\033[0m\n' "$*"; }
 yellow(){ printf '\033[33m%s\033[0m\n' "$*"; }
 bold()  { printf '\033[1m%s\033[0m\n' "$*"; }
+BAR='═══════════════════════════════════════════════════════════════'
 
-pass() { green "  PASS: $1"; PASS=$((PASS + 1)); }
-fail() { red "  FAIL: $1"; FAIL=$((FAIL + 1)); }
-warn() { yellow "  WARN: $1"; WARN=$((WARN + 1)); }
+pass() { local msg="$1"; green "  PASS: $msg"; PASS=$((PASS + 1)); }
+fail() { local msg="$1"; red "  FAIL: $msg"; FAIL=$((FAIL + 1)); }
+warn() { local msg="$1"; yellow "  WARN: $msg"; WARN=$((WARN + 1)); }
 
-echo "═══════════════════════════════════════════════════════════════"
+echo "$BAR"
 echo "  PROTOCTIST.JL — Aspect Tests (Cross-Cutting Concerns)"
-echo "═══════════════════════════════════════════════════════════════"
+echo "$BAR"
 echo ""
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -121,7 +122,7 @@ fi
 # Summary
 # ═══════════════════════════════════════════════════════════════════════
 echo ""
-echo "═══════════════════════════════════════════════════════════════"
+echo "$BAR"
 printf "  Results: "
 green "PASS=$PASS" | tr -d '\n'
 echo -n "  "
@@ -129,6 +130,6 @@ if [[ "$FAIL" -gt 0 ]]; then red "FAIL=$FAIL" | tr -d '\n'; else echo -n "FAIL=0
 echo -n "  "
 if [[ "$WARN" -gt 0 ]]; then yellow "WARN=$WARN"; else echo "WARN=0"; fi
 echo ""
-echo "═══════════════════════════════════════════════════════════════"
+echo "$BAR"
 
 exit "$FAIL"

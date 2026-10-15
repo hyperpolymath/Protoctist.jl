@@ -28,8 +28,8 @@ SCRATCH="${SCRATCH:-$(mktemp -d /tmp/julia-mint-test.XXXXXX)}"
 trap 'rm -rf "$SCRATCH"' EXIT
 
 PASS=0; FAIL=0
-ok()   { echo "  PASS: $1"; PASS=$((PASS+1)); }
-bad()  { echo "  FAIL: $1"; FAIL=$((FAIL+1)); }
+ok()   { echo "  PASS: $1"; PASS=$((PASS+1)); return "$?"; }
+bad()  { echo "  FAIL: $1"; FAIL=$((FAIL+1)); return "$?"; }
 
 command -v "$JULIA" >/dev/null 2>&1 || { echo "SKIP: no julia binary (JULIA_BIN)"; exit 0; }
 [[ -d "$OVERLAY" ]] || { echo "FAIL: overlay not found at $OVERLAY"; exit 1; }

@@ -27,8 +27,8 @@ set -uo pipefail
 WWW="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FORBIDDEN_DIRS="dns tls security_headers webservers profiles schemas tests runbooks"
 FAIL=0
-bad() { echo "BOUNDARY FAIL: $*" >&2; FAIL=1; }
-ok()  { echo "ok: $*"; }
+bad() { echo "BOUNDARY FAIL: $*" >&2; FAIL=1; return "$?"; }
+ok()  { echo "ok: $*"; return 0; }
 
 # ── stage scanner ────────────────────────────────────────────────────────────
 scan_stage() { # $1 = staged dir; returns 1 on any violation (messages to stderr)
@@ -46,6 +46,7 @@ scan_stage() { # $1 = staged dir; returns 1 on any violation (messages to stderr
             named.conf*|rndc.conf*|tsig*|*.zone|*.journal|*.pid|*.log)
                 echo "stage scan: operational/secret material present: ${f#"$root"/}" >&2
                 found=1 ;;
+            *) : ;; # any other staged file is publishable material
         esac
     done < <(find "$root" -type f)
     return "$found"
@@ -62,6 +63,7 @@ scan_config() { # $1 = server config; returns 1 if it could publish the bundle
                 echo "config scan: document root points into the www/ bundle: $r" >&2; found=1 ;;
             *dns*|*tls*|*security_headers*|*webservers*|*profiles*|*schemas*|*tests*|*runbooks*)
                 echo "config scan: document root points at operational material: $r" >&2; found=1 ;;
+            *) : ;; # a document root outside the bundle is what the boundary requires
         esac
     done < <(sed -nE 's/^[[:space:]]*root[[:space:]]+\*[[:space:]]*([^;[:space:]]+).*$/\1/p
                       s/^[[:space:]]*root[[:space:]]+([^;[:space:]]+).*$/\1/p
