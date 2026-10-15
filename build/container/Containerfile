@@ -99,11 +99,12 @@ LABEL org.opencontainers.image.title="Protoctist.jl" \
 #   - curl: health check probe
 #   - libstdc++: C++ standard library (if needed by native deps)
 #   - ncurses: terminal UI (if needed, e.g. Elixir IEx)
-RUN apk add --no-cache ca-certificates curl
-
+#
 # Create non-root user for the application.
 # Running as root inside containers is a security anti-pattern.
-RUN addgroup -S appuser && adduser -S appuser -G appuser
+RUN apk add --no-cache ca-certificates curl \
+    && addgroup -S appuser \
+    && adduser -S appuser -G appuser
 
 WORKDIR /app
 
@@ -125,10 +126,9 @@ RUN chmod +x /app/entrypoint.sh
 # COPY build/container/stapeln/manifest.toml /app/manifest.toml
 
 # Create data directory for persistent storage (mountable volume)
-RUN mkdir -p /data && chown appuser:appuser /data
-
-# Set ownership of the application directory
-RUN chown -R appuser:appuser /app
+# and set ownership of the application directory
+RUN mkdir -p /data && chown appuser:appuser /data \
+    && chown -R appuser:appuser /app
 
 # Environment variables — customise for your application
 ENV APP_HOST=[::]
@@ -147,6 +147,6 @@ EXPOSE 9443
 
 # Health check — the application must respond 2xx at /health
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -sf http://localhost:${APP_PORT}/health || exit 1
+    CMD curl -sf "http://localhost:${APP_PORT}/health" || exit 1
 
 ENTRYPOINT ["/app/entrypoint.sh"]
