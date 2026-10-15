@@ -46,8 +46,8 @@ log_pass() {
 check_file_exists() {
     local file="$1"
     local description="${2:-}"
-    if [ -f "$REPO_ROOT/$file" ]; then
-        [ "$VERBOSE" = "1" ] && log_pass "File exists: $file"
+    if [[ -f "$REPO_ROOT/$file" ]]; then
+        [[ "$VERBOSE" = "1" ]] && log_pass "File exists: $file"
         return 0
     else
         log_error "Required file missing: $file ${description:+(${description})}"
@@ -64,8 +64,8 @@ check_deed_exists() {
     local description="${1:-}"
     local f
     for f in "$REPO_ROOT"/*_chora.deed; do
-        if [ -f "$f" ]; then
-            [ "$VERBOSE" = "1" ] && log_pass "Repo deed exists: ${f#"$REPO_ROOT"/}"
+        if [[ -f "$f" ]]; then
+            [[ "$VERBOSE" = "1" ]] && log_pass "Repo deed exists: ${f#"$REPO_ROOT"/}"
             return 0
         fi
     done
@@ -77,8 +77,8 @@ check_file_either() {
     local first="$1"
     local second="$2"
     local description="${3:-}"
-    if [ -f "$REPO_ROOT/$first" ] || [ -f "$REPO_ROOT/$second" ]; then
-        [ "$VERBOSE" = "1" ] && log_pass "File exists: $first or $second"
+    if [[ -f "$REPO_ROOT/$first" ]] || [[ -f "$REPO_ROOT/$second" ]]; then
+        [[ "$VERBOSE" = "1" ]] && log_pass "File exists: $first or $second"
         return 0
     fi
     log_error "Required file missing: $first or $second ${description:+($description)}"
@@ -88,8 +88,8 @@ check_file_either() {
 check_dir_exists() {
     local dir="$1"
     local description="${2:-}"
-    if [ -d "$REPO_ROOT/$dir" ]; then
-        [ "$VERBOSE" = "1" ] && log_pass "Directory exists: $dir"
+    if [[ -d "$REPO_ROOT/$dir" ]]; then
+        [[ "$VERBOSE" = "1" ]] && log_pass "Directory exists: $dir"
         return 0
     else
         log_error "Required directory missing: $dir ${description:+(${description})}"
@@ -107,8 +107,8 @@ check_dir_either() {
     local first="$1"
     local second="$2"
     local description="${3:-}"
-    if [ -d "$REPO_ROOT/$first" ] || [ -d "$REPO_ROOT/$second" ]; then
-        [ "$VERBOSE" = "1" ] && log_pass "Directory exists: $first or $second"
+    if [[ -d "$REPO_ROOT/$first" ]] || [[ -d "$REPO_ROOT/$second" ]]; then
+        [[ "$VERBOSE" = "1" ]] && log_pass "Directory exists: $first or $second"
         return 0
     fi
     log_error "Required directory missing: $first or $second ${description:+(${description})}"
@@ -121,8 +121,8 @@ check_dir_either() {
 # collision on case-insensitive filesystems).
 check_abi_dir_exists() {
     local description="${1:-}"
-    if [ -d "$REPO_ROOT/src/interface/Abi" ] || [ -d "$REPO_ROOT/src/interface/abi" ]; then
-        [ "$VERBOSE" = "1" ] && log_pass "Directory exists: src/interface/{Abi,abi}"
+    if [[ -d "$REPO_ROOT/src/interface/Abi" ]] || [[ -d "$REPO_ROOT/src/interface/abi" ]]; then
+        [[ "$VERBOSE" = "1" ]] && log_pass "Directory exists: src/interface/{Abi,abi}"
         return 0
     fi
     log_error "Required directory missing: src/interface/Abi ${description:+(${description})}"
@@ -131,8 +131,8 @@ check_abi_dir_exists() {
 check_abi_file_exists() {
     local fname="$1"
     local description="${2:-}"
-    if [ -f "$REPO_ROOT/src/interface/Abi/$fname" ] || [ -f "$REPO_ROOT/src/interface/abi/$fname" ]; then
-        [ "$VERBOSE" = "1" ] && log_pass "File exists: src/interface/{Abi,abi}/$fname"
+    if [[ -f "$REPO_ROOT/src/interface/Abi/$fname" ]] || [[ -f "$REPO_ROOT/src/interface/abi/$fname" ]]; then
+        [[ "$VERBOSE" = "1" ]] && log_pass "File exists: src/interface/{Abi,abi}/$fname"
         return 0
     fi
     log_error "Required file missing: src/interface/Abi/$fname ${description:+(${description})}"
@@ -234,14 +234,14 @@ WORKFLOW_ALIASES=(
 
 resolve_required_workflow() {
     local want="$1" pair alt
-    if [ -f "$REPO_ROOT/.github/workflows/$want" ]; then
+    if [[ -f "$REPO_ROOT/.github/workflows/$want" ]]; then
         printf '%s\n' "$want"
         return 0
     fi
     for pair in "${WORKFLOW_ALIASES[@]}"; do
-        [ "${pair%%:*}" = "$want" ] || continue
+        [[ "${pair%%:*}" = "$want" ]] || continue
         alt="${pair#*:}"
-        if [ -f "$REPO_ROOT/.github/workflows/$alt" ]; then
+        if [[ -f "$REPO_ROOT/.github/workflows/$alt" ]]; then
             printf '%s\n' "$alt"
             return 0
         fi
@@ -252,7 +252,7 @@ resolve_required_workflow() {
 # Check required workflows
 for workflow in "${REQUIRED_WORKFLOWS[@]}"; do
     if found="$(resolve_required_workflow "$workflow")"; then
-        [ "$VERBOSE" = "1" ] && log_pass "Workflow found: $found"
+        [[ "$VERBOSE" = "1" ]] && log_pass "Workflow found: $found"
     else
         log_error "Required workflow missing: $workflow"
     fi
@@ -262,7 +262,7 @@ done
 WORKFLOW_FILES=$(find "$REPO_ROOT/.github/workflows" -name "*.yml" -type f 2>/dev/null || true)
 WORKFLOW_COUNT=$(echo "$WORKFLOW_FILES" | grep -c "." || true)
 
-if [ "$WORKFLOW_COUNT" -ge 15 ]; then
+if [[ "$WORKFLOW_COUNT" -ge 15 ]]; then
     log_pass "Found $WORKFLOW_COUNT workflows (>= 15 expected)"
 else
     log_warning "Found only $WORKFLOW_COUNT workflows (expected >= 15)"
@@ -270,7 +270,7 @@ fi
 
 # Spot-check workflow files for issues
 while IFS= read -r workflow_file; do
-    if [ -z "$workflow_file" ]; then continue; fi
+    if [[ -z "$workflow_file" ]]; then continue; fi
 
     # Check for SPDX header (optional in YAML workflows, but best practice)
     if ! head -5 "$workflow_file" | grep -q "SPDX-License-Identifier"; then
@@ -316,12 +316,12 @@ echo ""
 
 # Note: Template repo is allowed to have placeholders
 # For derived repos, we'd check that placeholders are replaced
-if [ "$(basename "$REPO_ROOT")" = "Protoctist.jl" ]; then
+if [[ "$(basename "$REPO_ROOT")" = "Protoctist.jl" ]]; then
     log_pass "Skipping placeholder check for template repo"
 else
     # Check that key files don't have unresolved placeholders
     for file in "$REPO_ROOT/README.adoc" "$REPO_ROOT/Justfile" "$REPO_ROOT/.machine_readable/descriptiles/STATE.a2ml"; do
-        if [ -f "$file" ]; then
+        if [[ -f "$file" ]]; then
             if has_placeholder "$file"; then
                 log_warning "File contains unresolved placeholders: $(basename "$file")"
             fi
@@ -368,7 +368,7 @@ SOURCE_COUNT=$(echo "$SOURCE_FILES" | grep -c "." || true)
 SPDX_COUNT=0
 
 while IFS= read -r src_file; do
-    if [ -z "$src_file" ]; then continue; fi
+    if [[ -z "$src_file" ]]; then continue; fi
     if has_spdx_header "$src_file"; then
         SPDX_COUNT=$((SPDX_COUNT + 1))
     else
@@ -376,10 +376,10 @@ while IFS= read -r src_file; do
     fi
 done <<< "$SOURCE_FILES"
 
-if [ "$SOURCE_COUNT" -gt 0 ]; then
+if [[ "$SOURCE_COUNT" -gt 0 ]]; then
     PERCENT=$((SPDX_COUNT * 100 / SOURCE_COUNT))
     log_pass "SPDX headers: $SPDX_COUNT/$SOURCE_COUNT ($PERCENT%)"
-    if [ "$PERCENT" -lt 100 ]; then
+    if [[ "$PERCENT" -lt 100 ]]; then
         log_warning "Not all source files have SPDX headers"
     fi
 fi
@@ -393,7 +393,7 @@ log_info "Phase 7: Build system verification"
 echo ""
 
 # Check Zig build
-if [ -f "$REPO_ROOT/src/interface/ffi/build.zig" ]; then
+if [[ -f "$REPO_ROOT/src/interface/ffi/build.zig" ]]; then
     if command -v zig &> /dev/null; then
         cd "$REPO_ROOT/src/interface/ffi"
         if zig build 2>&1 | grep -q "error"; then
@@ -414,7 +414,7 @@ fi
 # path / import breakage that a bare per-file `idris2 --check` masks as a
 # tolerated "module name does not match file name" warning.
 if command -v idris2 &> /dev/null; then
-    if [ -f "$REPO_ROOT/src/interface/abi.ipkg" ]; then
+    if [[ -f "$REPO_ROOT/src/interface/abi.ipkg" ]]; then
         if (cd "$REPO_ROOT" && idris2 --typecheck src/interface/abi.ipkg) > /dev/null 2>&1; then
             log_pass "Idris2 ABI typechecks (abi.ipkg)"
         else
@@ -425,7 +425,7 @@ if command -v idris2 &> /dev/null; then
         # the expected namespace/path mismatch). Look in either case of the dir.
         IDS_FILES=$(find "$REPO_ROOT/src/interface/Abi" "$REPO_ROOT/src/interface/abi" -name "*.idr" -type f 2>/dev/null || true)
         while IFS= read -r ids_file; do
-            if [ -z "$ids_file" ]; then continue; fi
+            if [[ -z "$ids_file" ]]; then continue; fi
             if ! idris2 --check "$ids_file" 2>&1 | grep -q "Error"; then
                 log_pass "Idris2 syntax OK: $(basename "$ids_file")"
             else
@@ -447,22 +447,22 @@ echo ""
 
 check_file_exists "docs/developer/ABI-FFI-README.adoc" "ABI/FFI documentation"
 # TOPOLOGY may live at root or under docs/architecture/, .md or .adoc
-if [ -f "$REPO_ROOT/TOPOLOGY.adoc" ] || [ -f "$REPO_ROOT/TOPOLOGY.md" ] || \
-   [ -f "$REPO_ROOT/docs/architecture/TOPOLOGY.adoc" ] || [ -f "$REPO_ROOT/docs/architecture/TOPOLOGY.md" ]; then
-    [ "$VERBOSE" = "1" ] && log_pass "Architecture topology found"
+if [[ -f "$REPO_ROOT/TOPOLOGY.adoc" ]] || [[ -f "$REPO_ROOT/TOPOLOGY.md" ]] || \
+   [[ -f "$REPO_ROOT/docs/architecture/TOPOLOGY.adoc" ]] || [[ -f "$REPO_ROOT/docs/architecture/TOPOLOGY.md" ]]; then
+    [[ "$VERBOSE" = "1" ]] && log_pass "Architecture topology found"
 else
     log_error "Required file missing: TOPOLOGY (root or docs/architecture/, .adoc or .md)"
 fi
 # CONTRIBUTING.md may live at root or in .github/ (GitHub auto-discovers either)
-if [ -f "$REPO_ROOT/CONTRIBUTING.md" ] || [ -f "$REPO_ROOT/.github/CONTRIBUTING.md" ]; then
-    [ "$VERBOSE" = "1" ] && log_pass "Contribution guide found"
+if [[ -f "$REPO_ROOT/CONTRIBUTING.md" ]] || [[ -f "$REPO_ROOT/.github/CONTRIBUTING.md" ]]; then
+    [[ "$VERBOSE" = "1" ]] && log_pass "Contribution guide found"
 else
     log_error "Required file missing: CONTRIBUTING.md (root or .github/)"
 fi
 
 # Governance can be at root or in docs/governance/
-if [ -f "$REPO_ROOT/GOVERNANCE.adoc" ] || [ -f "$REPO_ROOT/GOVERNANCE.md" ] || [ -d "$REPO_ROOT/docs/governance" ]; then
-    [ "$VERBOSE" = "1" ] && log_pass "Governance files found"
+if [[ -f "$REPO_ROOT/GOVERNANCE.adoc" ]] || [[ -f "$REPO_ROOT/GOVERNANCE.md" ]] || [[ -d "$REPO_ROOT/docs/governance" ]]; then
+    [[ "$VERBOSE" = "1" ]] && log_pass "Governance files found"
 else
     log_warning "Governance documentation not found"
 fi
@@ -480,9 +480,9 @@ echo -e "Errors:   ${RED}${ERRORS}${NC}"
 echo -e "Warnings: ${YELLOW}${WARNINGS}${NC}"
 echo ""
 
-if [ "$ERRORS" -eq 0 ]; then
+if [[ "$ERRORS" -eq 0 ]]; then
     echo -e "${GREEN}✓ Validation PASSED${NC}"
-    [ "$WARNINGS" -gt 0 ] && echo -e "  (with $WARNINGS warnings)"
+    [[ "$WARNINGS" -gt 0 ]] && echo -e "  (with $WARNINGS warnings)"
     exit 0
 else
     echo -e "${RED}✗ Validation FAILED${NC}"

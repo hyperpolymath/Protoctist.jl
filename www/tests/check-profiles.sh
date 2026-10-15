@@ -49,7 +49,7 @@ assert_profile() { # $1 = profile toml; returns 1 on any violation
     esac
 
     # full-expert composes EXACTLY the four, explicitly.
-    if [ "$prof" = "full-expert" ]; then
+    if [[ "$prof" = "full-expert" ]]; then
         local inc; inc="$(sed -nE 's/^includes = \[(.*)\].*/\1/p' "$f")"
         for want in baseline-site consent-aware-web authoritative-dns privacy-enhanced; do
             case "$inc" in *"$want"*) : ;; *) echo "  full-expert.includes omits $want" >&2; v=1 ;; esac
@@ -60,15 +60,15 @@ assert_profile() { # $1 = profile toml; returns 1 on any violation
     # Process substitution (not a pipe) so violations set v in THIS shell;
     # `|| true` around grep so an empty array is not a pipefail "failure".
     while IFS= read -r c; do
-        [ -n "$c" ] || continue
-        [ -e "$REPO/$c" ] || { echo "  component path does not exist: $c" >&2; v=1; }
+        [[ -n "$c" ]] || continue
+        [[ -e "$REPO/$c" ]] || { echo "  component path does not exist: $c" >&2; v=1; }
     done < <(sed -nE 's/^components = \[(.*)\].*/\1/p' "$f" | { grep -o '"[^"]*"' || true; } | tr -d '"')
 
     # requires/includes must resolve to sibling profile files.
     for key in requires includes; do
         while IFS= read -r c; do
-            [ -n "$c" ] || continue
-            [ -f "$WWW/profiles/$c.toml" ] || { echo "  $key references missing profile: $c" >&2; v=1; }
+            [[ -n "$c" ]] || continue
+            [[ -f "$WWW/profiles/$c.toml" ]] || { echo "  $key references missing profile: $c" >&2; v=1; }
         done < <(sed -nE "s/^$key = \[(.*)\].*/\1/p" "$f" | { grep -o '"[^"]*"' || true; } | tr -d '"')
     done
     return "$v"

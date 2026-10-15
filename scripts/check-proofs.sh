@@ -86,7 +86,7 @@ check_one() {
     coq)    out="$(cd "$ROOT/$root" && coqc           "$rel" 2>&1)"; rc=$? ;;
   esac
   set -e
-  if [ "$rc" -eq 0 ] && { [ -z "$ERROR_RE" ] || ! grep -qE "$ERROR_RE" <<<"$out"; }; then
+  if [[ "$rc" -eq 0 ]] && { [[ -z "$ERROR_RE" ]] || ! grep -qE "$ERROR_RE" <<<"$out"; }; then
     LAST_OUT=""; return 0
   fi
   LAST_OUT="$out"; return 1
@@ -110,8 +110,8 @@ fi
 echo
 
 # --- a repo with proofs but no MANIFEST is itself a failure -------------------
-if [ ! -f "$MANIFEST_FILE" ]; then
-  if [ -d "$PROOF_DIR" ] && [ -n "$(find "$PROOF_DIR" -name "*.$EXT" 2>/dev/null)" ]; then
+if [[ ! -f "$MANIFEST_FILE" ]]; then
+  if [[ -d "$PROOF_DIR" ]] && [[ -n "$(find "$PROOF_DIR" -name "*.$EXT" 2>/dev/null)" ]]; then
     echo "FAIL: $PROOF_DIR contains .$EXT proofs but has no MANIFEST." >&2
     echo "      Create $MANIFEST_FILE listing each as 'gated' or 'quarantine'." >&2
     exit 1
@@ -127,12 +127,12 @@ trap 'rm -f "$listed_tmp"' EXIT
 
 while IFS='|' read -r root rel status note; do
   # skip blank lines and comments
-  [ -z "${root// }" ] && continue
+  [[ -z "${root// }" ]] && continue
   case "${root#"${root%%[![:space:]]*}"}" in \#*) continue ;; esac
   printf '  %-30s %-24s ' "$root" "$rel"
   echo "$root/$rel" >>"$listed_tmp"
   if check_one "$root" "$rel"; then
-    if [ "$status" = gated ]; then
+    if [[ "$status" = gated ]]; then
       echo "PASS"
     else
       echo "PASS -- UNEXPECTED (quarantined module now compiles)"
@@ -140,13 +140,13 @@ while IFS='|' read -r root rel status note; do
       unexpected_pass=$((unexpected_pass + 1))
     fi
   else
-    if [ "$status" = gated ]; then
+    if [[ "$status" = gated ]]; then
       echo "FAIL"
       printf '%s\n' "${LAST_OUT//$'\n'/$'\n        '}" | sed '1s/^/        /'
       fails=$((fails + 1))
     else
       echo "fail (quarantined, expected)"
-      [ -n "${note// }" ] && echo "        reason:$note"
+      [[ -n "${note// }" ]] && echo "        reason:$note"
     fi
   fi
 done < "$MANIFEST_FILE"
@@ -161,22 +161,22 @@ found="$(cd "$ROOT" && find "$PROOF_DIR" -name "*.$EXT" -not -path '*/build/*' 2
 unlisted="$(comm -13 <(printf '%s\n' "$listed") <(printf '%s\n' "$found") || true)"
 missing="$(comm -23 <(printf '%s\n' "$listed") <(printf '%s\n' "$found") || true)"
 
-if [ -n "${unlisted//[[:space:]]/}" ]; then
+if [[ -n "${unlisted//[[:space:]]/}" ]]; then
   echo "FAIL: .$EXT proofs on disk but absent from $MANIFEST_FILE:"
   printf '  %s\n' $unlisted
   echo "      List each as 'gated' or 'quarantine'; new proofs are gated by default."
   fails=$((fails + 1))
 fi
-if [ -n "${missing//[[:space:]]/}" ]; then
+if [[ -n "${missing//[[:space:]]/}" ]]; then
   echo "FAIL: MANIFEST lists modules that do not exist (stale entries):"
   printf '  %s\n' $missing
   fails=$((fails + 1))
 fi
-[ -z "${unlisted//[[:space:]]/}${missing//[[:space:]]/}" ] && \
+[[ -z "${unlisted//[[:space:]]/}${missing//[[:space:]]/}" ]] && \
   echo "  all $(printf '%s\n' "$found" | grep -c .) .$EXT file(s) accounted for"
 
 echo
-if [ "$fails" -gt 0 ] || [ "$unexpected_pass" -gt 0 ]; then
+if [[ "$fails" -gt 0 ]] || [[ "$unexpected_pass" -gt 0 ]]; then
   echo "RESULT: FAIL ($fails failure(s), $unexpected_pass unexpected pass(es))"
   exit 1
 fi

@@ -19,7 +19,7 @@ fi
 validate_aibdp() { # $1 = aibdp json; returns 1 on any violation
     local f="$1" v=0 st
     jq empty "$f" 2>/dev/null || { echo "  not valid JSON" >&2; return 1; }
-    [ "$(jq -r '.aibdp_version // empty' "$f")" = "0.2" ] \
+    [[ "$(jq -r '.aibdp_version // empty' "$f")" = "0.2" ]] \
         || { echo "  aibdp_version must be 0.2" >&2; v=1; }
     jq -e '.contact | test("^(mailto:|https?:)")' "$f" >/dev/null \
         || { echo "  contact must be a mailto:/http(s) URI" >&2; v=1; }
@@ -35,7 +35,7 @@ validate_aibdp() { # $1 = aibdp json; returns 1 on any violation
             *) echo "  policies.$name.status not in {allowed,conditional,disallowed}: $status" >&2; v=1 ;; esac
         jq -e --arg n "$name" '.policies[$n].rationale | type == "string" and length > 0' "$f" >/dev/null \
             || { echo "  policies.$name missing rationale" >&2; v=1; }
-        if [ "$status" = "conditional" ]; then
+        if [[ "$status" = "conditional" ]]; then
             jq -e --arg n "$name" '.policies[$n].conditions | type == "array" and length >= 1' "$f" >/dev/null \
                 || { echo "  policies.$name is conditional without conditions" >&2; v=1; }
         fi
@@ -43,7 +43,7 @@ validate_aibdp() { # $1 = aibdp json; returns 1 on any violation
     # Enforcement: absent or mechanism "none" — never http_430.
     if jq -e 'has("enforcement")' "$f" >/dev/null; then
         local mech; mech="$(jq -r '.enforcement.mechanism // "none"' "$f")"
-        [ "$mech" = "none" ] \
+        [[ "$mech" = "none" ]] \
             || { echo "  enforcement.mechanism is '$mech' — this bundle is declaration-only" >&2; v=1; }
     fi
     return "$v"
@@ -51,15 +51,15 @@ validate_aibdp() { # $1 = aibdp json; returns 1 on any violation
 
 consistency_with_ai_txt() { # declaration must not contradict ai.txt
     local ai="$WWW/.well-known/ai.txt" f="$WWW/.well-known/aibdp.json" v=0
-    [ -f "$ai" ] || return 0
+    [[ -f "$ai" ]] || return 0
     local want got
     for pair in "Disallow-Training:training" "Disallow-Summarization:summarization" "Disallow-Generation:generation"; do
         key="${pair%%:*}"; field="${pair##*:}"
         want="$(grep -m1 "^$key:" "$ai" | awk '{print $2}')"
         got="$(jq -r --arg n "$field" '.policies[$n].status // "absent"' "$f")"
         case "$want" in
-            yes) [ "$got" = "disallowed" ] || { echo "  ai.txt $key yes but aibdp policies.$field.status=$got" >&2; v=1; } ;;
-            no)  [ "$got" = "allowed" ]    || { echo "  ai.txt $key no but aibdp policies.$field.status=$got" >&2; v=1; } ;;
+            yes) [[ "$got" = "disallowed" ]] || { echo "  ai.txt $key yes but aibdp policies.$field.status=$got" >&2; v=1; } ;;
+            no)  [[ "$got" = "allowed" ]]    || { echo "  ai.txt $key no but aibdp policies.$field.status=$got" >&2; v=1; } ;;
         esac
     done
     return "$v"
@@ -73,12 +73,12 @@ AI_FILE="$WWW/.well-known/ai.txt"
 # migration reached: the migration moves ai.txt and security.txt, and aibdp.json
 # was never part of it. Silence is not a violation — but ai.txt REFERRING to
 # aibdp while the file is absent is a real contradiction, and still fails below.
-if [ ! -f "$MAIN" ] && ! grep -qi 'aibdp' "$AI_FILE" 2>/dev/null; then
+if [[ ! -f "$MAIN" ]] && ! grep -qi 'aibdp' "$AI_FILE" 2>/dev/null; then
     echo "SKIP: no AIBDP declaration here (www/.well-known/aibdp.json absent and"
     echo "SKIP:   ai.txt makes no aibdp claim) — there is nothing to validate"
     exit 77
 fi
-if [ ! -f "$MAIN" ]; then
+if [[ ! -f "$MAIN" ]]; then
     bad "ai.txt references aibdp but www/.well-known/aibdp.json is missing"
 elif validate_aibdp "$MAIN" 2>/dev/null; then
     ok "aibdp.json valid, experimental + declaration-only labelled"

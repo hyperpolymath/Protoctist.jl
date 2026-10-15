@@ -104,7 +104,7 @@ fi
 if command -v named-checkzone >/dev/null 2>&1; then
     for zone in "$DNS"/records/*.zone; do
         origin="$(basename "$zone" .zone)"
-        [ "$origin" = "2.0.192.in-addr.arpa" ] || origin="${origin%.zone}"
+        [[ "$origin" = "2.0.192.in-addr.arpa" ]] || origin="${origin%.zone}"
         if named-checkzone "$origin" "$zone" >/dev/null 2>&1; then
             ok "named-checkzone: records/$(basename "$zone")"
         else
@@ -117,7 +117,7 @@ fi
 
 # ── planted controls MUST be rejected ────────────────────────────────────────
 for ctl in "$WWW"/tests/controls/named.conf*.control; do
-    [ -f "$ctl" ] || continue
+    [[ -f "$ctl" ]] || continue
     if posture_assert "$ctl" 2>/dev/null; then
         bad "planted open-recursion control was NOT rejected: ${ctl#"$WWW"/}"
     else

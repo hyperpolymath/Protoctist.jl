@@ -21,7 +21,7 @@ if ! command -v "$PA_BIN" &>/dev/null; then
     exit 1
 fi
 
-if [ ! -f "target/release/$BINARY_NAME" ]; then
+if [[ ! -f "target/release/$BINARY_NAME" ]]; then
     echo "Warning: Release binary not found at target/release/$BINARY_NAME"
     echo "Running build first..."
     just build --release

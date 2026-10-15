@@ -37,7 +37,7 @@ ORDER=(intend must trust adjust dust bust)
 
 for v in "${ORDER[@]}"; do
   f="$DIR/${XFILE[$v]}"
-  [ -f "$f" ] || { echo "extract-clauses.sh: missing Xfile: $f" >&2; exit 2; }
+  [[ -f "$f" ]] || { echo "extract-clauses.sh: missing Xfile: $f" >&2; exit 2; }
 done
 
 # short content hash (drift provenance), matches arrival-pack extract.sh

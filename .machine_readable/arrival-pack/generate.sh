@@ -16,7 +16,7 @@ TARGET="$ROOT/CLAUDE.md"
 bash "$AP/extract.sh" "$ROOT/.machine_readable/descriptiles" > "$AP/claude-md-data.json"
 nickel export --format raw "$AP/arrival-pack.ncl" > "$AP/.region.tmp"
 
-if [ -f "$TARGET" ] && grep -q 'ARRIVAL-PACK:BEGIN' "$TARGET"; then
+if [[ -f "$TARGET" ]] && grep -q 'ARRIVAL-PACK:BEGIN' "$TARGET"; then
   # Replace the marked block in place, keeping human content around it.
   awk '
     FNR==NR { region = region $0 ORS; next }

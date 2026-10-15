@@ -46,7 +46,7 @@ check() {
 # check_status <label> <expected-http-status> <actual-http-status>
 check_status() {
     local name="$1" expected="$2" actual="$3"
-    if [ "$actual" = "$expected" ]; then
+    if [[ "$actual" = "$expected" ]]; then
         green "  PASS: $name (HTTP $actual)"
         PASS=$((PASS + 1))
     else
@@ -136,7 +136,7 @@ echo ""
 # code with `|| true` because a benchmark wants a duration, not a verdict —
 # so the test could fail on every run and nothing said so.
 INSTANTIATION_TEST="$(dirname "$0")/e2e/template_instantiation_test.sh"
-if [ -f "$INSTANTIATION_TEST" ]; then
+if [[ -f "$INSTANTIATION_TEST" ]]; then
     echo ""
     echo "── Template instantiation ─────────────────────────────────────"
     if bash "$INSTANTIATION_TEST" "$(dirname "$0")/.."; then
@@ -159,9 +159,9 @@ echo "════════════════════════�
 printf "  Results: "
 green "PASS=$PASS" | tr -d '\n'
 echo -n "  "
-if [ "$FAIL" -gt 0 ]; then red "FAIL=$FAIL" | tr -d '\n'; else echo -n "FAIL=0"; fi
+if [[ "$FAIL" -gt 0 ]]; then red "FAIL=$FAIL" | tr -d '\n'; else echo -n "FAIL=0"; fi
 echo -n "  "
-if [ "$SKIP" -gt 0 ]; then yellow "SKIP=$SKIP"; else echo "SKIP=0"; fi
+if [[ "$SKIP" -gt 0 ]]; then yellow "SKIP=$SKIP"; else echo "SKIP=0"; fi
 echo "═══════════════════════════════════════════════════════════════"
 
 exit "$FAIL"

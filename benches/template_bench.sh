@@ -47,7 +47,7 @@ declare -A results
 log_info "Running template validation benchmark"
 
 # Warm-up run
-if [ -f "$REPO_ROOT/scripts/validate-template.sh" ]; then
+if [[ -f "$REPO_ROOT/scripts/validate-template.sh" ]]; then
     bash "$REPO_ROOT/scripts/validate-template.sh" "$REPO_ROOT" 0 > /dev/null 2>&1 || true
 fi
 
@@ -64,7 +64,7 @@ for i in $(seq 1 $BENCH_RUNS); do
     RUN_TIME=$(( (END - START) / 1000000 ))
     TOTAL_TIME=$(( TOTAL_TIME + RUN_TIME ))
 
-    [ "$OUTPUT_FORMAT" = "human" ] && echo "  Run $i: ${RUN_TIME}ms"
+    [[ "$OUTPUT_FORMAT" = "human" ]] && echo "  Run $i: ${RUN_TIME}ms"
 done
 
 AVG_VALIDATION_TIME=$(( TOTAL_TIME / BENCH_RUNS ))
@@ -100,7 +100,7 @@ else
         RUN_TIME=$(( (END - START) / 1000000 ))
         TOTAL_TIME=$(( TOTAL_TIME + RUN_TIME ))
 
-        [ "$OUTPUT_FORMAT" = "human" ] && echo "  Run $i: ${RUN_TIME}ms"
+        [[ "$OUTPUT_FORMAT" = "human" ]] && echo "  Run $i: ${RUN_TIME}ms"
     done
 
     AVG_BUILD_TIME=$(( TOTAL_TIME / BENCH_RUNS ))
@@ -146,7 +146,7 @@ fi
 
 log_info "Running workflow validation benchmark"
 
-if [ -f "$REPO_ROOT/tests/workflows/validate_workflows_test.sh" ]; then
+if [[ -f "$REPO_ROOT/tests/workflows/validate_workflows_test.sh" ]]; then
     START=$(date +%s%N)
     bash "$REPO_ROOT/tests/workflows/validate_workflows_test.sh" "$REPO_ROOT/.github/workflows" > /dev/null 2>&1 || true
     END=$(date +%s%N)
@@ -162,7 +162,7 @@ fi
 
 log_info "Running template instantiation benchmark"
 
-if [ -f "$REPO_ROOT/tests/e2e/template_instantiation_test.sh" ]; then
+if [[ -f "$REPO_ROOT/tests/e2e/template_instantiation_test.sh" ]]; then
     START=$(date +%s%N)
     bash "$REPO_ROOT/tests/e2e/template_instantiation_test.sh" "$REPO_ROOT" > /dev/null 2>&1 || true
     END=$(date +%s%N)
@@ -182,7 +182,7 @@ echo "BENCHMARK RESULTS"
 echo "═══════════════════════════════════════════════════════════════════════════════"
 echo ""
 
-if [ "$OUTPUT_FORMAT" = "json" ]; then
+if [[ "$OUTPUT_FORMAT" = "json" ]]; then
     echo "{"
     echo "  \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\","
     echo "  \"repo\": \"$REPO_ROOT\","
@@ -191,8 +191,8 @@ if [ "$OUTPUT_FORMAT" = "json" ]; then
     count=0
     for key in "${!results[@]}"; do
         value="${results[$key]}"
-        [ $count -gt 0 ] && echo ","
-        if [ "$value" = "skipped" ]; then
+        [[ $count -gt 0 ]] && echo ","
+        if [[ "$value" = "skipped" ]]; then
             echo -n "    \"$key\": \"skipped\""
         else
             echo -n "    \"$key\": $value"
@@ -202,11 +202,11 @@ if [ "$OUTPUT_FORMAT" = "json" ]; then
     echo ""
     echo "  }"
     echo "}"
-elif [ "$OUTPUT_FORMAT" = "csv" ]; then
+elif [[ "$OUTPUT_FORMAT" = "csv" ]]; then
     echo "metric,value_ms,timestamp"
     for key in "${!results[@]}"; do
         value="${results[$key]}"
-        if [ "$value" != "skipped" ]; then
+        if [[ "$value" != "skipped" ]]; then
             echo "$key,$value,$(date -u +%Y-%m-%dT%H:%M:%SZ)"
         fi
     done
@@ -214,7 +214,7 @@ else
     # Human-readable format
     for key in "${!results[@]}"; do
         value="${results[$key]}"
-        if [ "$value" = "skipped" ]; then
+        if [[ "$value" = "skipped" ]]; then
             printf "  %-30s %s\n" "$key:" "SKIPPED"
         else
             printf "  %-30s %5d ms\n" "$key:" "$value"

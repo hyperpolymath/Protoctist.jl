@@ -104,7 +104,7 @@ set +e
 bash "$CHECKER" "$DOTTED" >/dev/null 2>&1
 rc=$?
 set -e
-[ "$rc" -eq 2 ] || fail "two competing allowlists returned $rc, expected 2"
+[[ "$rc" -eq 2 ]] || fail "two competing allowlists returned $rc, expected 2"
 rm -rf "$DOTTED/machine-readable"
 
 # 9. NEITHER spelling present is a setup error (2), and the message names both
@@ -114,7 +114,7 @@ set +e
 out=$(bash "$CHECKER" "$DOTTED" 2>&1)
 rc=$?
 set -e
-[ "$rc" -eq 2 ] || fail "absent allowlist returned $rc, expected 2"
+[[ "$rc" -eq 2 ]] || fail "absent allowlist returned $rc, expected 2"
 grep -q '.machine_readable/root-allow.txt' <<<"$out" || fail "error did not name the dotted path"
 grep -q 'machine-readable/root-allow.txt'  <<<"$out" || fail "error did not name the hyphenated path"
 

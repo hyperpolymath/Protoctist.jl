@@ -74,39 +74,39 @@ EOF
 
 die() { echo "migrate-wellknown: ERROR — $*" >&2; exit 2; }
 
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
         --in-place) IN_PLACE=1; shift ;;
         --strict)   STRICT=1; shift ;;
         --dry-run)  DRY_RUN=1; shift ;;
-        --report)   [ $# -ge 2 ] || die "--report requires a path"; REPORT="$2"; shift 2 ;;
+        --report)   [[ $# -ge 2 ]] || die "--report requires a path"; REPORT="$2"; shift 2 ;;
         --report=*) REPORT="${1#--report=}"; shift ;;
         -h|--help)  usage; exit 0 ;;
         *)          die "unknown option: $1" ;;
     esac
 done
 
-if [ "$IN_PLACE" -eq 1 ] && [ "$STRICT" -eq 1 ]; then
+if [[ "$IN_PLACE" -eq 1 ]] && [[ "$STRICT" -eq 1 ]]; then
     die "--in-place and --strict are mutually exclusive (--in-place already fails on conflict)"
 fi
 
 # The report is written under --dry-run too: a dry run that only prints is
 # useless to a batch driver, which needs the planned actions in a form it can
 # read. Under --dry-run the rows describe what WOULD happen.
-if [ -n "$REPORT" ]; then
+if [[ -n "$REPORT" ]]; then
     repdir="$(dirname "$REPORT")"
-    if [ ! -d "$repdir" ]; then mkdir -p "$repdir"; fi
+    if [[ ! -d "$repdir" ]]; then mkdir -p "$repdir"; fi
     printf 'action\tpath\tdetail\n' > "$REPORT"
 fi
 
 rep() {
-    if [ -n "$REPORT" ]; then
+    if [[ -n "$REPORT" ]]; then
         printf '%s\t%s\t%s\n' "$1" "$2" "${3:-}" >> "$REPORT"
     fi
     return 0
 }
 
-if [ ! -d "$ROOT" ]; then
+if [[ ! -d "$ROOT" ]]; then
     echo "migrate-wellknown: no $ROOT/ at repository root — nothing to migrate."
     exit 0
 fi
@@ -121,7 +121,7 @@ move_file() { # src dst — never overwrites; caller guarantees dst is free
     # The dry-run guard precedes every filesystem effect, mkdir included:
     # an empty directory is invisible to `git status` but is still a change
     # to the tree, and --dry-run promises to leave nothing behind.
-    if [ "$DRY_RUN" -eq 1 ]; then return 0; fi
+    if [[ "$DRY_RUN" -eq 1 ]]; then return 0; fi
     mkdir -p "$(dirname "$dst")"
     if git_tracked "$src"; then
         git mv "$src" "$dst"
@@ -132,7 +132,7 @@ move_file() { # src dst — never overwrites; caller guarantees dst is free
 
 remove_file() { # src
     local src="$1"
-    if [ "$DRY_RUN" -eq 1 ]; then return 0; fi
+    if [[ "$DRY_RUN" -eq 1 ]]; then return 0; fi
     if git_tracked "$src"; then
         git rm -q "$src"
     else
@@ -150,14 +150,14 @@ quarantine_dest() { # rel -> path
     local base="$QUARANTINE/$rel"
     local cand="$base"
     local n=1
-    while [ -e "$cand" ]; do
+    while [[ -e "$cand" ]]; do
         cand="$base.$n"
         n=$((n + 1))
     done
     printf '%s' "$cand"
 }
 
-if [ "$DRY_RUN" -eq 0 ] && [ ! -d "$DEST" ]; then
+if [[ "$DRY_RUN" -eq 0 ]] && [[ ! -d "$DEST" ]]; then
     mkdir -p "$DEST"
 fi
 
@@ -167,14 +167,14 @@ while IFS= read -r -d '' src; do
     rel="${src#"$ROOT"/}"
     dst="$DEST/$rel"
 
-    if [ -f "$dst" ]; then
+    if [[ -f "$dst" ]]; then
         if cmp -s "$src" "$dst"; then
             # Identical: the duplicate root copy goes; www is canonical.
             remove_file "$src"
             deduped=$((deduped + 1))
             echo "  identical, root copy removed: $rel"
             rep deduped "$rel" "identical to $DEST/$rel; root copy removed"
-        elif [ "$IN_PLACE" -eq 1 ]; then
+        elif [[ "$IN_PLACE" -eq 1 ]]; then
             conflicts=$((conflicts + 1))
             echo "  CONFLICT (both preserved): $rel differs between $ROOT/ and $DEST/" >&2
             echo "    root sha256: $(sha256sum "$src" | cut -d' ' -f1)" >&2
@@ -182,7 +182,7 @@ while IFS= read -r -d '' src; do
             rep conflict "$rel" "divergent; both preserved in place"
         else
             qdst="$(quarantine_dest "$rel")"
-            if [ -e "$qdst" ]; then
+            if [[ -e "$qdst" ]]; then
                 die "refusing to overwrite quarantine target $qdst"
             fi
             # Hashes are read BEFORE the move: afterwards $src no longer
@@ -198,7 +198,7 @@ while IFS= read -r -d '' src; do
             rep quarantined "$rel" "divergent; root copy -> $qdst"
         fi
     else
-        if [ -e "$dst" ]; then
+        if [[ -e "$dst" ]]; then
             die "refusing to overwrite existing $dst"
         fi
         move_file "$src" "$dst"
@@ -210,8 +210,8 @@ done < <(find "$ROOT" -type f -print0 | sort -z)
 
 # Drop the root directory only when it is fully empty of files.
 left=0
-if [ -z "$(find "$ROOT" -type f -print -quit 2>/dev/null)" ]; then
-    if [ "$DRY_RUN" -eq 0 ]; then
+if [[ -z "$(find "$ROOT" -type f -print -quit 2>/dev/null)" ]]; then
+    if [[ "$DRY_RUN" -eq 0 ]]; then
         find "$ROOT" -depth -type d -empty -delete 2>/dev/null || true
     fi
 else
@@ -220,25 +220,25 @@ fi
 
 echo "migrate-wellknown: moved=$moved deduped=$deduped quarantined=$quarantined conflicts=$conflicts left_in_root=$left"
 
-if [ "$DRY_RUN" -eq 1 ]; then
+if [[ "$DRY_RUN" -eq 1 ]]; then
     echo "migrate-wellknown: dry run — nothing written."
     exit 0
 fi
 
-if [ "$left" -gt 0 ]; then
+if [[ "$left" -gt 0 ]]; then
     echo "migrate-wellknown: WARNING — $left file(s) remain under $ROOT/ (unexpected)." >&2
     exit 1
 fi
 
-if [ "$conflicts" -gt 0 ]; then
+if [[ "$conflicts" -gt 0 ]]; then
     echo "migrate-wellknown: DIVERGENT CONTENT — both locations preserved in place; resolve by hand." >&2
     exit 1
 fi
 
-if [ "$quarantined" -gt 0 ]; then
+if [[ "$quarantined" -gt 0 ]]; then
     echo "migrate-wellknown: $quarantined divergent file(s) quarantined under $QUARANTINE/ —" >&2
     echo "migrate-wellknown: resolve by hand, then delete that directory. Nothing was overwritten." >&2
-    if [ "$STRICT" -eq 1 ]; then
+    if [[ "$STRICT" -eq 1 ]]; then
         exit 1
     fi
 fi

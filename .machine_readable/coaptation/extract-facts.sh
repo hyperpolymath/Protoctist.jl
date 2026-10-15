@@ -24,14 +24,14 @@ AGENTIC="$DIR6A2/AGENTIC.a2ml"
 ANCHOR="$DIR6A2/anchors/ANCHOR.a2ml"
 
 for f in "$CLADE" "$STATE" "$ECO" "$AGENTIC" "$ANCHOR"; do
-  [ -f "$f" ] || { echo "extract-facts.sh: missing required a2ml: $f" >&2; exit 2; }
+  [[ -f "$f" ]] || { echo "extract-facts.sh: missing required a2ml: $f" >&2; exit 2; }
 done
 
 # scalar KEY FILE -> first `KEY = "value"` or unquoted `KEY = value` (anchored)
 scalar() {
   local v
   v="$(grep -oP "^$1 = \"\K[^\"]+" "$2" | head -1 || true)"
-  if [ -z "$v" ]; then
+  if [[ -z "$v" ]]; then
     v="$(grep -oP "^$1 = \K[^\"#]+" "$2" | head -1 | sed 's/[[:space:]]*$//' || true)"
   fi
   printf '%s' "$v"
@@ -49,7 +49,7 @@ arr() {
     ' "$file" | grep -oP '"[^"]*"' | sed 's/^"//; s/"$//' || true
   )
   for i in "${!items[@]}"; do
-    if [ "$i" -eq 0 ]; then out="${items[$i]}"; else out="$out$sep${items[$i]}"; fi
+    if [[ "$i" -eq 0 ]]; then out="${items[$i]}"; else out="$out$sep${items[$i]}"; fi
   done
   printf '%s' "$out"
 }
