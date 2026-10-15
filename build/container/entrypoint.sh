@@ -41,10 +41,8 @@ echo "  Log:  ${APP_LOG_FORMAT:-json}"
 # The VOLUME directive in the Containerfile creates /data, but a bind-mount
 # might replace it with an empty directory owned by root.
 
-if [ -d "${APP_DATA_DIR:-/data}" ]; then
-    if [ ! -w "${APP_DATA_DIR:-/data}" ]; then
-        echo "WARNING: ${APP_DATA_DIR:-/data} is not writable by $(whoami)"
-    fi
+if [ -d "${APP_DATA_DIR:-/data}" ] && [ ! -w "${APP_DATA_DIR:-/data}" ]; then
+    echo "WARNING: ${APP_DATA_DIR:-/data} is not writable by $(whoami)"
 fi
 
 # ---------------------------------------------------------------------------

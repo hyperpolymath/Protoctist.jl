@@ -37,10 +37,13 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"   # build/container/stapeln -> r
 # Container engine — podman (recommended), nerdctl or docker.
 ENGINE="${CONTAINER_ENGINE:-podman}"
 
+# `--push` command-line flag that enables registry pushes.
+PUSH_FLAG="--push"
+
 PUSH=""
 for arg in "$@"; do
-    if [ "$arg" = "--push" ]; then
-        PUSH="--push"
+    if [ "$arg" = "$PUSH_FLAG" ]; then
+        PUSH="$PUSH_FLAG"
     fi
 done
 
@@ -86,7 +89,7 @@ else
     echo "  The container image is built and tagged but not packed as a .ctp bundle."
     echo "  To pack manually: ct pack ${FULL_IMAGE} -o ${CTP_FILE}"
     echo ""
-    if [ "$PUSH" = "--push" ]; then
+    if [ "$PUSH" = "$PUSH_FLAG" ]; then
         echo "--- Pushing unsigned OCI image (no .ctp) ---"
         "${ENGINE}" push "${FULL_IMAGE}"
         echo "  Pushed: ${FULL_IMAGE} (unsigned OCI — not a .ctp bundle)"
@@ -135,7 +138,7 @@ echo ""
 # Step 5: Push to registry (optional)
 # ---------------------------------------------------------------------------
 
-if [ "$PUSH" = "--push" ]; then
+if [ "$PUSH" = "$PUSH_FLAG" ]; then
     echo "--- Step 5: Pushing to registry ---"
 
     if command -v ct &>/dev/null; then
