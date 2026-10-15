@@ -321,10 +321,8 @@ if [[ "$(basename "$REPO_ROOT")" = "Protoctist.jl" ]]; then
 else
     # Check that key files don't have unresolved placeholders
     for file in "$REPO_ROOT/README.adoc" "$REPO_ROOT/Justfile" "$REPO_ROOT/.machine_readable/descriptiles/STATE.a2ml"; do
-        if [[ -f "$file" ]]; then
-            if has_placeholder "$file"; then
-                log_warning "File contains unresolved placeholders: $(basename "$file")"
-            fi
+        if [[ -f "$file" ]] && has_placeholder "$file"; then
+            log_warning "File contains unresolved placeholders: $(basename "$file")"
         fi
     done
 fi

@@ -72,6 +72,7 @@ case "$PROVER" in
   lean4)  CMD=lean;   EXT=lean; ERROR_RE='error:'  ;;
   agda)   CMD=agda;   EXT=agda; ERROR_RE=''        ;;
   coq)    CMD=coqc;   EXT=v;    ERROR_RE=''        ;;
+  *)      ;; # unreachable: $PROVER validated above
 esac
 
 check_one() {
@@ -84,6 +85,7 @@ check_one() {
     lean4)  out="$(cd "$ROOT/$root" && lean          "$rel" 2>&1)"; rc=$? ;;
     agda)   out="$(cd "$ROOT/$root" && agda --safe    "$rel" 2>&1)"; rc=$? ;;
     coq)    out="$(cd "$ROOT/$root" && coqc           "$rel" 2>&1)"; rc=$? ;;
+    *)      ;; # unreachable: $PROVER validated above
   esac
   set -e
   if [[ "$rc" -eq 0 ]] && { [[ -z "$ERROR_RE" ]] || ! grep -qE "$ERROR_RE" <<<"$out"; }; then
@@ -128,7 +130,10 @@ trap 'rm -f "$listed_tmp"' EXIT
 while IFS='|' read -r root rel status note; do
   # skip blank lines and comments
   [[ -z "${root// }" ]] && continue
-  case "${root#"${root%%[![:space:]]*}"}" in \#*) continue ;; esac
+  case "${root#"${root%%[![:space:]]*}"}" in
+    \#*) continue ;;
+    *) ;; # not a comment — a manifest entry, checked below
+  esac
   printf '  %-30s %-24s ' "$root" "$rel"
   echo "$root/$rel" >>"$listed_tmp"
   if check_one "$root" "$rel"; then

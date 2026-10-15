@@ -117,6 +117,8 @@ case "$REPO_NAME" in
         echo "      (.github/settings.yml identity guard above still applied)"
         exit 0
         ;;
+    *)  # any other name is an instantiation — checked in full below
+        ;;
 esac
 
 # Files that legitimately contain tokens after instantiation.
@@ -137,6 +139,8 @@ is_allowed() {
     # the contractiles ship one too.
     case "$rel" in
         Justfile|justfile|*/Justfile|*/justfile|*.just) return 0 ;;
+        *)  # any other file is not exempt — fall through to the rejection
+            ;;
     esac
     return 1
 }

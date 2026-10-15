@@ -28,7 +28,8 @@ dangerous=0
 
 # Blank comment content while preserving line count (so grep -n stays accurate).
 strip_comments() {
-  local ext="${1##*.}" lc bo bc
+  local file="$1" lc bo bc
+  local ext="${file##*.}"
   case "$ext" in
     idr|lean|agda) lc='--'; bo='{-'; bc='-}' ;;   # line + block comments
     v)             lc='';   bo='(*'; bc='*)' ;;   # Coq block comments only
@@ -51,7 +52,7 @@ strip_comments() {
         }
       }
       print out
-    }' "$1"
+    }' "$file"
 }
 
 while IFS= read -r f; do

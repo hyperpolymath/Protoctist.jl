@@ -28,6 +28,7 @@ enumeration_file="$(mktemp)" || exit 2   # TMPDIR-respecting; Hypatia hardcoded_
 # shellcheck disable=SC2329
 cleanup() {
   rm -f -- "$enumeration_file"
+  return "$?"
 }
 trap cleanup EXIT
 

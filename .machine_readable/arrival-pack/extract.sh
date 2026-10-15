@@ -26,10 +26,10 @@ done
 
 # scalar KEY FILE -> first `KEY = "value"` or unquoted `KEY = value` (anchored)
 scalar() {
-  local v
-  v="$(grep -oP "^$1 = \"\K[^\"]+" "$2" | head -1 || true)"
+  local key="$1" file="$2" v
+  v="$(grep -oP "^$key = \"\K[^\"]+" "$file" | head -1 || true)"
   if [[ -z "$v" ]]; then
-    v="$(grep -oP "^$1 = \K[^\"#]+" "$2" | head -1 | sed 's/[[:space:]]*$//' || true)"
+    v="$(grep -oP "^$key = \K[^\"#]+" "$file" | head -1 | sed 's/[[:space:]]*$//' || true)"
   fi
   printf '%s' "$v"
 }
@@ -53,7 +53,10 @@ arr() {
 }
 
 # short content hash (drift provenance)
-sh() { sha256sum "$1" | cut -c1-12; }
+sh() {
+  local file="$1"
+  sha256sum "$file" | cut -c1-12
+}
 
 # --- IS-NOT: present only if ECOSYSTEM declares `what-this-is-not` ------------
 isnot="$(arr 'what-this-is-not' "$ECO" ' · ')"
