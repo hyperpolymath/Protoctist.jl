@@ -98,6 +98,16 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'oven-sh/setup-bun@v2.2.0'
 dependencies:
+    'github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d':
+        ref: '24c54180a607b1449ed407dd24f251e4e9147c8d'
+        commit: 'sha1-24c54180a607b1449ed407dd24f251e4e9147c8d'
+        owner_id: 44036562
+        repo_id: 108519891
+    'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1':
+        ref: '3d3c42e5aac5ba805825da76410c181273ba90b1'
+        commit: 'sha1-3d3c42e5aac5ba805825da76410c181273ba90b1'
+        owner_id: 44036562
+        repo_id: 197814629
     'SonarSource/sonarqube-scan-action@v8.3.0':
         ref: 'v8.3.0'
         commit: 'sha1-d209202bc7d53ff1cc128f7f907dac145c9d6ae9'
