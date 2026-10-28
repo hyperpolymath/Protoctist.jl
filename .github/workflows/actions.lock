@@ -7,7 +7,7 @@ workflows:
         - 'actions/checkout@v7.0.1'
     '.github/workflows/codeql.yml':
         - 'actions/checkout@v7.0.1'
-        - 'github/codeql-action@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee'
+        - 'github/codeql-action@9b3254085494b55a0f7c4c2b3d2d52cc712ce370'
     '.github/workflows/deed-validate.yml':
         - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
         - 'hyperpolymath/deed-ecosystem@eb89a3311e96835cdacad875e52118bed571880d'
@@ -62,7 +62,7 @@ workflows:
         - 'actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9'
         - 'haskell-actions/setup@0f8e8c99d88aeb3fbfd523f1ef2c6f762d10d64d'
     '.github/workflows/push-email-notify.yml':
-        - 'hyperpolymath/smtp-notify-action@v0.5.0'
+        - 'hyperpolymath/smtp-notify-action@v0.5.1'
     '.github/workflows/quality.yml':
         - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
         - 'editorconfig-checker/action-editorconfig-checker@51f63319f592f97930c73d9c46184d20bd206393'
@@ -155,9 +155,9 @@ dependencies:
         commit: 'sha1-54075bcc5e249e4758d363f27d099f55d843f124'
         owner_id: 47606891
         repo_id: 331103973
-    'github/codeql-action@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee':
-        ref: 'v4.39.0'
-        commit: 'sha1-6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee'
+    'github/codeql-action@9b3254085494b55a0f7c4c2b3d2d52cc712ce370':
+        ref: 'v4.39.1'
+        commit: 'sha1-9b3254085494b55a0f7c4c2b3d2d52cc712ce370'
         owner_id: 9919
         repo_id: 259445878
     'haskell-actions/setup@0f8e8c99d88aeb3fbfd523f1ef2c6f762d10d64d':
@@ -180,9 +180,9 @@ dependencies:
         commit: 'sha1-20f6be5b5a14a48680b236955b5c4ad9033d00d4'
         owner_id: 6759885
         repo_id: 1275650185
-    'hyperpolymath/smtp-notify-action@v0.5.0':
-        ref: 'v0.5.0'
-        commit: 'sha1-c1c9fa07992a02c1fd3d67a0dc1b08cccb852aef'
+    'hyperpolymath/smtp-notify-action@v0.5.1':
+        ref: 'v0.5.1'
+        commit: 'sha1-e384daf6167a7a7567642d6a62060106244d2413'
         owner_id: 6759885
         repo_id: 1352485172
     'hyperpolymath/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3':
