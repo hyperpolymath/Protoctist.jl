@@ -77,7 +77,10 @@ jobs:
 
   test:
     name: Test (Test + Aqua)
-    runs-on: ubuntu-latest
+    # Julia 1.9.4's libopenlibm cannot load on glibc >= 2.41 (JuliaLang/julia#57250).
+    # Use the archetype's compatible Ubuntu 24.04 image for the declared floor.
+    # Keep the existing matrix labels stable for required status checks.
+    runs-on: ${{ matrix.julia == '1.9' && 'ubuntu-24.04' || matrix.os }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
