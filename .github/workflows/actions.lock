@@ -166,7 +166,7 @@ dependencies:
         owner_id: 75048950
         repo_id: 623796603
     'hyperpolymath/cicd-suite@55556cf5ba71ba744695861503c13148d3915a5d':
-        ref: '55556cf5ba71ba744695861503c13148d3915a5d'
+        ref: 'main'
         commit: 'sha1-55556cf5ba71ba744695861503c13148d3915a5d'
         owner_id: 6759885
         repo_id: 1326697643
@@ -176,7 +176,7 @@ dependencies:
         owner_id: 6759885
         repo_id: 1275649586
     'hyperpolymath/k9-ecosystem@20f6be5b5a14a48680b236955b5c4ad9033d00d4':
-        ref: '<sha-pinned>'
+        ref: 'main'
         commit: 'sha1-20f6be5b5a14a48680b236955b5c4ad9033d00d4'
         owner_id: 6759885
         repo_id: 1275650185
@@ -186,7 +186,7 @@ dependencies:
         owner_id: 6759885
         repo_id: 1352485172
     'hyperpolymath/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3':
-        ref: '94572e612a7bf11f8e6343d19adadf17ef2a3de3'
+        ref: 'main'
         commit: 'sha1-94572e612a7bf11f8e6343d19adadf17ef2a3de3'
         owner_id: 6759885
         repo_id: 1116521501
