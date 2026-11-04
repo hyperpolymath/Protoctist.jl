@@ -31,13 +31,13 @@ workflows:
     '.github/workflows/estate-rules.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/governance.yml':
-        - 'metadatastician/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3'
+        - 'metadatastician/standards@cf8f91219d80da55cf8cbbfcd587d00c2d8798ed'
     '.github/workflows/groove-check.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/guix-policy.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/hypatia-scan.yml':
-        - 'metadatastician/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3'
+        - 'metadatastician/standards@cf8f91219d80da55cf8cbbfcd587d00c2d8798ed'
     '.github/workflows/julia-ci.yml':
         - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
         - 'julia-actions/cache@9353db09a0f2bbbdec6f41791918c75d37391b36'
@@ -51,7 +51,7 @@ workflows:
     '.github/workflows/main-estate-audit.yml':
         - 'hyperpolymath/cicd-suite@55556cf5ba71ba744695861503c13148d3915a5d'
     '.github/workflows/mirror.yml':
-        - 'metadatastician/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3'
+        - 'metadatastician/standards@cf8f91219d80da55cf8cbbfcd587d00c2d8798ed'
     '.github/workflows/ossf-best-practices.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/pages.yml':
@@ -76,11 +76,11 @@ workflows:
     '.github/workflows/runtime-policy.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/rust-ci.yml':
-        - 'metadatastician/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3'
+        - 'metadatastician/standards@cf8f91219d80da55cf8cbbfcd587d00c2d8798ed'
     '.github/workflows/scorecard.yml':
-        - 'metadatastician/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3'
+        - 'metadatastician/standards@cf8f91219d80da55cf8cbbfcd587d00c2d8798ed'
     '.github/workflows/secret-scanner.yml':
-        - 'metadatastician/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3'
+        - 'metadatastician/standards@cf8f91219d80da55cf8cbbfcd587d00c2d8798ed'
     '.github/workflows/security-policy.yml':
         - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
     '.github/workflows/sonarqube.yml':
@@ -195,9 +195,9 @@ dependencies:
         commit: 'sha1-da908477b5db94c10ffce8cfea9f2b3b9d5db687'
         owner_id: 53965732
         repo_id: 202020219
-    'metadatastician/standards@94572e612a7bf11f8e6343d19adadf17ef2a3de3':
+    'metadatastician/standards@cf8f91219d80da55cf8cbbfcd587d00c2d8798ed':
         ref: 'main'
-        commit: 'sha1-94572e612a7bf11f8e6343d19adadf17ef2a3de3'
+        commit: 'sha1-cf8f91219d80da55cf8cbbfcd587d00c2d8798ed'
         owner_id: 297579217
         repo_id: 1116521501
     'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6':
