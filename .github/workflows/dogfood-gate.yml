@@ -113,7 +113,7 @@ jobs:
           else
             echo "## K9 Contract Validation" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "Validated **${K9_COUNT}** K9 contract(s) against **${CFG_COUNT}** config file(s)." >> "$GITHUB_STEP_SUMMARY"
+            echo "Discovered **${K9_COUNT}** K9 file(s) and **${CFG_COUNT}** config file(s). See the validation step for scanned and skipped counts." >> "$GITHUB_STEP_SUMMARY"
           fi
 
   # ---------------------------------------------------------------------------
@@ -323,10 +323,10 @@ jobs:
           fi
 
   # ---------------------------------------------------------------------------
-  # Job 6: Canon lockstep — does this template still implement the canon?
+  # Job 6: Canon lockstep — compare the declared canon identity.
   #
-  # The canon<->spine binding. hyperpolymath/standards publishes canon.lock: the
-  # released identity of the law, with a sha256 per law artefact. This repo
+  # metadatastician/standards publishes canon.lock, with a sha256 per artefact.
+  # This consumer
   # declares the SAME hashes in .machine_readable/rsr-profile.a2ml [canon].
   #
   # Before this job, the declaration was two free-text strings
@@ -346,16 +346,15 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Fetch the canon's released identity
+      - name: Fetch the current canon declaration
         id: canon
         run: |
           set -euo pipefail
           LOCK="$RUNNER_TEMP/canon.lock"
-          URL="https://raw.githubusercontent.com/hyperpolymath/standards/main/canon.lock"
+          URL="https://raw.githubusercontent.com/metadatastician/standards/main/canon.lock"
           if ! curl -fsSL --retry 3 --max-time 30 "$URL" -o "$LOCK"; then
             echo "::error::could not fetch canon.lock from $URL"
-            echo "The canon does not publish a released identity, so this repo"
-            echo "cannot be shown to implement it. Fix at source: add canon.lock."
+            echo "The current canon declaration could not be read; refusing to compare."
             exit 1
           fi
           # Read (not compute) the criteria hash canon.lock asserts.
@@ -486,19 +485,19 @@ jobs:
             row gates_sha256    "$want_gates" "$got_gates"
           } >> "$GITHUB_STEP_SUMMARY"
           if [ "$ok" = "1" ]; then
-            echo ":white_check_mark: This template implements the canon at HEAD."
+            echo ":white_check_mark: Declared canon identity matches canon.lock."
             exit 0
           fi
-          echo "::error::canon lockstep broken — the template does not implement the canon at HEAD"
+          echo "::error::canon identity mismatch: version expected=$want_ver declared=$got_ver"
+          echo "::error::criteria_sha256 expected=$want_crit declared=$got_crit"
+          echo "::error::gates_sha256 expected=$want_gates declared=$got_gates"
           {
             echo ""
             echo ":x: **Lockstep broken.**"
             echo ""
-            echo "The canon's law changed and this template has not adopted it."
-            echo "Order matters (\`canon.lock [canon.lockstep].order\` is"
-            echo "\`spine-adopts-then-canon-releases\`): re-pin \`[canon]\` in"
-            echo "\`.machine_readable/rsr-profile.a2ml\` to the new hashes and fix any"
-            echo "criteria this repo now fails, BEFORE the canon release lands."
+            echo "Review the canon changes, then update the declared version and both hashes"
+            echo "in \`.machine_readable/rsr-profile.a2ml\` together."
+            echo "This job checks identity; the separate RSR checks assess conformance."
           } >> "$GITHUB_STEP_SUMMARY"
           exit 1
   # ---------------------------------------------------------------------------
