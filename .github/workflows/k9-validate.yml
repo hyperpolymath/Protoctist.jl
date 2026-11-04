@@ -60,5 +60,5 @@ jobs:
           else
             echo "## K9 Contract Validation" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "Validated **${K9_COUNT}** K9 contract(s) against **${CFG_COUNT}** config file(s)." >> "$GITHUB_STEP_SUMMARY"
+            echo "Discovered **${K9_COUNT}** K9 file(s) and **${CFG_COUNT}** config file(s). See the validation step for scanned and skipped counts." >> "$GITHUB_STEP_SUMMARY"
           fi
