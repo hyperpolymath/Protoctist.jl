@@ -78,7 +78,7 @@ Use plain JavaScript when this tooling is needed. The "use ReScript" rule is ret
 
 # This repo: `%{data.canonical_name}`  ·  clade `%{data.prefixed_name}`
 
-- **Identity** — uuid `#uuid"%{data.uuid}"` (typed: the UUIDv5 of the birth path until the deed conversion mints its UUIDv8); clade `%{data.clade_primary}` (secondary `%{data.clade_secondary}`); born %{data.born}; forge `%{data.forge_gh}`.
+- **Identity** — uuid: in `CLADE.a2ml` and the repo deed (not printed here until the deed conversion mints its UUIDv8); clade `%{data.clade_primary}` (secondary `%{data.clade_secondary}`); born %{data.born}; forge `%{data.forge_gh}`.
 - **IS** — %{data.purpose}
 - **IS-NOT** — %{data.isnot}
 - **Where it sits** — pipeline position **%{data.pipeline_pos}**; chain `%{data.chain}`; coordination = `%{data.coordination}`.

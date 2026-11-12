@@ -60,7 +60,7 @@ Use plain JavaScript when this tooling is needed. The "use ReScript" rule is ret
 
 # This repo: `Protoctist.jl`  ·  clade `UNASSIGNED-Protoctist.jl`
 
-- **Identity** — uuid `#uuid"08edd557-b1b0-53f8-9a37-39a0d50b3cd7"` (typed: the UUIDv5 of the birth path until the deed conversion mints its UUIDv8); clade `UNASSIGNED` (secondary ``); born 2026-09-23; forge `hyperpolymath/Protoctist.jl`.
+- **Identity** — uuid: in `CLADE.a2ml` and the repo deed (not printed here until the deed conversion mints its UUIDv8); clade `UNASSIGNED` (secondary ``); born 2026-09-23; forge `hyperpolymath/Protoctist.jl`.
 - **IS** — Integration library unifying types, IO and exports for PR2/SILVA-driven protist workflows
 - **IS-NOT** — rsr-template-repo (the template this repository was minted from; its ECOSYSTEM, STATE and CHANGELOG were carried here by mistake) · a classifier (it consumes assignments from DADA2, QIIME 2 and others; it does not produce them) · a phylogeny tool (the exported tree is the taxonomy the lineages span, with ranks and no branch lengths) · a PR2-to-SILVA mapper (it refuses to mix the two ladders) · EpistemicTypes.jl (it carries receipts but never mints or verifies them, and its Standpoint, Warrant and ProjectionY are separate types with different fields)
 - **Where it sits** — pipeline position **library**; chain `DADA2 / QIIME 2 / EPA-ng outputs → Protoctist.jl (lineages, rollup, jplace, manifests) → Newick and iTOL datasets`; coordination = ``.
