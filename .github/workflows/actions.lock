@@ -76,8 +76,6 @@ workflows:
         - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
     '.github/workflows/runtime-policy.yml':
         - 'actions/checkout@v7.0.1'
-    '.github/workflows/rust-ci.yml':
-        - 'metadatastician/standards@cf8f91219d80da55cf8cbbfcd587d00c2d8798ed'
     '.github/workflows/scorecard.yml':
         - 'metadatastician/standards@cf8f91219d80da55cf8cbbfcd587d00c2d8798ed'
     '.github/workflows/secret-scanner.yml':
