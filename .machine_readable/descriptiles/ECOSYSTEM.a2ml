@@ -1,45 +1,38 @@
 # SPDX-License-Identifier: MPL-2.0
-# ECOSYSTEM.a2ml — Ecosystem position (META-TEMPLATE)
+# ECOSYSTEM.a2ml: where Protoctist.jl sits in the estate.
 #
-# This is the ECOSYSTEM file for Protoctist.jl itself. It records the
-# TEMPLATE's own position in the estate. When consumed by a new project,
-# replace these fields with the target project's ecosystem position and
-# related projects (see the NOTE FOR CONSUMERS at the bottom).
+# Written anew on 2026-11-12 from Project.toml, README.adoc,
+# docs/EXPLAINME.adoc and VARIANT.a2ml. It replaces the template's own
+# ECOSYSTEM, which this repository carried from its mint. Planned to move into
+# the repo deed with the other descriptiles.
 
 [metadata]
 project = "Protoctist.jl"
 ecosystem = "hyperpolymath"
 
 [position]
-type = "repository-template"
-purpose = "Canonical RSR-compliant repository template: scaffolding (CI/CD, AI manifests, ABI/FFI standards, container ecosystem, governance) that new hyperpolymath projects are instantiated from."
-# IS-NOT — anti-identity (the boundary-erosion guard; each line is a real past confusion)
+type = "julia-library"
+purpose = "Integration library unifying types, IO and exports for PR2/SILVA-driven protist workflows"
+# IS-NOT: anti-identity (the boundary-erosion guard)
 what-this-is-not = [
-  "a project in its own right",
-  "Scaffoldia (the full-featured repo designer)",
-  "standards (the canon source this template operationalises)",
+  "rsr-template-repo (the template this repository was minted from; its ECOSYSTEM, STATE and CHANGELOG were carried here by mistake)",
+  "a classifier (it consumes assignments from DADA2, QIIME 2 and others; it does not produce them)",
+  "a phylogeny tool (the exported tree is the taxonomy the lineages span, with ranks and no branch lengths)",
+  "a PR2-to-SILVA mapper (it refuses to mix the two ladders)",
+  "EpistemicTypes.jl (it carries receipts but never mints or verifies them, and its Standpoint, Warrant and ProjectionY are separate types with different fields)",
 ]
 
 [pipeline]
-position = "foundation"
-chain = "standards → rsr-template-repo → (every estate repo)"
-notes = "rsr-template-repo turns the RSR standard into runnable scaffolding. New repos are created from it via `just repo-init`, which substitutes the {{PLACEHOLDER}} tokens."
-coordination = "standards"
+position = "library"
+chain = "DADA2 / QIIME 2 / EPA-ng outputs → Protoctist.jl (lineages, rollup, jplace, manifests) → Newick and iTOL datasets"
+notes = "No package dependencies. Package extensions for EpistemicTypes.jl and Cladistics.jl are planned; none ships in 0.1."
+# Not assigned yet: CLADE.a2ml has clade primary = "UNASSIGNED".
+coordination = ""
 
 [related-projects]
 projects = [
-  { name = "standards", relationship = "standard-source", notes = "Defines the RSR standard, contractile canon, and policies that this template operationalises." },
-  { name = "stapeln", relationship = "build-tooling", notes = "Layer-based container build system; the template ships stapeln.toml scaffolding." },
-  { name = "selur-compose", relationship = "build-tooling", notes = "Service composition; the template ships selur-compose.toml scaffolding." },
-  { name = "k9-svc", relationship = "validation-tooling", notes = "Runs the self-validating k9.ncl checks (.machine_readable/self-validating/)." },
-  { name = "cerro-torre", relationship = "signing-tooling", notes = "Container/image signing provider referenced by the container scaffolding." },
-  { name = "svalinn", relationship = "verification-tooling", notes = "Supply-chain verification referenced by the container scaffolding." },
-  { name = "vordr", relationship = "verification-tooling", notes = "Build/artifact verification referenced by the container scaffolding." },
+  { name = "EpistemicTypes.jl", relationship = "planned-extension", notes = "Receipts, epi_status and the merge check in general form. Shares type names with different fields; one package must own them before the extension." },
+  { name = "Cladistics.jl", relationship = "planned-extension", notes = "General tree algebra and LCA; the extension would convert a TaxonomyTree to a Cladistics tree." },
+  { name = "EchoTypes.jl", relationship = "sibling", notes = "Executable companion to the Agda library echo-types." },
+  { name = "rsr-template-repo", relationship = "minted-from", notes = "Template parent recorded in VARIANT.a2ml; supplies the CI, governance and machine-readable scaffolding." },
 ]
-
-# ---------------------------------------------------------------------------
-# NOTE FOR CONSUMERS: When using this template to create a new repo, replace
-# the project/purpose above and rewrite [related-projects] to describe YOUR
-# project's actual ecosystem. The entries above describe the TEMPLATE's own
-# position, not yours.
-# ---------------------------------------------------------------------------

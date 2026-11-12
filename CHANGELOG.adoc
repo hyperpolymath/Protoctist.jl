@@ -6,80 +6,72 @@ The format is based on https://keepachangelog.com/en/1.1.0/[Keep a
 Changelog], and this project adheres to
 https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
+No release has been tagged. `0.1.0` is the version in `Project.toml` and the
+release recorded in `CITATION.cff`.
+
 === [Unreleased]
 
-==== Added
-
-* `www/` site-operations bundle (issue #53): canonical `.well-known/`
-  metadata, publishable content, policy sources, error bodies,
-  security-header templates, Caddy/nginx/Apache integration examples, an
-  authoritative-only BIND 9 starting hand with record templates,
-  encrypted-DNS/privacy and TLS guidance, explicit opt-in profiles,
-  schemas, planted-control tests and operational runbooks.
-* `scripts/migrate-wellknown-to-www.sh` — conflict-safe migration of a
-  repository-root `.well-known/` into `www/.well-known/` (identical copies
-  de-duplicated, root-only content moved, divergent content quarantined —
-  see Changed).
-* `scripts/sweep-wellknown.sh` — stage 5 (#119) batch driver: classify,
-  migrate, test and commit across the estate in batches of 25, holding
-  Pages-served and non-RSR repositories for a human decision instead of
-  sweeping them blind.
-* `www/runbooks/stage5-wellknown-sweep.adoc` — how to run the sweep, and
-  how to recover from a quarantine.
-* Mint wiring for the `www/` bundle: `repo-init` now invokes
-  `scripts/migrate-wellknown-to-www.sh` when the tree being minted still
-  carries a legacy root `.well-known/`, and runs `www/tests/run-all.sh`
-  afterwards. Both are no-ops for a repository minted from the current
-  template; they exist for running `repo-init` over a tree that predates
-  #53. #106 described both as already present — neither was, which is a
-  fair part of why the estate still carries root `.well-known/` directories.
-
 ==== Changed
 
-* Canonical `.well-known/` location moved from the repository root to
-  `www/.well-known/`. Well-known enforcement, Groove checks, the root-shape
-  allowlist, the SSG bootstrap and the documentation now prefer the `www/`
-  location and accept the legacy root location with a warning during the
-  migration window.
-
-==== Changed
-
-* Divergent root/`www/` `.well-known/` content is now quarantined to
-  `www/.legacy-well-known-<YYYYMMDD>/` instead of being left in place: the
-  estate-wide sweep (#119) is unattended, so a conflict must not halt it, and
-  must not be silent either. The `www/` copy is untouched, both hashes are
-  printed, and the run exits non-zero. `--in-place` keeps the previous
-  contract (preserve both, exit 1) for hand resolution. The quarantine lives
-  under `www/` rather than at the root because the root allowlist is matched
-  literally and bidirectionally, so a dated root directory would report as
-  drift in every repository swept.
+* The package UUID was re-minted as a UUIDv8 (estate ADR-008 amendment D320).
+  The previous UUIDv5 is in the git history of `Project.toml`.
+* `read_ecsv` and the structs with `Vector` fields were changed so that JET
+  reports no findings (it reported 18). The source follows JuliaFormatter 2.14.
+* `load_protist_run` accepts `sep=`, so DADA2 and QIIME 2 TSV exports load
+  directly.
 
 ==== Fixed
 
-* `dot-wellknown-enforcement.yml` now drives the migrator that #106 described
-  but never wired up: previously the workflow only printed advice to run it,
-  so nothing verified that a repository would survive the migration. It now
-  runs the migrator in `--dry-run` and turns every conflict into a
-  `::warning` annotation — a warning, not an error, for the migration window.
-* The migrator's acceptance test had encoded the in-place contract as the
-  required behaviour, contradicting #106's stated design; it now proves the
-  quarantine contract across nine scenarios, including the collision case
-  where a quarantine name is already taken.
-* `tests/e2e/template_instantiation_test.sh` fed the three container answers
-  only when `container/` existed, but `build/just/repo-init.just` asks those
-  questions when `build/container/` does. On any complete checkout — which is
-  what CI clones — the recipe asked three questions the test had no answers
-  for, `read` hit EOF, and the recipe exited 1, so the instantiation e2e was
-  red at the container prompt. The guard now matches the recipe's own path.
-  (The test also needed `ruby` for the two mint tools. Those are Rust as
-    of 2026-09-18, so it no longer stops there.)
+* `read_jplace` kept only the first candidate of each query's `p` array and
+  the first name of `n`/`nm`. It now returns one `Placement` per (name,
+  candidate) and reads `null` fields as `NaN`. `write_jplace` groups the
+  candidates back into one object per query, and `best_placements` selects by
+  highest `like_weight_ratio`, not by position. Two limits remain: the
+  scanner reads only the compact `[[...]]` form of `p`, so a file with
+  whitespace between those brackets yields no placements; and when a query's
+  first candidate has a `NaN` ratio, `best_placements` keeps it.
+* `load_protist_run` read an unparseable count (`NA`, blank, `12.5`) as 0 and
+  so dropped reads from every rollup. It now throws an `ArgumentError` that
+  names the file, row and column. Integral floats such as `12.0` are accepted.
+* A lineage with a closing `;`, as SILVA and QIIME 2 write it, no longer gets
+  an extra rank. Trailing blanks are dropped; interior blanks (unfilled ranks)
+  are kept.
+* `write_ecsv` quotes a field that contains the separator in use, not only a
+  comma, so space- and tab-separated files round-trip QIIME 2 lineages.
+* Docstrings no longer claim a package extension, receipt verification or a
+  phylogeny that 0.1 does not provide.
+* `CHANGELOG.adoc`, `STATE.a2ml` and `ECOSYSTEM.a2ml` described the repository
+  template this package was minted from, not the package.
 
-* Restore the modular `just` recipes removed by the root-layout refactor, so
-  `just repo-init`, validation, assessment, container, Groove, and proof tasks
-  are available again.
-* Require lowercase hyphenated repository slugs at initialization and verify
-  that both Guix package definitions receive the rendered slug and project URL.
-* Keep template validation aligned with authority documents moved under
-  `docs/`, and repair the cross-platform `cloak`/`uncloak` recipe syntax.
-* Restore the tracked-file language-ban gate with regression fixtures proving
-  that supported Zig passes while prohibited V-language remnants fail.
+==== Added
+
+* `docs/guide/`: a cookbook (DADA2 with PR2 to iTOL, QIIME 2 with SILVA, EPA-ng
+  placements, pooled runs), lineage formats, troubleshooting and a glossary.
+* `examples/dada2`, `examples/qiime2` and `examples/epa-ng`, run by
+  `test/cases/examples.jl`.
+* `docs/ARCHITECTURE.adoc`, the design decisions in `docs/EXPLAINME.adoc`, and
+  real citation keywords and the author's ORCID in `CITATION.cff`.
+
+==== Removed
+
+* `.github/workflows/rust-ci.yml`. The package has no Rust code.
+* The template's documentation, `features/` and the unwired Idris2/Zig
+  skeleton under `src/`.
+
+=== [0.1.0] - 2026-09-23
+
+==== Added
+
+* An implementation of the Protoctist design from the thread "Clades and Other
+  Prompts". The thread held no Protoctist source, so `src/` is written from the
+  design; the recovered material is in `docs/recovered/`.
+* `src/types.jl`: the PR2 (9 ranks) and SILVA (7 ranks) ladders, `TaxPath`,
+  `EpiStatus`, `EvidenceReceipt`, `ResidualInfo`, `Standpoint`, `Warrant` and
+  `ProjectionY`.
+* `src/tree.jl`: the taxonomy tree, cumulative rollup and annotated Newick
+  (NHX).
+* `src/io.jl`: ECSV read and write, jplace read and write, and iTOL dataset
+  export.
+* `src/manifest.jl`: run manifests and the merge check.
+* The test suite: Aqua package-shape checks, then behaviour tests in
+  `test/cases/`.
