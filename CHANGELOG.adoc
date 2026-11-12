@@ -26,7 +26,10 @@ release recorded in `CITATION.cff`.
   the first name of `n`/`nm`. It now returns one `Placement` per (name,
   candidate) and reads `null` fields as `NaN`. `write_jplace` groups the
   candidates back into one object per query, and `best_placements` selects by
-  highest `like_weight_ratio`, never by position.
+  highest `like_weight_ratio`, not by position. Two limits remain: the
+  scanner reads only the compact `[[...]]` form of `p`, so a file with
+  whitespace between those brackets yields no placements; and when a query's
+  first candidate has a `NaN` ratio, `best_placements` keeps it.
 * `load_protist_run` read an unparseable count (`NA`, blank, `12.5`) as 0 and
   so dropped reads from every rollup. It now throws an `ArgumentError` that
   names the file, row and column. Integral floats such as `12.0` are accepted.
