@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   governance:
-    uses: metadatastician/standards/.github/workflows/governance-reusable.yml@8d1a2aab4211493cf42f147f2080f024605797dc
+    uses: metadatastician/standards/.github/workflows/governance-reusable.yml@88a44ddfb00a83f7e4709644de3cb1f4c54fa097
     with:
       # Preserve the previously reviewed scanner if a baseline is added later.
       hypatia-ref: 51ab6496bf47e30a0576d503df31fec30f3cfe56

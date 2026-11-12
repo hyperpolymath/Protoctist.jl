@@ -32,7 +32,7 @@ workflows:
         - 'actions/checkout@v7.0.1'
     '.github/workflows/governance.yml':
         - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
-        - 'metadatastician/standards@8d1a2aab4211493cf42f147f2080f024605797dc'
+        - 'metadatastician/standards@88a44ddfb00a83f7e4709644de3cb1f4c54fa097'
     '.github/workflows/groove-check.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/guix-policy.yml':
@@ -194,9 +194,9 @@ dependencies:
         commit: 'sha1-da908477b5db94c10ffce8cfea9f2b3b9d5db687'
         owner_id: 53965732
         repo_id: 202020219
-    'metadatastician/standards@8d1a2aab4211493cf42f147f2080f024605797dc':
+    'metadatastician/standards@88a44ddfb00a83f7e4709644de3cb1f4c54fa097':
         ref: 'main'
-        commit: 'sha1-8d1a2aab4211493cf42f147f2080f024605797dc'
+        commit: 'sha1-88a44ddfb00a83f7e4709644de3cb1f4c54fa097'
         owner_id: 297579217
         repo_id: 1116521501
     'metadatastician/standards@cf8f91219d80da55cf8cbbfcd587d00c2d8798ed':
