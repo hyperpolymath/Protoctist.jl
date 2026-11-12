@@ -55,7 +55,7 @@ contention, the novel and contaminated flags, and a free-text note.
 Sans fibre (`SANS_FIBRE`)::
 No origin witness. The claim carries no receipt at all.
 
-Standpoint::
+Standpoint (`LineageStandpoint`)::
 Where a claim is made from: the reference, the rank ladder and its version.
 Two claims are comparable only from the same standpoint.
 

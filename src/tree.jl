@@ -52,7 +52,7 @@ struct TaxonomyTree
     nodes::Vector{TaxNode}
     ladder::Symbol
 
-    # See Warrant in types.jl: explicit inner constructor, no convert().
+    # See LineageWarrant in types.jl: explicit inner constructor, no convert().
     TaxonomyTree(nodes::Vector{TaxNode}, ladder::Symbol) = new(nodes, ladder)
 end
 

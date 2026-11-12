@@ -327,8 +327,11 @@ surprise.
 * *Evidence from tables.* `load_protist_run` rolls up counts only. Status and
   residuals are passed to `rollup_counts` as row fields (see the README).
 * *Sibling packages.* Protoctist 0.1 defines its own copies of the evidence
-  shapes. Binding them to EpistemicTypes.jl and Cladistics.jl through package
-  extensions is planned; none ships in this release.
+  shapes, named `LineageStandpoint`, `LineageWarrant` and `LineageProjection`
+  so they do not clash with the types EpistemicTypes.jl owns. Binding them to
+  EpistemicTypes.jl and Cladistics.jl through package extensions is planned;
+  none ships in this release. `ResidualInfo` still has the same name as
+  EpistemicTypes.jl's, with different fields.
 
 == Checking these claims
 

@@ -197,3 +197,61 @@ end
         end
     end
 end
+
+@testset "jplace: pretty-printed placements are read" begin
+    mktempdir() do dir
+        p = joinpath(dir, "pretty.jplace")
+        # Whitespace and newlines between the brackets of "p", as a JSON
+        # pretty-printer writes them. The old scanner returned 0 placements.
+        write(
+            p,
+            """
+   {
+     "tree": "((A:0.1{0},B:0.2{1}):0.3{2});",
+     "version": 3,
+     "fields": ["edge_num", "likelihood", "like_weight_ratio", "distal_length", "pendant_length"],
+     "placements": [
+       {
+         "p": [
+           [ 0, -120.0, 0.35, 0.01, 0.02 ],
+           [ 1, -119.5, 0.65, 0.02, 0.03 ]
+         ],
+         "n": [ "query1" ]
+       },
+       { "p": [ [2, -110.0, 1.0, 0.05, 0.06] ], "nm": [ [ "query2a", 3 ], [ "query2b", 1 ] ] }
+     ]
+   }
+   """,
+        )
+        b = Protoctist.IO.read_jplace(p)
+        @test length(b.placements) == 4
+        q1 = filter(x -> x.name == "query1", b.placements)
+        @test [x.edge_num for x in q1] == [0, 1]
+        @test [x.like_weight_ratio for x in q1] ≈ [0.35, 0.65]
+        @test Set(x.name for x in b.placements) == Set(["query1", "query2a", "query2b"])
+    end
+end
+
+@testset "jplace: a null ratio never wins best_placements" begin
+    mktempdir() do dir
+        p = joinpath(dir, "nan.jplace")
+        write(
+            p,
+            """
+   {
+     "tree": "((A:0.1{0},B:0.2{1}):0.3{2});",
+     "version": 3,
+     "fields": ["edge_num", "likelihood", "like_weight_ratio", "distal_length", "pendant_length"],
+     "placements": [
+       {"p": [[0, -120.0, null, 0.01, 0.02], [1, -119.5, 0.8, 0.02, 0.03]], "n": ["first_null"]},
+       {"p": [[0, -120.0, null, 0.01, 0.02], [1, -119.5, null, 0.02, 0.03]], "n": ["all_null"]}
+     ]
+   }
+   """,
+        )
+        best = Protoctist.IO.best_placements(Protoctist.IO.read_jplace(p))
+        @test only(filter(x -> x.name == "first_null", best)).edge_num == 1
+        # With no number to compare, the first listed is kept.
+        @test only(filter(x -> x.name == "all_null", best)).edge_num == 0
+    end
+end

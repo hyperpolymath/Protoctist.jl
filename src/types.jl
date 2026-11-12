@@ -4,10 +4,13 @@
 # Protoctist.Types — the vocabulary protist workflows share.
 #
 # Recovered from the design thread "Clades and Other Prompts" (2026-09-16).
-# The design names EpistemicTypes.jl as the owner of the evidence vocabulary.
-# Protoctist 0.1 defines these shapes itself and takes no dependency on it;
-# binding them to EpistemicTypes through a package extension is planned and
-# is not present in this release.
+# The design names EpistemicTypes.jl as the owner of the evidence vocabulary
+# (Standpoint, Warrant, ProjectionY, Receipt). Protoctist defines its own,
+# differently shaped copies and takes no dependency on EpistemicTypes, so they
+# are named LineageStandpoint, LineageWarrant and LineageProjection: the same
+# names with different fields would make `using EpistemicTypes, Protoctist`
+# ambiguous. A package extension that maps them onto EpistemicTypes is planned
+# and is not present in this release.
 
 module Types
 
@@ -15,9 +18,9 @@ export TaxPath,
     EvidenceReceipt,
     EpiStatus,
     ResidualInfo,
-    Standpoint,
-    Warrant,
-    ProjectionY,
+    LineageStandpoint,
+    LineageWarrant,
+    LineageProjection,
     PR2_RANKS,
     SILVA_RANKS,
     ranks_for,
@@ -82,28 +85,31 @@ The epistemic standing of a per-row claim, as decided by the warrant gates.
 @enum EpiStatus FACTIVE BELIEF COLLAPSED SANS_FIBRE
 
 """
-    Standpoint(source, ladder, version)
+    LineageStandpoint(source, ladder, version)
 
 Where a claim is being made *from*: which reference, which rank ladder, and
 which version of it. Two claims are only comparable from the same standpoint.
 """
-struct Standpoint
+struct LineageStandpoint
     source::String
     ladder::Symbol
     version::String
 end
-Standpoint(source::AbstractString; ladder::Symbol = :pr2, version::AbstractString = "") =
-    Standpoint(String(source), ladder, String(version))
+LineageStandpoint(
+    source::AbstractString;
+    ladder::Symbol = :pr2,
+    version::AbstractString = "",
+) = LineageStandpoint(String(source), ladder, String(version))
 
 """
-    Warrant(score, threshold, gates)
+    LineageWarrant(score, threshold, gates)
 
 What entitles a claim: the classifier score, the threshold it was judged
 against, and the named sample gates that passed. `gates` is ordered so the
 canonical form of a warrant is stable, which is what makes a receipt
 signable.
 """
-struct Warrant
+struct LineageWarrant
     score::Float64
     threshold::Float64
     gates::Vector{Symbol}
@@ -112,19 +118,19 @@ struct Warrant
     # default: dispatch checks the types, new() is a straight store, and no
     # abstract interpretation of convert(Vector{Symbol}, ::AbstractArray)
     # can explore BitVector or range paths that cannot occur here.
-    Warrant(score::Float64, threshold::Float64, gates::Vector{Symbol}) =
+    LineageWarrant(score::Float64, threshold::Float64, gates::Vector{Symbol}) =
         new(score, threshold, gates)
 end
-Warrant(score::Real, threshold::Real) =
-    Warrant(Float64(score), Float64(threshold), Symbol[])
+LineageWarrant(score::Real, threshold::Real) =
+    LineageWarrant(Float64(score), Float64(threshold), Symbol[])
 
 """
-    ProjectionY(rank, label)
+    LineageProjection(rank, label)
 
 The projection of a claim onto the rank ladder: the rank actually claimed
 and the label claimed there. `rank` is a member of the standpoint's ladder.
 """
-struct ProjectionY
+struct LineageProjection
     rank::Symbol
     label::String
 end
@@ -141,12 +147,13 @@ never mints one, and it does not check signatures itself. Signing and
 verification stay with the issuing library.
 """
 struct EvidenceReceipt
-    standpoint::Standpoint
-    warrant::Warrant
-    projection::ProjectionY
+    standpoint::LineageStandpoint
+    warrant::LineageWarrant
+    projection::LineageProjection
     signature::String
 end
-EvidenceReceipt(s::Standpoint, w::Warrant, y::ProjectionY) = EvidenceReceipt(s, w, y, "")
+EvidenceReceipt(s::LineageStandpoint, w::LineageWarrant, y::LineageProjection) =
+    EvidenceReceipt(s, w, y, "")
 
 """
     ResidualInfo(named_candidates, novel_ok, contaminated, note)

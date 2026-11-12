@@ -14,7 +14,7 @@
     :version "0.1.0"
     :last-updated "2026-09-23"
     :project "Protoctist.jl"
-    :purpose "Canonical RSR (Rhodium Standard Repository) template — governance, CI/CD, machine-readable metadata, ABI/FFI seam and formal-verification scaffolding that hyperpolymath projects are instantiated from."
+    :purpose "Integration library unifying types, IO and exports for PR2/SILVA-driven protist workflows"
     (agent :name CLAUDE :role "proofs, compilers, repo-local implementation, CI/CD, formal verification, Rust/Idris2/Zig")
     (agent :name CHATGPT :role "prose, papers, publication review, standards docs, outreach drafts, letters")
     (agent :name GEMINI :role "estate audits, cross-repo sweeps, long-context triage, pattern detection")
@@ -25,6 +25,21 @@
     (work :agent GEMINI :task "estate audits, cross-repo sweeps, long-context triage, pattern detection")
     (work :agent VIBE :task "UI/frontend, PanLL panels,  components, theming, rapid prototyping")
     )
+  (ecosystem
+    :project "Protoctist.jl"
+    :ecosystem "hyperpolymath"
+    :position-type "julia-library"
+    :purpose "Integration library unifying types, IO and exports for PR2/SILVA-driven protist workflows"
+    :not ("rsr-template-repo (the template this repository was minted from; its ECOSYSTEM, STATE and CHANGELOG were carried here by mistake)"
+          "a classifier (it consumes assignments from DADA2, QIIME 2 and others; it does not produce them)"
+          "a phylogeny tool (the exported tree is the taxonomy the lineages span, with ranks and no branch lengths)"
+          "a PR2-to-SILVA mapper (it refuses to mix the two ladders)"
+          "EpistemicTypes.jl (it carries receipts but never mints or verifies them, and its Standpoint, Warrant and ProjectionY are owned there; Protoctist's own copies are LineageStandpoint, LineageWarrant and LineageProjection)")
+    :pipeline-position "library"
+    :chain "DADA2 / QIIME 2 / EPA-ng outputs → Protoctist.jl (lineages, rollup, jplace, manifests) → Newick and iTOL datasets"
+    :pipeline-notes "No package dependencies. Package extensions for EpistemicTypes.jl and Cladistics.jl are planned; none ships in 0.1. Related: EpistemicTypes.jl (planned-extension): Receipts, epi_status and the merge check in general form. EpistemicTypes.jl owns the Standpoint, Warrant and ProjectionY type names and Protoctist's copies are renamed (LineageStandpoint, LineageWarrant and LineageProjection). Related: Cladistics.jl (planned-extension): General tree algebra and LCA; the extension would convert a TaxonomyTree to a Cladistics tree. Related: EchoTypes.jl (sibling): Executable companion to the Agda library echo-types."
+    :coordination ""
+    (related :name "rsr-template-repo" :relationship minted-from :notes "Template parent recorded in VARIANT.a2ml; supplies the CI, governance and machine-readable scaffolding."))
   (ply
     (directory :ply 1 :path ".github")
     (directory :id "machine-readable-pillar" :ply 1 :path ".machine_readable" :description "Registry for all machine-readable metadata, policies, and internal\nautomation scripts."
