@@ -44,8 +44,9 @@ enter or leave at any point.
 | `Types`
 | `src/types.jl`
 | `TaxPath` (labels plus a rank ladder, `:pr2` by default), `rank_index`,
-  `at_rank`, `truncate_to`; the evidence vocabulary `Standpoint`, `Warrant`,
-  `ProjectionY`, `EvidenceReceipt`, `EpiStatus`, `ResidualInfo`.
+  `at_rank`, `truncate_to`; the evidence vocabulary `LineageStandpoint`,
+  `LineageWarrant`, `LineageProjection`, `EvidenceReceipt`, `EpiStatus`,
+  `ResidualInfo`.
 
 | `Tree`
 | `src/tree.jl`

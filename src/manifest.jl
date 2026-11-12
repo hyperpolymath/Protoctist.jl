@@ -55,7 +55,7 @@ struct MergeVerdict
     ok::Bool
     reasons::Vector{String}
 
-    # See types.jl's Warrant: explicit inner constructor, no convert().
+    # See types.jl's LineageWarrant: explicit inner constructor, no convert().
     MergeVerdict(ok::Bool, reasons::Vector{String}) = new(ok, reasons)
 end
 

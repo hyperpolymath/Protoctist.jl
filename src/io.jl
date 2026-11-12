@@ -42,7 +42,7 @@ struct ECSVTable
     columns::Vector{Vector{String}}
     meta::Vector{String}
 
-    # See types.jl's Warrant: explicit inner constructor, no convert().
+    # See types.jl's LineageWarrant: explicit inner constructor, no convert().
     ECSVTable(
         names::Vector{String},
         columns::Vector{Vector{String}},
@@ -210,7 +210,7 @@ struct PlacementBatch
     fields::Vector{String}
     version::Int
 
-    # See types.jl's Warrant: explicit inner constructor; the String/Int
+    # See types.jl's LineageWarrant: explicit inner constructor; the String/Int
     # conversions are explicit and concretely typed, not convert()-ed.
     PlacementBatch(
         tree::AbstractString,
@@ -364,7 +364,11 @@ function _jplace_entries(s::AbstractString, fields::Vector{String})
     out = Tuple{String,Dict{String,Float64}}[]
     pm = match(r"\"placements\"\s*:\s*\[", s)
     pm === nothing && return out
-    for obj in eachmatch(r"\{[^{}]*\"p\"\s*:\s*\[\[(.*?)\]\][^{}]*\}"s, s[pm.offset:end])
+    # Whitespace is allowed between the brackets of "p", as pretty-printed
+    # JSON writes it. The pattern used to require "[[" and "]]", so such
+    # a file gave no placements and no error.
+    for obj in
+        eachmatch(r"\{[^{}]*\"p\"\s*:\s*\[\s*\[(.*?)\]\s*\][^{}]*\}"s, s[pm.offset:end])
         body = obj.match
         names = _json_string_array(body, "n")
         if isempty(names)
@@ -396,7 +400,9 @@ end
     best_placements(b::PlacementBatch) -> Vector{Placement}
 
 One placement per query: the candidate with the highest `like_weight_ratio`
-(the first listed wins an exact tie). Queries keep the order in which they
+(the first listed wins an exact tie). A `NaN` ratio, read from `null`, never
+wins over a number; if every candidate is `NaN`, the first listed is kept.
+Queries keep the order in which they
 first appear. Use this when a downstream step needs a single edge per
 query; `b.placements` itself keeps the full distribution.
 """
@@ -408,7 +414,8 @@ function best_placements(b::PlacementBatch)
         if cur === nothing
             push!(order, p.name)
             best[p.name] = p
-        elseif p.like_weight_ratio > cur.like_weight_ratio
+        elseif p.like_weight_ratio > cur.like_weight_ratio ||
+               (isnan(cur.like_weight_ratio) && !isnan(p.like_weight_ratio))
             best[p.name] = p
         end
     end

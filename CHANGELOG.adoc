@@ -19,6 +19,10 @@ release recorded in `CITATION.cff`.
   reports no findings (it reported 18). The source follows JuliaFormatter 2.14.
 * `load_protist_run` accepts `sep=`, so DADA2 and QIIME 2 TSV exports load
   directly.
+* *Breaking:* `Standpoint`, `Warrant` and `ProjectionY` are renamed
+  `LineageStandpoint`, `LineageWarrant` and `LineageProjection`. EpistemicTypes.jl
+  owns the evidence vocabulary, and the same names with different fields made
+  `using EpistemicTypes, Protoctist` ambiguous.
 
 ==== Fixed
 
@@ -26,10 +30,12 @@ release recorded in `CITATION.cff`.
   the first name of `n`/`nm`. It now returns one `Placement` per (name,
   candidate) and reads `null` fields as `NaN`. `write_jplace` groups the
   candidates back into one object per query, and `best_placements` selects by
-  highest `like_weight_ratio`, not by position. Two limits remain: the
-  scanner reads only the compact `[[...]]` form of `p`, so a file with
-  whitespace between those brackets yields no placements; and when a query's
-  first candidate has a `NaN` ratio, `best_placements` keeps it.
+  highest `like_weight_ratio`, not by position.
+* `read_jplace` read only the compact `[[...]]` form of `p`, so a pretty-printed
+  file, with whitespace between those brackets, gave no placements and no
+  error. Whitespace is now allowed.
+* `best_placements` kept a first candidate whose ratio was `null` (`NaN`) over a
+  later numeric ratio. A `NaN` ratio now never wins over a number.
 * `load_protist_run` read an unparseable count (`NA`, blank, `12.5`) as 0 and
   so dropped reads from every rollup. It now throws an `ArgumentError` that
   names the file, row and column. Integral floats such as `12.0` are accepted.

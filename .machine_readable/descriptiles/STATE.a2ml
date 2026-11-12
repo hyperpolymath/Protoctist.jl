@@ -50,13 +50,9 @@ milestones = [
 ]
 
 [blockers-and-issues]
-# 1. EpistemicTypes.jl defines Standpoint, Warrant and ProjectionY with the
-#    same names as this package but different fields, so the planned
-#    extension cannot alias them. One package must own the vocabulary first.
 
 [critical-next-actions]
 actions = [
-  "Decide which package owns Standpoint, Warrant and ProjectionY (this one or EpistemicTypes.jl)",
 ]
 
 [maintenance-status]
