@@ -5,19 +5,19 @@
 #
 # Recovered from the design thread "Clades and Other Prompts" (2026-09-16).
 # The design names EpistemicTypes.jl as the owner of the evidence vocabulary
-# (Standpoint, Warrant, ProjectionY, Receipt). Protoctist defines its own,
-# differently shaped copies and takes no dependency on EpistemicTypes, so they
-# are named LineageStandpoint, LineageWarrant and LineageProjection: the same
-# names with different fields would make `using EpistemicTypes, Protoctist`
-# ambiguous. A package extension that maps them onto EpistemicTypes is planned
-# and is not present in this release.
+# (Standpoint, Warrant, ProjectionY, Receipt, ResidualInfo). Protoctist defines
+# its own, differently shaped copies and takes no dependency on EpistemicTypes,
+# so they are named LineageStandpoint, LineageWarrant, LineageProjection and
+# LineageResidual: the same names with different fields would make
+# `using EpistemicTypes, Protoctist` ambiguous. A package extension that maps
+# them onto EpistemicTypes is planned and is not present in this release.
 
 module Types
 
 export TaxPath,
     EvidenceReceipt,
     EpiStatus,
-    ResidualInfo,
+    LineageResidual,
     LineageStandpoint,
     LineageWarrant,
     LineageProjection,
@@ -156,21 +156,21 @@ EvidenceReceipt(s::LineageStandpoint, w::LineageWarrant, y::LineageProjection) =
     EvidenceReceipt(s, w, y, "")
 
 """
-    ResidualInfo(named_candidates, novel_ok, contaminated, note)
+    LineageResidual(named_candidates, novel_ok, contaminated, note)
 
 What is left over after a claim is made: the named species still in
 contention, whether the novelty gates were satisfied, and whether a
 contamination gate fired. "Novel" is only ever asserted after the
 contamination gates pass — that ordering is the whole point of the field.
 """
-struct ResidualInfo
+struct LineageResidual
     named_candidates::Int
     novel_ok::Bool
     contaminated::Bool
     note::String
 end
-ResidualInfo(n::Integer, novel_ok::Bool, contaminated::Bool) =
-    ResidualInfo(Int(n), novel_ok, contaminated, "")
+LineageResidual(n::Integer, novel_ok::Bool, contaminated::Bool) =
+    LineageResidual(Int(n), novel_ok, contaminated, "")
 
 """
     TaxPath(labels; ladder = :pr2)

@@ -147,7 +147,7 @@ differently.
 * `COLLAPSED`: the claim was moved to a coarser rank.
 * `SANS_FIBRE`: no receipt.
 
-Each row can also carry a `ResidualInfo`: the named candidates still in
+Each row can also carry a `LineageResidual`: the named candidates still in
 contention, whether novelty is admissible, and whether a contamination gate
 fired.
 
@@ -327,11 +327,10 @@ surprise.
 * *Evidence from tables.* `load_protist_run` rolls up counts only. Status and
   residuals are passed to `rollup_counts` as row fields (see the README).
 * *Sibling packages.* Protoctist 0.1 defines its own copies of the evidence
-  shapes, named `LineageStandpoint`, `LineageWarrant` and `LineageProjection`
-  so they do not clash with the types EpistemicTypes.jl owns. Binding them to
-  EpistemicTypes.jl and Cladistics.jl through package extensions is planned;
-  none ships in this release. `ResidualInfo` still has the same name as
-  EpistemicTypes.jl's, with different fields.
+  shapes, named `LineageStandpoint`, `LineageWarrant`, `LineageProjection` and
+  `LineageResidual` so they do not clash with the types EpistemicTypes.jl owns.
+  Binding them to EpistemicTypes.jl and Cladistics.jl through package
+  extensions is planned; none ships in this release.
 
 == Checking these claims
 

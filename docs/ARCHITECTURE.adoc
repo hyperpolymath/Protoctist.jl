@@ -46,7 +46,7 @@ enter or leave at any point.
 | `TaxPath` (labels plus a rank ladder, `:pr2` by default), `rank_index`,
   `at_rank`, `truncate_to`; the evidence vocabulary `LineageStandpoint`,
   `LineageWarrant`, `LineageProjection`, `EvidenceReceipt`, `EpiStatus`,
-  `ResidualInfo`.
+  `LineageResidual`.
 
 | `Tree`
 | `src/tree.jl`
