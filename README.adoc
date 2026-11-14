@@ -93,7 +93,7 @@ tree = build_taxonomy_tree(["Eukaryota;TSAR;Rhizaria;Cercozoa",
 rows = [
     (path = TaxPath("Eukaryota;TSAR;Rhizaria;Cercozoa"), count = 10, status = FACTIVE),
     (path = TaxPath("Eukaryota;TSAR;Alveolata;Dinoflagellata"), count = 3,
-     status = BELIEF, residual = ResidualInfo(2, false, false)),
+     status = BELIEF, residual = LineageResidual(2, false, false)),
 ]
 annot = rollup_counts(tree, rows)
 annotate_newick(tree, annot)
@@ -101,7 +101,7 @@ annotate_newick(tree, annot)
 ----
 
 `FACTIVE` marks an assignment the evidence entails; `BELIEF` one it supports
-without entailing. `ResidualInfo` records how many named candidates remained,
+without entailing. `LineageResidual` records how many named candidates remained,
 whether a novel taxon is admissible, and whether contamination is suspected.
 
 The second row names `Dinoflagellata`, which the tree does not contain. It is
@@ -197,7 +197,7 @@ with `--safe --without-K`:
   warrant there has no `Evidence → A` constructor. In the same way, Protoctist
   carries `EvidenceReceipt`s it is given and never mints one.
 * https://github.com/hyperpolymath/residual-evidence-types[residual-evidence-types]
-  quantifies identification over *all* admissible candidates. `ResidualInfo`
+  quantifies identification over *all* admissible candidates. `LineageResidual`
   is the count-level summary of that judgement.
 
 The Julia types follow these designs; they are not extracted from the proofs.

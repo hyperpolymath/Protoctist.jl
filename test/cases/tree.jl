@@ -22,7 +22,7 @@
             path = TaxPath(p),
             count = 3,
             status = FACTIVE,
-            residual = ResidualInfo(1, false, false),
+            residual = LineageResidual(1, false, false),
         ) for p in paths
     ]
     a = rollup_counts(t, rows)

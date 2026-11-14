@@ -15,7 +15,7 @@ Collapsed (`COLLAPSED`)::
 The claim was made at a coarser rank than the one requested.
 
 Contaminated::
-A `ResidualInfo` flag, set when a contamination gate fired for the row.
+A `LineageResidual` flag, set when a contamination gate fired for the row.
 
 Evidence receipt (`EvidenceReceipt`)::
 The record of what a claim rested on: its standpoint, warrant, projection and
@@ -44,11 +44,11 @@ In jplace, a placement's share of the total likelihood across the candidate
 edges for its query. `best_placements` selects by it.
 
 Novel (`novel_ok`)::
-A `ResidualInfo` flag: the novelty gates were satisfied. It is only ever set
+A `LineageResidual` flag: the novelty gates were satisfied. It is only ever set
 after the contamination gates pass, so a contaminated row is never reported as
 novel.
 
-Residual (`ResidualInfo`)::
+Residual (`LineageResidual`)::
 What is left over after a claim is made: the number of named species still in
 contention, the novel and contaminated flags, and a free-text note.
 

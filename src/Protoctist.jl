@@ -54,7 +54,7 @@ export Types, Tree, IO, Manifest
 export TaxPath,
     EvidenceReceipt,
     EpiStatus,
-    ResidualInfo,
+    LineageResidual,
     LineageStandpoint,
     LineageWarrant,
     LineageProjection,

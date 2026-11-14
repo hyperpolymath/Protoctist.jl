@@ -28,7 +28,7 @@ end
 
 @testset "EpiStatus and residuals" begin
     @test FACTIVE !== BELIEF
-    r = ResidualInfo(3, false, true)
+    r = LineageResidual(3, false, true)
     @test r.named_candidates == 3
     @test r.novel_ok == false
     @test r.contaminated == true

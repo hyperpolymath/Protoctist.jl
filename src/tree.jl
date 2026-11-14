@@ -143,7 +143,7 @@ NodeAnnot(n::Integer) = NodeAnnot(
 Roll per-row evidence up the taxonomy tree.
 
 `rows` is any iterable of rows exposing `path` (a `TaxPath`), and optionally
-`count`, `status` (an `EpiStatus`) and `residual` (a `ResidualInfo`). A row
+`count`, `status` (an `EpiStatus`) and `residual` (a `LineageResidual`). A row
 whose lineage is not in `tree` is attributed to the deepest ancestor the
 tree does contain, never dropped silently — losing a read is a worse error
 than attributing it coarsely, and the coarse attribution is visible.

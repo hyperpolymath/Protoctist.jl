@@ -23,6 +23,11 @@ release recorded in `CITATION.cff`.
   `LineageStandpoint`, `LineageWarrant` and `LineageProjection`. EpistemicTypes.jl
   owns the evidence vocabulary, and the same names with different fields made
   `using EpistemicTypes, Protoctist` ambiguous.
+* *Breaking:* `ResidualInfo` is renamed `LineageResidual`, for the same reason.
+  EpistemicTypes.jl exports a `ResidualInfo` with different fields, so
+  `using EpistemicTypes, Protoctist` made the name ambiguous. The fields and
+  constructors are unchanged. A code search of the default branches visible on
+  2026-11-14 found no other repository using Protoctist's copy.
 
 ==== Fixed
 
