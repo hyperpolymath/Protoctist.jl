@@ -53,7 +53,7 @@ Load `tree.newick` into iTOL and drag the three dataset files onto the tree.
 `load_protist_run` rolls up counts only, so the status and contamination files
 are all zeros here. To fill them, build rows that carry a `status` and a
 `residual`, roll them up with `rollup_counts`, and write the files with
-`Protoctist.IO.export_itol_bundle(tree, annot, "out")`. The README section on
+`Protoctist.Formats.export_itol_bundle(tree, annot, "out")`. The README section on
 evidence status shows the row shape.
 
 The counts summed here are over all samples. For one tree per sample, write one
@@ -103,7 +103,7 @@ placement for every query, and for `nm` entries every name:
 [source,julia]
 ----
 using Protoctist
-const PIO = Protoctist.IO
+const PIO = Protoctist.Formats
 
 b = PIO.read_jplace("epa_result.jplace")
 length(b.placements)               # 4: ASV1 on two edges, ASV2 and ASV7 sharing one

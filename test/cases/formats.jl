@@ -12,7 +12,7 @@
    "Eukaryota;Excavata;Metamonada,odd",3
    """,
         )
-        t = Protoctist.IO.read_ecsv(p)
+        t = Protoctist.Formats.read_ecsv(p)
         @test t.names == ["lineage", "count"]
         @test length(t) == 2
         # a comma inside a quoted field must survive
@@ -20,8 +20,8 @@
         @test length(t.meta) == 3          # header preserved
 
         q = joinpath(dir, "out.ecsv")
-        Protoctist.IO.write_ecsv(t, q)
-        t2 = Protoctist.IO.read_ecsv(q)
+        Protoctist.Formats.write_ecsv(t, q)
+        t2 = Protoctist.Formats.read_ecsv(q)
         @test t2.names == t.names
         @test t2.columns == t.columns
         @test t2.meta == t.meta
@@ -45,7 +45,7 @@ end
    }
    """,
         )
-        b = Protoctist.IO.read_jplace(p)
+        b = Protoctist.Formats.read_jplace(p)
         @test b.version == 3
         @test occursin("{0}", b.tree)
         @test length(b.placements) == 2
@@ -55,8 +55,8 @@ end
         @test b.placements[2].name == "query2"
 
         q = joinpath(dir, "out.jplace")
-        Protoctist.IO.write_jplace(b, q)
-        b2 = Protoctist.IO.read_jplace(q)
+        Protoctist.Formats.write_jplace(b, q)
+        b2 = Protoctist.Formats.read_jplace(q)
         @test b2.tree == b.tree
         @test length(b2.placements) == length(b.placements)
         @test b2.placements[1].name == "query1"
@@ -85,7 +85,7 @@ end
    }
    """,
         )
-        b = Protoctist.IO.read_jplace(p)
+        b = Protoctist.Formats.read_jplace(p)
         @test length(b.placements) == 5
         q1 = filter(x -> x.name == "query1", b.placements)
         @test [x.edge_num for x in q1] == [0, 1]
@@ -98,17 +98,17 @@ end
         @test q3.like_weight_ratio ≈ 0.5           # columns after the null stay aligned
         @test q3.pendant_length ≈ 0.1
 
-        best = Protoctist.IO.best_placements(b)
+        best = Protoctist.Formats.best_placements(b)
         @test [x.name for x in best] == ["query1", "query2a", "query2b", "query3"]
         @test best[1].edge_num == 1                # highest LWR, not first listed
         @test best[1].like_weight_ratio ≈ 0.65
 
         q = joinpath(dir, "out.jplace")
-        Protoctist.IO.write_jplace(b, q)
+        Protoctist.Formats.write_jplace(b, q)
         out = read(q, String)
         @test !occursin("NaN", out)                # JSON has no NaN
         @test count("\"n\":", out) == 4            # one object per query
-        b2 = Protoctist.IO.read_jplace(q)
+        b2 = Protoctist.Formats.read_jplace(q)
         @test length(b2.placements) == length(b.placements)
         @test [(x.name, x.edge_num) for x in b2.placements] == [(x.name, x.edge_num) for x in b.placements]
         @test isnan(only(filter(x -> x.name == "query3", b2.placements)).likelihood)
@@ -185,15 +185,15 @@ end
 @testset "a field containing the separator round-trips" begin
     mktempdir() do dir
         # QIIME 2 lineages contain spaces; Astropy ECSV is space-delimited.
-        t = Protoctist.IO.ECSVTable(
+        t = Protoctist.Formats.ECSVTable(
             ["taxonomy", "reads"],
             [["d__Eukaryota; p__Cercozoa", "a\tb"], ["4", "2"]],
             ["# %ECSV 1.0"],
         )
         for sep in (' ', '\t', ',')
             p = joinpath(dir, "sep.ecsv")
-            Protoctist.IO.write_ecsv(t, p; sep = sep)
-            @test Protoctist.IO.read_ecsv(p; sep = sep).columns == t.columns
+            Protoctist.Formats.write_ecsv(t, p; sep = sep)
+            @test Protoctist.Formats.read_ecsv(p; sep = sep).columns == t.columns
         end
     end
 end
@@ -223,7 +223,7 @@ end
    }
    """,
         )
-        b = Protoctist.IO.read_jplace(p)
+        b = Protoctist.Formats.read_jplace(p)
         @test length(b.placements) == 4
         q1 = filter(x -> x.name == "query1", b.placements)
         @test [x.edge_num for x in q1] == [0, 1]
@@ -249,7 +249,7 @@ end
    }
    """,
         )
-        best = Protoctist.IO.best_placements(Protoctist.IO.read_jplace(p))
+        best = Protoctist.Formats.best_placements(Protoctist.Formats.read_jplace(p))
         @test only(filter(x -> x.name == "first_null", best)).edge_num == 1
         # With no number to compare, the first listed is kept.
         @test only(filter(x -> x.name == "all_null", best)).edge_num == 0

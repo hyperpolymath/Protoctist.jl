@@ -11,7 +11,7 @@ inventory is link:architecture/REPOSITORY-MAP.adoc[REPOSITORY-MAP].
 
 ----
 lineage table (ECSV / CSV)          jplace (EPA-ng, pplacer)
-        │ IO.read_ecsv                      │ IO.read_jplace
+        │ Formats.read_ecsv                 │ Formats.read_jplace
         ▼                                   ▼
   ProtistRun  ── TaxPath per row      PlacementBatch ── best_placements
         │
@@ -20,7 +20,7 @@ lineage table (ECSV / CSV)          jplace (EPA-ng, pplacer)
         ▼
   TaxonomyTree + NodeAnnot
         │ Tree.annotate_newick       (NHX in bracket comments)
-        │ IO.export_itol_bundle
+        │ Formats.export_itol_bundle
         ▼
   Newick, iTOL datasets, ECSV       Manifest.build_manifest / validate_merge
 ----
@@ -53,8 +53,8 @@ enter or leave at any point.
 | `TaxonomyTree` (a trie keyed by `(label, rank)`), `NodeAnnot`,
   `build_taxonomy_tree`, `rollup_counts`, `annotate_newick`.
 
-| `IO`
-| `src/io.jl`
+| `Formats`
+| `src/formats.jl`
 | `ECSVTable`, `read_ecsv`/`write_ecsv` (header comments kept verbatim),
   `columntable` (the Tables.jl column-table shape), `read_jplace`/`write_jplace`
   (every placement of every query), `best_placements` (highest
@@ -80,7 +80,7 @@ planned as package extensions and is not in 0.1.
 
 `test/runtests.jl` runs `Aqua.test_all` first, then every
 `test/cases/*.jl` in sorted order: one file per source module (`types.jl`,
-`tree.jl`, `io.jl`, `manifest.jl`), `examples.jl`, which runs each
+`tree.jl`, `formats.jl`, `manifest.jl`), `examples.jl`, which runs each
 `examples/*/run.jl`, and `smoke.jl`. The worked examples under `examples/`
 (`dada2/`, `qiime2/`, `epa-ng/`) are therefore tested and cannot drift from the
 code.

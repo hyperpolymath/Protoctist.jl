@@ -5,7 +5,7 @@
 #      cleanly, whose deps are not compat-closed, or whose exports are
 #      ambiguous is rejected before any behaviour test can pass.
 #   2. Behaviour — every test/cases/*.jl is included, in sorted order. There is
-#      one file per source module (types, tree, io, manifest); io.jl covers
+#      one file per source module (types, tree, formats, manifest); formats.jl covers
 #      the lineage tables, jplace and the exporters, manifest.jl the
 #      manifest and merge check, examples.jl runs examples/*/run.jl. smoke.jl
 #      is only the load check.

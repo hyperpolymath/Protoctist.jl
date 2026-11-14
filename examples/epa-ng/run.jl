@@ -5,7 +5,7 @@
 # Run from this directory:  julia --project=../.. run.jl
 
 using Protoctist
-const PIO = Protoctist.IO
+const PIO = Protoctist.Formats
 
 b = PIO.read_jplace("epa_result.jplace")
 println(length(b.placements), " candidate placements")

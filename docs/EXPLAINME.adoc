@@ -196,13 +196,13 @@ turns that into a loop.
 === D10. No package dependencies
 
 *Decision.* `[deps]` in `Project.toml` is empty. ECSV, CSV/TSV and jplace are
-read and written by code in `src/io.jl`.
+read and written by code in `src/formats.jl`.
 
 *Why.* A package that enters an existing analysis environment should not be
 able to change the resolution of anything already there. With no dependencies,
 adding Protoctist cannot downgrade CSV.jl, JSON3.jl or DataFrames.jl in your
 environment. A Tables.jl-shaped escape hatch covers users who want a
-DataFrame: `DataFrame(Protoctist.IO.columntable(Protoctist.IO.read_ecsv(p)))`.
+DataFrame: `DataFrame(Protoctist.Formats.columntable(Protoctist.Formats.read_ecsv(p)))`.
 
 *Cost.* The file readers are written for the formats as pipelines emit them,
 not as general parsers. The limits below list where that matters.
@@ -295,7 +295,7 @@ strip that header.
 
 | DataFrames.jl, any Tables.jl sink
 | NamedTuple of columns
-| `Protoctist.IO.columntable`.
+| `Protoctist.Formats.columntable`.
 |===
 
 == What it deliberately does not do
@@ -350,11 +350,11 @@ tests that pin each decision are:
 
 | D1, D2 | `types.jl` — "TaxPath — ladders, ranks, truncation"
 | D3, D4, D5 | `tree.jl`
-| D4 (counts) | `io.jl` — "counts are never silently zeroed; TSV loads"
+| D4 (counts) | `formats.jl` — "counts are never silently zeroed; TSV loads"
 | D9 | `manifest.jl`
-| D11 | `io.jl` — "jplace keeps every candidate placement"
-| D12 | `io.jl` — "iTOL bundle + run pipeline"
-| D13 | `io.jl` — "ECSV round-trip", "a field containing the separator round-trips"
+| D11 | `formats.jl` — "jplace keeps every candidate placement"
+| D12 | `formats.jl` — "iTOL bundle + run pipeline"
+| D13 | `formats.jl` — "ECSV round-trip", "a field containing the separator round-trips"
 |===
 
 Where a decision fixed an earlier defect (D2's trailing separator, D4's count
