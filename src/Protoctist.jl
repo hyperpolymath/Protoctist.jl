@@ -33,15 +33,15 @@ no extension ships in this release.
 
 - [`Protoctist.Types`](@ref)    — `TaxPath`, `EvidenceReceipt`, `EpiStatus`, …
 - [`Protoctist.Tree`](@ref)     — taxonomy trees, evidence rollup, Newick
-- [`Protoctist.IO`](@ref)       — ECSV, jplace, iTOL bundles
+- [`Protoctist.Formats`](@ref)  — ECSV, jplace, iTOL bundles
 - [`Protoctist.Manifest`](@ref) — run manifests and the merge check
 """
 module Protoctist
 
-# --- submodules (order matters: IO uses Tree) ----------------------------
+# --- submodules (order matters: Formats uses Tree) ----------------------------
 include("types.jl")
 include("tree.jl")
-include("io.jl")
+include("formats.jl")
 include("manifest.jl")
 
 using .Types
@@ -50,7 +50,7 @@ using .Manifest
 
 # --- public API ----------------------------------------------------------
 
-export Types, Tree, IO, Manifest
+export Types, Tree, Formats, Manifest
 export TaxPath,
     EvidenceReceipt,
     EpiStatus,
@@ -78,7 +78,7 @@ One loaded protist run: the source table, the taxonomy tree built from its
 lineages, and the evidence rolled up over that tree.
 """
 struct ProtistRun
-    table::IO.ECSVTable
+    table::Formats.ECSVTable
     tree::Tree.TaxonomyTree
     annot::Tree.NodeAnnot
     ladder::Symbol
@@ -116,7 +116,7 @@ function load_protist_run(
     count = nothing,
     sep::Char = ',',
 )
-    t = IO.read_ecsv(path; sep = sep)
+    t = Formats.read_ecsv(path; sep = sep)
     lincol =
         lineage === nothing ? _detect(t, ("lineage", "taxonomy", "taxpath", "taxon")) :
         String(lineage)
@@ -153,7 +153,7 @@ function _parsecount(s::AbstractString, row::Int, col::AbstractString, path::Abs
     )
 end
 
-function _detect(t::IO.ECSVTable, candidates)
+function _detect(t::Formats.ECSVTable, candidates)
     for c in candidates
         i = findfirst(n -> lowercase(n) == c, t.names)
         i === nothing || return t.names[i]
@@ -190,6 +190,6 @@ also be dropped onto an IQ-TREE phylogeny in iTOL wherever its tip or node
 labels use the same taxon names. The name follows the recovered design.
 """
 export_iqtree_annotated(run::ProtistRun, outdir::AbstractString) =
-    IO.export_itol_bundle(run.tree, run.annot, outdir)
+    Formats.export_itol_bundle(run.tree, run.annot, outdir)
 
 end # module Protoctist

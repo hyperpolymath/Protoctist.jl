@@ -113,10 +113,10 @@ visible.
 
 [source,julia]
 ----
-b = Protoctist.IO.read_jplace("epa_result.jplace")
+b = Protoctist.Formats.read_jplace("epa_result.jplace")
 b.placements                           # every candidate edge for every query
-Protoctist.IO.best_placements(b)       # one per query, highest like_weight_ratio
-Protoctist.IO.write_jplace(b, "filtered.jplace")
+Protoctist.Formats.best_placements(b)       # one per query, highest like_weight_ratio
+Protoctist.Formats.write_jplace(b, "filtered.jplace")
 ----
 
 Every candidate edge is kept, including those for multiplicity names (`nm`).
@@ -179,7 +179,7 @@ recomputed.
 
 | DataFrames.jl, any Tables.jl sink
 | NamedTuple of columns
-| `DataFrame(Protoctist.IO.columntable(Protoctist.IO.read_ecsv(path)))`.
+| `DataFrame(Protoctist.Formats.columntable(Protoctist.Formats.read_ecsv(path)))`.
 |===
 
 Protoctist does not reach back into any of these tools. It reads what they
@@ -233,7 +233,7 @@ branch lengths on the taxonomy tree, and row matching that is linear in rows
 julia --project=. -e 'using Pkg; Pkg.test()'
 ----
 
-100 behaviour tests across types, trees, IO and manifests. They run after
+100 behaviour tests across types, trees, file formats and manifests. They run after
 `Aqua.test_all` (11 checks), which covers method ambiguities, unbound type
 parameters, undefined exports, stale dependencies, compat bounds, type piracy
 and persistent tasks.

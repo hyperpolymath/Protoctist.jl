@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 #
-# Protoctist.IO — the file formats protist pipelines actually exchange.
+# Protoctist.Formats — the file formats protist pipelines actually exchange.
 #
 # Recovered API (design thread, 2026-09-16):
 #   read_ecsv(path)::DataFrame        write_ecsv(df, path)
@@ -12,10 +12,10 @@
 # dependency: the core must load in a bare environment. `read_ecsv` returns an
 # `ECSVTable`; `columntable(t)` turns it into a NamedTuple of vectors, which is
 # the Tables.jl column-table shape every DataFrame constructor accepts, so
-# `DataFrame(Protoctist.IO.columntable(read_ecsv(p)))` gives the design's
+# `DataFrame(Protoctist.Formats.columntable(read_ecsv(p)))` gives the design's
 # DataFrame without imposing the dependency on users who do not want it.
 
-module IO
+module Formats
 
 using ..Types
 using ..Tree: annotate_newick, TaxonomyTree, NodeAnnot
@@ -486,4 +486,4 @@ function export_itol_bundle(tree::TaxonomyTree, annot::NodeAnnot, outdir::Abstra
     return written
 end
 
-end # module IO
+end # module Formats
