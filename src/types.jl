@@ -178,6 +178,11 @@ LineageResidual(n::Integer, novel_ok::Bool, contaminated::Bool) =
 A ranked lineage. `labels` is root-first and may be shorter than the ladder
 (an unresolved lineage), never longer. Missing intermediate ranks are the
 empty string, which is distinct from a rank the path does not reach at all.
+
+A label that is exactly `"NA"` is read as an unfilled rank, the same as the
+empty string. That is what DADA2 `assignTaxonomy` writes where it stopped
+assigning, so its output loads directly: `"Eukaryota;Alveolata;NA;NA"` equals
+`"Eukaryota;Alveolata"`. No PR2 or SILVA taxon is named `NA`.
 """
 struct TaxPath
     labels::Vector{String}
@@ -188,7 +193,9 @@ struct TaxPath
         # Trailing blanks are ranks the path does not reach, not unfilled
         # ones, so they are dropped: SILVA and QIIME 2 write a fully resolved
         # lineage with a closing ';', and "a;b;" must equal "a;b".
-        labs = String[String(x) for x in labels]
+        # DADA2 writes "NA" where it stopped assigning; that is an unfilled
+        # rank, not a taxon named "NA".
+        labs = String[x == "NA" ? "" : String(x) for x in labels]
         while !isempty(labs) && isempty(last(labs))
             pop!(labs)
         end

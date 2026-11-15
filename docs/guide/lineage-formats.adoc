@@ -51,7 +51,7 @@ around each label.
 | Whitespace is stripped. Same as `Eukaryota;TSAR`.
 
 | `Eukaryota;TSAR;NA`
-| `NA` is a label. See link:troubleshooting.adoc#na-taxa[Troubleshooting].
+| `NA` is an unfilled rank, as DADA2 writes it. Same as `Eukaryota;TSAR`.
 |===
 
 [source,julia]
@@ -72,7 +72,7 @@ truncate_to(TaxPath("Eukaryota;TSAR;Alveolata;Ciliophora"), :division)
 | DADA2 `assignTaxonomy` / `addSpecies`
 | Matrix, one column per rank, `NA` where unresolved. PR2 v5's DADA2 file has
   9 levels. SILVA's DADA2 training set gives 6, or 7 with `addSpecies`.
-| Paste each row with `;`, turning `NA` into `""`
+| Paste each row with `;`. `NA` is read as an unfilled rank
   (link:cookbook.adoc#_dada2_and_pr2_to_an_itol_figure[recipe]).
 
 | QIIME 2 `feature-classifier`

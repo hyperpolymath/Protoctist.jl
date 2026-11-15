@@ -55,16 +55,6 @@ Only PR2 v5 and SILVA ladders are defined. See link:lineage-formats.adoc[Lineage
 The file given to `read_jplace` is not jplace. jplace files usually come from
 EPA-ng (`epa_result.jplace`), pplacer (`*.jplace`) or `gappa`.
 
-[[na-taxa]]
-== A taxon called "NA" appears in the tree
-
-No error is raised for this one. A lineage such as
-`Eukaryota;TSAR;Alveolata;NA;NA` has five labels, and "NA" is a legal label, so
-the tree gains two nodes named `NA`, one nested in the other. This happens when
-a DADA2 taxonomy matrix is pasted in R without converting missing values. Use
-the conversion in the link:cookbook.adoc#_dada2_and_pr2_to_an_itol_figure[DADA2 recipe]
-so unresolved ranks become empty fields.
-
 == Reads sit on an interior node
 
 If `annotate_newick` shows a non-zero `count=` on a node that has children, some

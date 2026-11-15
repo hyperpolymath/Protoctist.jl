@@ -149,7 +149,7 @@ recomputed.
 
 | DADA2 `assignTaxonomy`
 | TSV/CSV, one lineage column
-| Join the per-rank columns into one `;` string first, with `NA` as empty.
+| Join the per-rank columns into one `;` string first. DADA2's `NA` is read as an unfilled rank.
   Pass `sep = '\t'` for TSV.
 
 | QIIME 2 `taxonomy.tsv`

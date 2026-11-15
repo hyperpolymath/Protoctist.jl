@@ -24,6 +24,17 @@
     @test TaxPath("Eukaryota;TSAR;Rhizaria;;Cercozoa;").labels ==
           ["Eukaryota", "TSAR", "Rhizaria", "", "Cercozoa"]   # interior blank kept
     @test length(TaxPath("Eukaryota;;;")) == 1
+
+    # DADA2 writes "NA" where it stopped assigning: an unfilled rank, never a
+    # taxon named "NA".
+    dada = TaxPath("Eukaryota;Alveolata;NA;NA")
+    @test dada == TaxPath("Eukaryota;Alveolata")
+    @test length(dada) == 2
+    @test at_rank(dada, PR2_RANKS[3]) === nothing
+    @test TaxPath("Eukaryota;NA;Alveolata").labels == ["Eukaryota", "", "Alveolata"]
+    @test isempty(TaxPath("NA;NA"))
+    # Only the exact R missing-value token is special; other labels are kept.
+    @test TaxPath("Eukaryota;na").labels == ["Eukaryota", "na"]
 end
 
 @testset "EpiStatus and residuals" begin

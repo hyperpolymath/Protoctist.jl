@@ -12,14 +12,13 @@ against the current release.
 
 `dada2::assignTaxonomy` returns a matrix with one row per ASV and one column per
 rank, with `NA` wherever the classifier stopped. Protoctist wants one lineage
-string per row. The only step that needs care is the `NA`: it has to become an
-empty field, which Protoctist reads as an unfilled rank. Written as-is, it
-would become a taxon named "NA".
+string per row. It reads `NA` as an unfilled rank, so the ranks can be joined
+as they are.
 
 .In R, after `assignTaxonomy` (and `addSpecies`, if used)
 [source,r]
 ----
-lineage <- apply(taxa, 1, function(r) paste(ifelse(is.na(r), "", r), collapse = ";"))
+lineage <- apply(taxa, 1, function(r) paste(r, collapse = ";"))
 out <- data.frame(feature = rownames(taxa), lineage = lineage,
                   count = colSums(seqtab.nochim)[rownames(taxa)])
 write.csv(out, "lineages.csv", row.names = FALSE)
@@ -28,7 +27,7 @@ write.csv(out, "lineages.csv", row.names = FALSE)
 This gives rows such as
 
 ----
-"ASV2","Eukaryota;TSAR;Rhizaria;Cercozoa;;Glissomonadida;;;",100
+"ASV2","Eukaryota;TSAR;Rhizaria;Cercozoa;NA;Glissomonadida;NA;NA;NA",100
 ----
 
 where the classifier resolved the order but not the class. Protoctist places

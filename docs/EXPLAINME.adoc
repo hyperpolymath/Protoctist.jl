@@ -252,9 +252,9 @@ strip that header.
 
 | DADA2 `assignTaxonomy` / `addSpecies`
 | A table with one lineage column
-| DADA2 returns one column per rank. Join them first, with `NA` as empty:
-  `apply(taxa, 1, function(r) paste(ifelse(is.na(r), "", r), collapse = ";"))`.
-  Trailing empties from unresolved ranks are then dropped by D2. Write TSV and
+| DADA2 returns one column per rank. Join them first:
+  `apply(taxa, 1, function(r) paste(r, collapse = ";"))`. `NA` is read as an
+  unfilled rank, and trailing unfilled ranks are then dropped by D2. Write TSV and
   load with `sep = '\t'`.
 
 | QIIME 2 `taxonomy.tsv`
