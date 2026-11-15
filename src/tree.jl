@@ -4,13 +4,15 @@
 # Protoctist.Tree — taxonomy trees, evidence rollup, annotated Newick.
 #
 # Recovered API (design thread, 2026-09-16):
-#   build_taxonomy_tree(paths)::Cladistics.Tree
+#   build_taxonomy_tree(paths)::Cladistics.Tree   (not built: see below)
 #   rollup_counts(tree, df, epi_policy)::NodeAnnot
 #   annotate_newick(tree, annot)::String
 #
-# Cladistics.jl owns the general tree algebra. Protoctist does not duplicate
-# it: this module builds the *taxonomy* tree, which is a trie over ranked
-# lineages. Converting `TaxonomyTree` to Cladistics' `Tree` through a
+# Cladistics.jl infers phylogenetic trees (UPGMA, neighbour joining,
+# parsimony) and reads and writes plain Newick; it has no `Tree` type, LCA,
+# rollup or annotated Newick. This module builds the *taxonomy* tree, a trie
+# over ranked lineages, and does its own rollup and annotated Newick.
+# Converting `TaxonomyTree` to Cladistics' `PhylogeneticTree` through a
 # package extension is planned and is not present in this release.
 
 module Tree

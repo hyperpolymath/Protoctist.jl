@@ -32,7 +32,7 @@ coordination = ""
 [related-projects]
 projects = [
   { name = "EpistemicTypes.jl", relationship = "planned-extension", notes = "Receipts, epi_status and the merge check in general form. Shares type names with different fields; one package must own them before the extension." },
-  { name = "Cladistics.jl", relationship = "planned-extension", notes = "General tree algebra and LCA; the extension would convert a TaxonomyTree to a Cladistics tree." },
+  { name = "Cladistics.jl", relationship = "planned-extension", notes = "Phylogenetic inference (UPGMA, neighbour joining, parsimony) and plain Newick I/O over its PhylogeneticTree; the extension would convert a TaxonomyTree to a PhylogeneticTree." },
   { name = "EchoTypes.jl", relationship = "sibling", notes = "Executable companion to the Agda library echo-types." },
   { name = "rsr-template-repo", relationship = "minted-from", notes = "Template parent recorded in VARIANT.a2ml; supplies the CI, governance and machine-readable scaffolding." },
 ]
