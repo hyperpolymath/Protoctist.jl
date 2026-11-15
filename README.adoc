@@ -205,7 +205,7 @@ The Julia types follow these designs; they are not extracted from the proofs.
 == Related packages
 
 * https://github.com/hyperpolymath/EpistemicTypes.jl[EpistemicTypes.jl] — receipts and merge checks in general form
-* https://github.com/hyperpolymath/Cladistics.jl[Cladistics.jl] — general tree algebra, LCA
+* https://github.com/hyperpolymath/Cladistics.jl[Cladistics.jl] — phylogenetic inference and Newick I/O (`PhylogeneticTree`)
 * https://github.com/hyperpolymath/EchoTypes.jl[EchoTypes.jl] — specification tests
 
 Protoctist 0.1 defines its own copies of the few shapes it needs from these,

@@ -21,7 +21,7 @@ libraries rather than duplicating their logic.
 Protoctist is the integration layer over three sibling libraries:
 
 - `EpistemicTypes.jl` — receipts, `epi_status`, residual summaries, merge check
-- `Cladistics.jl`     — LCA, cumulative rollups, annotated Newick
+- `Cladistics.jl`     — phylogenetic inference, `PhylogeneticTree`, Newick I/O
 - `EchoTypes.jl`      — spec tests (test-only; never on a hot path)
 
 Version 0.1 has no dependencies at all. The evidence vocabulary and the
