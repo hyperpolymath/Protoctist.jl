@@ -9,8 +9,7 @@
   under `examples/`, and the test suite runs all of them.
 * link:guide/lineage-formats.adoc[Lineage formats]: the rank ladders, how a
   lineage string is parsed, and what each classifier writes.
-* link:guide/troubleshooting.adoc[Troubleshooting]: every error message, and
-  the one silent pitfall (`NA` as a taxon name).
+* link:guide/troubleshooting.adoc[Troubleshooting]: every error message.
 * link:guide/glossary.adoc[Glossary].
 
 == Design
