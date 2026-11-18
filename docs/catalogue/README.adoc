@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= The field catalogue
+
+A review draft: what Protoctist should offer the field, method by method, and
+a proposal to BIOCEV to review it. Nothing here is implemented because it is
+listed.
+
+* link:protoctist-field-catalogue.adoc[The catalogue] (master file; the parts
+  are under `parts/`).
+* link:protoctist-field-catalogue.pdf[The same as a PDF], built from this
+  source on the date on its cover.
+* `review-sheet.csv`: one row per entry, for a reviewer's marks. Generated.
+* `evidence/obligation_checks.jl` and its `.out`: the tests behind the
+  "TESTED" rows of the obligation register.
+
+== Building
+
+[source,bash]
+----
+docs/catalogue/build.sh
+----
+
+writes `review-sheet.csv` here and the HTML under `docs/catalogue/out/`
+(ignored by git). With `CHROMIUM` set to a Chromium binary it also prints the
+PDF. It needs `asciidoctor`, and network access to cdnjs for MathJax when the
+page is rendered.
+
+[source,bash]
+----
+julia --project=. docs/catalogue/evidence/obligation_checks.jl
+----
+
+re-runs the obligation checks.

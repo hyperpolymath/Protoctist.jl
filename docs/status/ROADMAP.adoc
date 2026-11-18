@@ -16,7 +16,9 @@
 
 == Candidates for the next release
 
-These are open. Their order is not fixed.
+These are open. Their order is not fixed. The
+link:../catalogue/README.adoc[field catalogue] is a review draft of the wider
+scope, and its review is what would fix the order.
 
 Package extensions::
 Load-time integration with EpistemicTypes.jl (receipt verification) and

@@ -1,0 +1,12 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+[[ecosystem]]
+= Julia packages: the tested survey
+
+== Status
+
+The survey was still running when this revision was built. Each candidate
+package is being installed and loaded under Julia 1.13.4 in its own
+environment. Until the results are written here, no catalogue entry should
+be read as saying that a named Julia package works.

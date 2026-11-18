@@ -1,0 +1,219 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+= The catalogue: distances, trees, placement and rollup
+
+== D. Distances and trees
+
+New code in this domain belongs to Cladistics.jl, which today provides Hamming,
+p, Jukes–Cantor and Kimura distances, UPGMA, canonical neighbour joining,
+parsimony, bootstrap, Robinson–Foulds distance, rooting and Newick. Protoctist
+converts between its `TaxonomyTree` and a phylogeny through an extension.
+
+=== PC-D01 · Evolutionary distances
+
+[horizontal]
+p-distance:: stem:[p = n_{\text{diff}} / L] over compared sites.
+Jukes–Cantor:: stem:[d = -\tfrac{3}{4}\ln\!\left(1 - \tfrac{4}{3}p\right)], defined for stem:[p < \tfrac34]. With gamma shape stem:[\alpha]: stem:[d = \tfrac34\alpha\left[(1-\tfrac43 p)^{-1/\alpha} - 1\right]].
+Kimura two-parameter:: With transition share stem:[P] and transversion share stem:[Q]: stem:[d = -\tfrac12\ln(1 - 2P - Q) - \tfrac14\ln(1 - 2Q)].
+Tamura–Nei:: With base frequencies stem:[\pi], stem:[\pi_R = \pi_A+\pi_G], stem:[\pi_Y = \pi_C+\pi_T], purine and pyrimidine transition shares stem:[P_1, P_2]: stem:[d = -k_1\ln w_1 - k_2\ln w_2 - k_3\ln w_3], where stem:[w_1 = 1 - \frac{\pi_R P_1}{2\pi_A\pi_G} - \frac{Q}{2\pi_R}], stem:[w_2 = 1 - \frac{\pi_Y P_2}{2\pi_C\pi_T} - \frac{Q}{2\pi_Y}], stem:[w_3 = 1 - \frac{Q}{2\pi_R\pi_Y}], stem:[k_1 = \frac{2\pi_A\pi_G}{\pi_R}], stem:[k_2 = \frac{2\pi_C\pi_T}{\pi_Y}], stem:[k_3 = 2\left(\pi_R\pi_Y - \frac{\pi_A\pi_G\pi_Y}{\pi_R} - \frac{\pi_C\pi_T\pi_R}{\pi_Y}\right)].
+Paralinear (LogDet):: With stem:[F] the stem:[4\times4] joint frequency matrix of a pair and stem:[\Pi_x, \Pi_y] its marginals: stem:[d = -\tfrac14 \ln \frac{\det F}{\sqrt{\det\Pi_x \det\Pi_y}}].
+Decision:: [.st-adopt]#ADOPT# what Cladistics.jl has; [.st-build]#BUILD# Tamura–Nei, LogDet and the gamma forms there.
+Estate:: Every corrected distance is undefined when a logarithm's argument is not positive. The method refuses with the pair named; it never returns infinity or a substituted value.
+Obligation:: PO-09.
+
+=== PC-D02 · Distances from amplicon-length data
+
+[horizontal]
+What:: With a few hundred sites stem:[p] takes few distinct values, so exact ties in the matrix, and therefore in the join criterion, are common. Takezaki (1998) reports tie trees are frequent for low divergence or few sites.
+Decision:: [.st-core]#CORE# for the report: every distance matrix states its number of sites, distinct values and tied pairs.
+Estate:: `p` is a ratio of integers. Kept as a rational it is exact, and a tree built from it by exact comparisons has no floating-point dependence (PC-D07).
+
+=== PC-D03 · Canonical neighbour joining
+
+[horizontal]
+Criterion:: With stem:[r] clusters and row sums stem:[t_i = \sum_k d_{ik}], join the pair minimising stem:[Q(i,j) = (r-2)\,d_{ij} - t_i - t_j] (Saitou and Nei 1987; Studier and Keppler 1988).
+Branch lengths:: stem:[\ell_{iu} = \tfrac12 d_{ij} + \frac{t_i - t_j}{2(r-2)}], stem:[\ell_{ju} = d_{ij} - \ell_{iu}].
+Update:: stem:[d_{uk} = \tfrac12\left(d_{ik} + d_{jk} - d_{ij}\right)].
+Cost:: stem:[\Theta(r^3)] time, stem:[\Theta(r^2)] memory.
+Decision:: [.st-adopt]#ADOPT# from Cladistics.jl.
+Obligation:: PO-08.
+
+=== PC-D04 · What neighbour joining guarantees
+
+[horizontal]
+Additive input:: If stem:[d] is a tree metric, the minimising pair is a cherry and the tree is recovered.
+Atteson radius:: If stem:[\max_{i,j} |d_{ij} - d^T_{ij}| < \mu(T)/2], with stem:[\mu(T)] the shortest edge, the topology of stem:[T] is returned (Atteson 1999).
+Edge radius:: Within stem:[\varepsilon/4] of a tree metric, every edge of length at least stem:[\varepsilon] is recovered, and this is tight (Mihaescu, Levy and Pachter 2009).
+What it minimises:: Each join most decreases the balanced minimum-evolution length stem:[\ell(T) = \sum_{i<j} 2^{\,1-\tau_{ij}}\, d_{ij}], with stem:[\tau_{ij}] the number of edges between stem:[i] and stem:[j] (Gascuel and Steel 2006).
+Limit measured here:: In MetaManifold issue 303, simulated data sat 9 to 175 times outside the Atteson radius even where every branch was recovered, so the radius does not predict success on such data.
+Decision:: [.st-core]#CORE# as documentation and as a reported diagnostic.
+
+=== PC-D05 · Ties and determinism
+
+[horizontal]
+What:: When the minimum of stem:[Q] is not unique, different valid trees exist, and packages return one depending on input order (Backeljau et al. 1996). RapidNJ and QuickTree return trees with nonzero Robinson–Foulds distance on 17 of 39 matrices in the SwiftNJ repository's own audit.
+Proposed rule:: The pair is the least stem:[(i,j)], stem:[j<i], among all pairs attaining the minimum, in an order of clusters derived from their content (a digest of each sequence), not from their position in the input. The tie count at every join is reported.
+Tested here:: On 300 generated sets of 6 to 24 sequences with 240 sites, every run had at least one tied join. With ties broken by input position, permuting the input changed the exact tree in 61 of 300 runs, and double precision gave a different tree from exact rationals in 34 of 300. That is why the order must come from content and the arithmetic must be stated (`docs/catalogue/evidence/`).
+Decision:: [.st-build]#BUILD# in Cladistics.jl. "The same tree as canonical neighbour joining" is defined only once a tie rule and an arithmetic are fixed.
+Estate:: A join made at a tie is `BELIEF` about the topology: the data support that branch no better than the alternatives. A tree with tied joins says so.
+Obligation:: PO-08.
+
+[[nj-proofs]]
+=== PC-D06 · RapidNJ: pruned exact search
+
+[horizontal]
+Structure:: Beside stem:[D], a matrix stem:[S] whose rows are the rows of stem:[D] sorted by increasing distance, an index map stem:[I] back into stem:[D], and stem:[t_{\max} = \max_k t_k] (Simonsen, Mailund and Pedersen 2008).
+Bound:: Walking row stem:[i] of stem:[S] with running minimum stem:[q_{\min}], the unexamined entries all satisfy stem:[Q(i,j) \ge q_{\text{bound}}(i) = (r-2)\,d_{i,\text{next}} - t_i - t_{\max}]. The row is abandoned once stem:[q_{\text{bound}}(i) \ge q_{\min}].
+Cost:: Worst case stem:[O(r^3)]; inserting a new row costs stem:[O(r\log r)]. Slower on redundant taxa and on distances concentrated in a small range. The later ERapidNJ replaces stem:[t_{\max}] with a per-row maximum.
+Proved:: [.st-proven]#PROVEN# in `epistemic-types`: `qBound-≤-Q` for any ordered group, using only reflexivity, transitivity, monotone addition, antitone negation and scaling by a natural number. No division or multiplication of distances is used. `skip-known` packages it: given a sorted row, a valid running maximum and an accepted exact comparison, nothing in the skipped part beats stem:[q_{\min}].
+Not proved:: That the row insertion maintains the two invariants; the cross-iteration reuse of bounds; the per-row bound of ERapidNJ; any rational instance (the integer instance is complete).
+Decision:: [.st-build]#BUILD# in Cladistics.jl, after experiment E-3.
+Obligation:: PO-08.
+
+=== PC-D07 · SwiftNJ and what a Julia successor should be
+
+[horizontal]
+The preprint:: Christensen, "SwiftNJ: Fast Exact Neighbour Joining via Correctness-Gated Coding Agents", bioRxiv, 29 May 2026, not peer reviewed. Rust, MIT. It is mainly a study of agent-written optimisation; it displays no formulae. What follows is from its source code as read on 18 November 2026.
+Mechanism:: No sorted rows. A dense single-precision matrix scanned eight columns at a time, pruned at two levels. Row: skip row stem:[i] if stem:[d^{\min}_i - (u_i + u_{\max}) > q_{\min}], with stem:[u_i = t_i/(r-2)]. Chunk: skip an eight-column block stem:[c] if stem:[m_{i,c} - u^{\max}_c > q_{\min} + u_i], with stem:[m_{i,c}] the block minimum stored in half precision rounded down.
+Reported:: Geometric-mean runtime 0.565 of RapidNJ's on 59 matrices, on one machine, single-threaded. A constant factor; the worst case stays cubic.
+Its correctness gate:: Up to 2,000 taxa, Robinson–Foulds distance zero against QuickTree. Above that, only agreement of total branch length within an unstated tolerance, and a different code path. No proof and no adversarial tie or rounding tests.
+Our reading:: The row bound is the RapidNJ rule and is covered by the Agda proof in exact arithmetic. The chunk bound is the same inequality with a tighter maximum, so the same proof shape applies; that is an obligation, not a result. In single precision the two sides of the chunk test are rounded independently, so a wrong skip within one unit in the last place of a tie is not excluded by the argument given.
+Proposal:: A Julia implementation in Cladistics.jl with three modes. `exact`: rational or integer distances, every comparison exact, result `FACTIVE`. `certified`: floating search, with every skip and every selection re-checked exactly or by a proved error bound before it is accepted. `fast`: floating throughout, result `BELIEF`, and labelled as such.
+Why build:: Three respects: a tree whose identity does not depend on rounding or input order; a status on the result; and no dependence on one instruction set. Speed parity with the Rust kernel is not claimed and would be measured.
+Decision:: [.st-build]#BUILD#, gated on E-3.
+Obligation:: PO-08.
+
+=== PC-D08 · Variance-weighted and minimum-evolution trees
+
+[horizontal]
+BIONJ:: Same selection; reduction stem:[d_{uk} = \lambda(d_{ik} - \ell_{iu}) + (1-\lambda)(d_{jk} - \ell_{ju})] with stem:[\lambda = \tfrac12 + \frac{\sum_{k}(v_{jk} - v_{ik})}{2(r-2)v_{ij}}] clamped to stem:[[0,1]] (Gascuel 1997).
+FastME:: Searches the balanced minimum-evolution length of PC-D04 by taxon insertion and subtree moves (Desper and Gascuel 2002; Lefort et al. 2015).
+Decision:: [.st-hold]#HOLD#. Neither returns the neighbour-joining tree, and neither was asked for.
+
+=== PC-D09 · Likelihood trees and alignment
+
+[horizontal]
+What:: MAFFT for alignment, trimAl for trimming, IQ-TREE or RAxML-NG for the reference tree, FastTree for large approximate trees, ModelFinder and UFBoot2 for model choice and support.
+Decision:: [.st-wrap]#WRAP#. These are the tools MetaManifold runs. Protoctist records the command, version and digest and reads the tree.
+Licences:: MAFFT BSD; IQ-TREE GPL-2.0; RAxML-NG AGPL-3.0; FastTree GPL-2.0.
+
+=== PC-D10 · Tree comparison and support
+
+[horizontal]
+Robinson–Foulds:: stem:[\mathrm{RF}(T_1,T_2) = |\Sigma(T_1) \,\triangle\, \Sigma(T_2)|] over the sets of nontrivial splits; normalised by stem:[2(n-3)] for binary unrooted trees.
+Bootstrap support:: The share of resampled-column trees containing a split.
+Stability measured:: On real 240-base reads, a tree on 768 of 1,024 sequences agreed with the full tree on 78% of well-supported branches (issue 303, experiment 6). A full amplicon tree is not a stable object.
+Decision:: [.st-adopt]#ADOPT# Cladistics.jl; [.st-core]#CORE# for reporting agreement against a subsample as a standard diagnostic.
+Estate:: A split present in the tree and absent under subsampling is `BELIEF`.
+
+=== PC-D11 · Distances on demand
+
+[horizontal]
+What:: Inserting leaves one at a time by a centroid search asks about stem:[n\log_2 n] distances for an exactly tree-like input instead of stem:[n^2/2]: 1.0 to 1.7 times stem:[n\log_2 n] at 1,024 to 16,384 leaves (issue 303, experiment 2).
+Limit:: Only for additive input. On real reads no lazy view tested reproduced 60% of supported branches.
+Decision:: [.st-hold]#HOLD#. Recorded because it was measured, and because it explains why the recommended route for amplicons is placement.
+
+== E. Phylogenetic placement
+
+=== PC-E01 · The jplace format
+
+[horizontal]
+What:: A reference tree with numbered edges and, per query, candidate placements with edge, likelihood, likelihood weight ratio, distal and pendant lengths (Matsen et al. 2012).
+Decision:: [.st-core]#CORE#. Read and written in 0.1.0 with every candidate kept.
+Proposed:: Keep `nm` multiplicities and the `metadata` block on write; a general JSON reader through an extension.
+Estate:: Dropping `nm` on write is `p-projecting` today; the target is `p-preserving`.
+Obligation:: PO-04.
+
+=== PC-E02 · Likelihood weight ratio
+
+[horizontal]
+Formula:: For a query with placement likelihoods stem:[L_e]: stem:[\mathrm{LWR}_e = \frac{L_e}{\sum_{e'} L_{e'}}], so stem:[\sum_e \mathrm{LWR}_e \le 1] over the candidates a placer reports.
+Decision:: [.st-core]#CORE#. Selection is by weight, never by listing order.
+Obligation:: PO-05, PO-06.
+
+=== PC-E03 · Spread of a placement
+
+[horizontal]
+Formula:: The expected distance between placement locations: stem:[\mathrm{EDPL} = \sum_{a}\sum_{b} \mathrm{LWR}_a\,\mathrm{LWR}_b\, \delta(a,b)], with stem:[\delta] the path distance between the two attachment points.
+Decision:: [.st-core]#CORE#, once branch lengths are carried through an extension.
+Obligation:: PO-22.
+
+=== PC-E04 · Placement mass on a clade, and assignment
+
+[horizontal]
+Formula:: stem:[m_q(C) = \sum_{e \in C} \mathrm{LWR}_{q,e}]. For nested clades stem:[C \subseteq C'], stem:[m_q(C) \le m_q(C')].
+Assignment:: Each query contributes its mass to the taxonomic path of each clade; the assigned lineage is the deepest prefix whose mass meets a threshold.
+Decision:: [.st-core]#CORE#. This is rollup (PC-F01) with fractional counts.
+Obligation:: PO-05.
+
+[[pc-e05]]
+=== PC-E05 · Clade verdicts with stated error
+
+[horizontal]
+Rule:: "Query stem:[q] belongs to clade stem:[C]" is entailed if stem:[m_q(C) \ge 1 - \epsilon], refuted if stem:[m_q(C) \le \epsilon], unresolved between.
+Measured:: With RAxML-EPA and stem:[\epsilon = 0.01] on 200 pruned-and-replaced sequences: 2,375 of 2,388 entailed verdicts right; none wrong among 1,515 on clades of at least 50 references; 7 wrong among 62 on clades of two or three. Reporting the smallest entailed clade of at least 16 references, 2 of 146 queries were wrong.
+Caution:: A fragment from an unrelated sequence can still be placed confidently; the negative control fails. Mass is evidence relative to the reference tree.
+Decision:: [.st-core]#CORE#, gated on E-4 with a reference tree BIOCEV chooses.
+Estate:: `FACTIVE` requires a minimum clade size as a gate, because that is where the measured error vanishes. Otherwise `BELIEF`. Unresolved verdicts are kept, with the clade named.
+Obligation:: PO-05.
+
+=== PC-E06 · From reads to a sample, and zooming
+
+[horizontal]
+What:: A per-sample verdict for a clade from per-read verdicts, with separate bounds for wrongly counted and missed reads. An entailed verdict survives zooming out to an enclosing clade if the same bound on wrongly counted reads holds there; a refuted verdict survives zooming in if the bound on missed reads is no larger.
+Status:: Stated in MetaManifold-Evidence in a module not yet merged. Containment alone is not enough for either law.
+Decision:: [.st-hold]#HOLD# until that proof is merged; then [.st-core]#CORE#.
+
+=== PC-E07 · Comparing samples by their placements
+
+[horizontal]
+Kantorovich–Rubinstein:: For placement distributions stem:[P, Q] on the reference tree: stem:[Z(P,Q) = \int_T \left|P(\tau(y)) - Q(\tau(y))\right|\,\lambda(dy)], with stem:[\tau(y)] the part of the tree below point stem:[y] (Evans and Matsen 2012). Weighted UniFrac is the special case with mass on the tips.
+Edge principal components:: Principal components of the samples-by-edges matrix of mass differences across each edge (Matsen and Evans 2013).
+Decision:: [.st-build]#BUILD#, later, in the placement extension. No Julia implementation was found.
+
+=== PC-E08 · Running placers
+
+[horizontal]
+What:: EPA-ng, RAxML-EPA, pplacer, APPLES-2; gappa for accumulation and summaries.
+Decision:: [.st-wrap]#WRAP#.
+Licences:: EPA-ng AGPL-3.0; gappa GPL-3.0; pplacer GPL-3.0.
+
+== F. Rollup and clade cumulus
+
+=== PC-F01 · Count rollup
+
+[horizontal]
+Formula:: For node stem:[v] with own count stem:[o_v] and children stem:[\mathrm{ch}(v)]: stem:[c_v = o_v + \sum_{w \in \mathrm{ch}(v)} c_w], so stem:[c_{\text{root}} = \sum_v o_v] equals the input total.
+Decision:: [.st-core]#CORE#. In 0.1.0, one linear pass.
+Proved elsewhere:: [.st-proven]#PROVEN# for tip counts in `MetaManifold-WebUI` (`cumulative-conserves-tips`, `child≤parent`). Protoctist's version also places a row at its deepest ancestor in the tree when its full lineage is absent, which that proof does not cover.
+Obligation:: PO-01.
+
+=== PC-F02 · Attribution report
+
+[horizontal]
+What:: Every row that was counted at an ancestor because its lineage was not in the tree, listed with the rank it fell back to.
+Decision:: [.st-core]#CORE#, on the roadmap.
+Estate:: Fall-back is `p-projecting`; the report is its residue.
+
+=== PC-F03 · Evidence rollup
+
+[horizontal]
+Formula:: Each node carries stem:[(f_v, b_v, s_v)], the cumulative counts that are factive, belief and residual, with stem:[f_v + b_v \le c_v]. Rollup sums each component.
+Rule:: Status is never raised by aggregation. A clade's factive count is the sum of factive rows beneath it and nothing else.
+Decision:: [.st-core]#CORE#. In 0.1.0.
+Obligation:: PO-19.
+
+=== PC-F04 · Rollup on a phylogeny
+
+[horizontal]
+What:: The same sums on a tree with branch lengths, giving nodes-by-samples cumulative counts from which Faith's PD and UniFrac follow.
+Decision:: [.st-core]#CORE# through the Cladistics extension.
+
+=== PC-F05 · Taxonomy against phylogeny
+
+[horizontal]
+What:: For each taxon, whether its members form one clade of the phylogeny, and if not, the smallest clade containing them and the intruders.
+Formula:: Taxon stem:[X] is monophyletic in stem:[T] iff stem:[\mathrm{tips}(\mathrm{MRCA}_T(X)) = X].
+Decision:: [.st-core]#CORE# through the extension.
+Estate:: A dispersed taxon is a residual with a witness: the intruding tips are returned.

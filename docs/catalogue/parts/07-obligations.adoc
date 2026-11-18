@@ -1,0 +1,233 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+[[obligations]]
+= Proof obligations
+
+== How to read the register
+
+[.lead]
+An obligation is a statement that must be true for a catalogue entry to be
+trusted. This register says what each one is, how far it has got, and which
+prover would check it.
+
+The statements below were drafted for this catalogue. They are proposals for
+formal statements, written in ordinary mathematical language, and they are
+provisional until a proof assistant accepts a formal version. Where a row says
+[.st-tested]#TESTED#, a program generated cases and checked them: the script
+is `docs/catalogue/evidence/obligation_checks.jl`, its output is beside it, and
+it ran under Julia 1.13.4 on 18 November 2026. A test that passes on two
+thousand cases is not a proof.
+
+Proof work follows the estate's policy: Agda under
+`--safe --without-K` as the source of truth for theory, with Rocq and Lean
+legs owed for a full grade; statements about one function of one repository
+are engineering and carry a status only.
+
+== The register
+
+[cols="1,5,2,3",options="header"]
+|===
+| Id | Statement | Status | Route
+
+| PO-01
+| *Rollup conserves.* For any tree and any rows, the own counts sum to the
+  row total and the root's cumulative count equals it, including rows whose
+  lineage is absent from the tree and are counted at their deepest ancestor
+  present. A child's cumulative count never exceeds its parent's.
+| [.st-tested]#TESTED# 1,000 of 1,000. The tip-count case is
+  [.st-proven]#PROVEN# in MetaManifold-WebUI.
+| Agda, extending `CladeCumulus` with the attribution map. Engineering leg:
+  property test in this repository.
+
+| PO-02
+| *Ladders are respected.* Paths on different ladders are never equal;
+  truncation to a rank is idempotent and monotone in the rank; the common
+  prefix of two paths is a path on the same ladder.
+| [.st-open]#OPEN#. Covered by unit tests, not by a property test.
+| Agda, small. A ladder-indexed vector type makes the first clause hold by
+  construction.
+
+| PO-03
+| *Lineage round trip.* Parsing a lineage string and printing it returns the
+  string up to the documented normalisations (trailing separators), and the
+  original is recoverable from what is kept.
+| [.st-open]#OPEN#
+| Agda over `echo-types`: the normalisation as a retention with a stated
+  residue.
+
+| PO-04
+| *Placement round trip.* Writing a batch and reading it back returns the same
+  placements, with `NaN` for `null` both ways. Stated loss today: `nm`
+  multiplicities and the metadata block.
+| [.st-open]#OPEN#. Unit-tested for the fields kept.
+| Engineering. Property test over generated batches; then remove the loss.
+
+| PO-05
+| *Placement mass.* For each query the weights of its candidates sum to at
+  most one, and the mass on a clade is at most the mass on any clade
+  containing it. The zoom laws of PC-E06 hold under their stated premises.
+| [.st-open]#OPEN#. The sum was checked only on generated input. The zoom laws
+  are stated in an unmerged module of MetaManifold-Evidence.
+| Agda in MetaManifold-Evidence for the zoom laws. The sum is a property of
+  the placer's output and is checked at read time, with a tolerance.
+
+| PO-06
+| *Selection ignores order.* The best placement of a query is a maximum of its
+  weights and does not depend on the order in which candidates are listed.
+| [.st-tested]#TESTED# 500 of 500.
+| Engineering. Property test.
+
+| PO-07
+| *Merge verdict.* Reflexive (a manifest merges with itself), symmetric in its
+  outcome, and complete: every field of the judgement surface that differs
+  appears among the reasons.
+| [.st-tested]#TESTED# for reflexivity and symmetry, 1,000 of 1,000.
+  Completeness [.st-open]#OPEN#.
+| Agda, small, as a decision procedure with a proof that the reason list is
+  empty iff the surfaces are equal.
+
+| PO-08
+| *Exact neighbour joining.*
+  (a) The row bound: every unexamined entry of a sorted row has
+  stem:[Q \ge q_{\text{bound}}].
+  (b) Inserting a new row keeps the row sorted and the running maximum valid.
+  (c) A search pruned by (a) selects the same pair as the full scan under the
+  same tie rule.
+  (d) With the tie rule of PC-D05 over a content-derived order, the tree is a
+  function of the set of sequences.
+  (e) The chunk bound of PC-D07 is a lower bound in exact arithmetic.
+  (f) A floating comparison is accepted only with an exact recheck or a proved
+  error bound.
+| (a) [.st-proven]#PROVEN# in `epistemic-types` for any ordered group.
+  (c) [.st-tested]#TESTED# 300 of 300 runs, 286,709 entries skipped, no
+  violation. (b), (d), (e), (f) [.st-open]#OPEN#. The need for (d) and (f)
+  is itself tested: see PC-D05.
+| Agda in `epistemic-types`: (b) is the missing invariant maintenance, (e) is
+  `qBound-≤-Q` with a per-chunk maximum, and a rational instance closes the
+  gap to p-distances. (d) in Agda over finite sets. (f) by an error-bound
+  lemma, or avoided by rational arithmetic.
+
+| PO-09
+| *Distance domains.* Each corrected distance is defined exactly when its
+  logarithms' arguments are positive, is zero iff the sequences agree on the
+  compared sites, and is increasing in the observed difference.
+| [.st-open]#OPEN#
+| SMT for the domain conditions over the rationals; Agda or Lean for
+  monotonicity.
+
+| PO-10
+| *Hill numbers.* Non-increasing in the order stem:[q]; order zero is
+  richness; every order lies between one and richness.
+| [.st-tested]#TESTED# 2,000 of 2,000 in floating point.
+  [.st-assumed]#ASSUMED# from Hill (1973).
+| Lean with Mathlib, as a consequence of power-mean monotonicity.
+
+| PO-11
+| *UniFrac.* Unweighted and normalised weighted UniFrac lie in stem:[[0,1]],
+  are symmetric, and are zero for identical samples.
+| Numerator at most denominator [.st-proven]#PROVEN# in MetaManifold-WebUI.
+  The rest [.st-open]#OPEN#.
+| Agda, extending `CladeCumulus`.
+
+| PO-13
+| *Centred log-ratio.* Sums to zero; invariant under rescaling; every path
+  states its zero policy.
+| Identities [.st-proven]#PROVEN# in CompositionalDA.jl.
+  [.st-tested]#TESTED# here 2,000 of 2,000.
+| Done in its home repository.
+
+| PO-14
+| *Aitchison distance.* Invariant under rescaling either sample; the distance
+  on a subcomposition never exceeds the distance on the whole.
+| [.st-tested]#TESTED# 2,000 of 2,000 each. [.st-assumed]#ASSUMED# from
+  Aitchison (1982).
+| Lean with Mathlib.
+
+| PO-15
+| *Benjamini–Hochberg.* Adjusted values dominate the raw ones, are at most
+  one, and preserve order.
+| [.st-proven]#PROVEN# in MetaManifold-WebUI and CompositionalDA.jl.
+  [.st-tested]#TESTED# here on exact rationals.
+| Done.
+
+| PO-16
+| *Permutation tests.* The p-value is at least stem:[1/(P+1)]; a term whose
+  labels are fixed within every block is untestable.
+| [.st-proven]#PROVEN# in MetaManifold-WebUI.
+| Done. Open: that the pseudo-F statistic is non-negative for a Euclidean
+  embedding.
+
+| PO-17
+| *Exact quality filter.* Comparison of an expected-error sum with a rational
+  threshold is decidable from integer counts per quality value.
+| [.st-tested]#TESTED# in MetaManifold-WebUI issue 303 against 512-bit
+  arithmetic, 60,000 comparisons.
+| Lean: irreducibility of stem:[10x^{10} - 1] and a sign decision in the
+  number field. Or SMT over algebraic numbers.
+
+| PO-19
+| *Status is never raised.* Factive and belief counts at a node sum to at most
+  its cumulative count; the factive count of a clade is exactly the sum of the
+  factive rows beneath it. "Novel" is reachable only after the contamination
+  gates pass.
+| [.st-tested]#TESTED# 1,000 of 1,000 for the counts. The gate ordering is
+  [.st-open]#OPEN# here and is implemented in EpistemicTypes.jl.
+| Agda in `epistemic-types`, as a homomorphism from rows to nodes that has no
+  map from belief to factive.
+
+| PO-21
+| *Richness estimators.* Chao1 is at least the observed richness; coverage
+  lies in stem:[[0,1]].
+| [.st-tested]#TESTED# 2,000 of 2,000 on exact rationals.
+| SMT.
+
+| PO-22
+| *Placement spread.* The expected distance between placement locations is
+  non-negative and is zero iff all mass is at one point.
+| [.st-open]#OPEN#
+| Agda or Lean, small.
+
+| PO-23
+| *Rarefaction.* Expected richness is non-decreasing in depth and equals the
+  observed richness at full depth.
+| [.st-tested]#TESTED# 2,000 of 2,000 on exact rationals.
+| Lean with Mathlib.
+
+| PO-25
+| *No deceptive export.* Every export path has a declared trope grade, and an
+  export that would put two nodes under one label is refused.
+| [.st-open]#OPEN#. Not implemented.
+| The trope checker, once Protoctist emits its intermediate representation.
+|===
+
+Numbers 12, 18, 20 and 24 are not used.
+
+== What the tests found
+
+Three results from the script are worth a reviewer's attention, because they
+are about amplicon-length data and none is flattering to common practice.
+
+* *Ties are the normal case.* Every one of 300 generated sets of 240-site
+  sequences produced at least one tied join.
+* *Input order changes the tree.* With ties broken by position, as most
+  programs do, shuffling the input changed the tree in 61 of 300 runs. The
+  arithmetic was exact, so this is not rounding.
+* *Rounding changes the tree.* Double precision and exact rational arithmetic
+  gave different trees in 34 of 300 runs on the same input order.
+
+The generated data are not real reads, and the proportions will differ on real
+runs. Experiment E-3 repeats this on data BIOCEV chooses.
+
+== Routes, in order of expected value
+
+. *Row insertion for RapidNJ* (PO-08b) and a *rational instance*, in
+  `epistemic-types`. These turn the existing proof from a rule about one row
+  into a statement about a whole run on p-distances.
+. *Rollup with attribution* (PO-01) and *status homomorphism* (PO-19). These
+  are the two properties every Protoctist figure depends on.
+. *Tie rule* (PO-08d). Small, and it is what makes "the neighbour-joining
+  tree" a well-defined object.
+. *Zoom laws* (PO-05), by merging the module that already states them.
+. *The community formulae* (PO-10, 14, 23) in Lean, where the analysis library
+  makes them short.

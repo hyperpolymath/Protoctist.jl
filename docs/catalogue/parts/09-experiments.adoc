@@ -1,0 +1,106 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+[[experiments]]
+= Experiments before any build
+
+== The rule
+
+[.lead]
+Nothing marked BUILD is started until its experiment has run and reported.
+Each experiment states in advance what result would stop the work.
+
+[cols="1,3,3,3",options="header"]
+|===
+| Id | Question | Method | Stops the work if
+
+| E-1
+| Can the installer keep the core free of dependencies?
+| Three variants in a scratch package: `install` in an extension on the `Pkg`
+  standard library; a separate thin package; printing the `Pkg.add` call for
+  the user to run. Measure load time of `using Protoctist` in each, and run
+  the Aqua checks.
+| The extension variant adds measurable load time or fails an Aqua check, in
+  which case the separate package is used.
+
+| E-2
+| Do type adapters work without piracy?
+| Write two extensions against packages that passed the survey (one tree
+  package, one diversity package). Round-trip a `TaxonomyTree` and a
+  `ProtistRun` through each and compare with Protoctist's own results on the
+  three worked examples in `examples/`.
+| A round trip loses a field that an entry needs, which changes that entry
+  to BUILD or HOLD.
+
+| E-3
+| Is an exact, order-independent neighbour joining worth its cost on real
+  data?
+| On amplicon variants from runs BIOCEV chooses, and on the matrices the
+  SwiftNJ repository ships: count tied joins; compare the trees from exact
+  rationals, double precision and single precision; compare input orders;
+  time canonical, row-pruned and row-and-chunk-pruned searches in Julia
+  against RapidNJ and the SwiftNJ binary.
+| Trees never differ on real data (then `fast` mode is enough and the exact
+  mode is documentation), or the exact mode is slower than is usable at the
+  sizes BIOCEV works with.
+
+| E-4
+| What are the error rates of clade verdicts on a protist reference tree?
+| Repeat the prune-and-replace design of MetaManifold issue 303, experiment 8,
+  on an 18S reference tree BIOCEV supplies, with V4 and V9 fragments, at
+  several thresholds and minimum clade sizes. Include the negative control.
+| The error does not fall with clade size as it did on 16S, in which case
+  `FACTIVE` is never issued for a placement and PC-E05 changes.
+
+| E-5
+| Do the wrapped tools install and run from Julia on the machines BIOCEV uses?
+| Install each binary package on Linux and macOS, run its version command and
+  one small job, record version and digest.
+| A tool has no working binary package on a required platform; the entry then
+  documents a manual install path.
+
+| E-6
+| Does a Julia PERMANOVA and UniFrac agree with the references?
+| Compare against vegan and scikit-bio outputs on public datasets, statistic
+  and permutation p-value, with the same permutations.
+| Disagreement beyond rounding that cannot be explained.
+
+| E-7
+| Is the loss ledger useful to an analyst?
+| Emit the trope graph for the three worked examples and for one BIOCEV run,
+  check it with the trope checker, and ask a reviewer whether the verdict and
+  witness told them anything they did not know.
+| The reviewer says no. The ledger then stays internal.
+|===
+
+== Benchmarks in context
+
+Performance is measured where it will be used, not in isolation.
+
+* *Sizes.* The numbers of variants, samples and reference tips in BIOCEV's
+  own studies set the benchmark sizes. Until those are known the catalogue
+  makes no performance claim.
+* *Whole path.* Time and memory from table to exported tree, as well as each
+  kernel.
+* *Regression gate.* A change that slows a benchmark by more than a stated
+  share fails review, as the recovered design specification asked.
+* *Published with failures.* Results go in the repository beside the script
+  that produced them, including the experiments that stop work.
+
+== What has been run for this draft
+
+[cols="3,4",options="header"]
+|===
+| Run | Result
+
+| Protoctist's own suite, Julia 1.13.4
+| 11 package-shape checks and 115 behaviour tests passed.
+
+| Obligation checks, `docs/catalogue/evidence/obligation_checks.jl`
+| 20 checks. 18 held on every generated case. The two that did not are the
+  findings in <<obligations>>: rounding and input order each change the
+  neighbour-joining tree on tied amplicon-length data.
+
+| Julia package survey
+| See <<ecosystem>>.
+|===

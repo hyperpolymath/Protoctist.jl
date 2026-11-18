@@ -1,0 +1,286 @@
+/* SPDX-License-Identifier: MPL-2.0 */
+/* Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk> */
+/* Stylesheet for the Protoctist field catalogue (screen and print). */
+
+:root {
+  --ink: #14232b;
+  --ink-soft: #40545e;
+  --paper: #fbfaf7;
+  --rule: #d9d5cb;
+  --accent: #0f6b62;
+  --accent-deep: #0a3f3a;
+  --accent-wash: #e6f1ef;
+  --warm: #b4541a;
+  --warm-wash: #fbeee4;
+  --code-bg: #f1efe9;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 15px; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.55;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+#header, #content, #footnotes, #footer {
+  max-width: 58rem;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ---- cover ------------------------------------------------------------ */
+
+#header {
+  max-width: none;
+  min-height: 100vh;
+  padding: 0;
+  background: linear-gradient(160deg, #0a3f3a 0%, #0f5f58 55%, #12433f 100%);
+  color: #f4f1e8;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+  break-after: page;
+}
+
+#header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("img/cover-motif.svg");
+  background-repeat: no-repeat;
+  background-position: right -6rem top -5rem;
+  background-size: 46rem;
+  opacity: 0.5;
+}
+
+#header > h1 {
+  position: relative;
+  margin: 0;
+  padding: 0 4rem;
+  font-family: "Inter Display", Inter, sans-serif;
+  font-size: 3.5rem;
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  max-width: 46rem;
+  color: #f4f1e8;
+}
+
+#header .details {
+  position: relative;
+  padding: 1.4rem 4rem 3.2rem;
+  font-size: 0.95rem;
+  color: #d6e6e2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1.2rem;
+}
+
+#header .details br { display: none; }
+#header .details .author { font-weight: 600; color: #f4f1e8; }
+#header .details .email a { color: #d6e6e2; text-decoration: none; }
+#header .details #revremark { flex-basis: 100%; margin-top: 0.6rem; color: #f0c9a8; }
+
+#toc.toc {
+  margin: 0 0 2rem;
+  page-break-after: always;
+  break-after: page;
+}
+
+#toc #toctitle {
+  font-family: "Inter Display", Inter, sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--accent-deep);
+}
+
+#toc ul { list-style: none; padding-left: 0; margin: 0; }
+#toc ul ul { padding-left: 1.2rem; }
+#toc li { margin: 0.18rem 0; }
+#toc > ul > li { margin-top: 0.7rem; font-weight: 600; }
+#toc > ul > li > ul > li { font-weight: 400; }
+#toc a { color: var(--ink); text-decoration: none; }
+#toc a:hover { color: var(--accent); }
+
+/* ---- body ------------------------------------------------------------- */
+
+#content { padding-top: 2.5rem; padding-bottom: 3rem; }
+
+h1, h2, h3, h4, h5 {
+  font-family: "Inter Display", Inter, sans-serif;
+  color: var(--accent-deep);
+  line-height: 1.2;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+h1.sect0 {
+  font-size: 2.3rem;
+  margin: 0 0 1.2rem;
+  padding: 5rem 0 1rem;
+  border-bottom: 3px solid var(--accent);
+  page-break-before: always;
+  break-before: page;
+  letter-spacing: -0.015em;
+}
+
+h2 { font-size: 1.55rem; margin: 2.6rem 0 0.8rem; padding-top: 0.6rem; border-top: 1px solid var(--rule); }
+h3 { font-size: 1.12rem; margin: 1.9rem 0 0.45rem; color: var(--ink); }
+h4 { font-size: 1rem; margin: 1.3rem 0 0.3rem; color: var(--ink-soft); }
+
+p { margin: 0 0 0.75rem; }
+a { color: var(--accent); }
+
+.lead p, .paragraph.lead > p { font-size: 1.14rem; color: var(--ink-soft); line-height: 1.5; }
+
+code, pre {
+  font-family: "DejaVu Sans Mono", ui-monospace, monospace;
+  font-size: 0.86em;
+}
+code { background: var(--code-bg); padding: 0.06em 0.3em; border-radius: 3px; }
+pre {
+  background: var(--code-bg);
+  padding: 0.8rem 1rem;
+  border-radius: 5px;
+  border-left: 3px solid var(--accent);
+  overflow-x: auto;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+pre code { background: none; padding: 0; }
+
+.listingblock .title, .tableblock caption.title, .imageblock .title {
+  font-weight: 600;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  margin-bottom: 0.3rem;
+  text-align: left;
+}
+
+/* tables */
+table.tableblock {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.8rem 0 1.3rem;
+  font-size: 0.87rem;
+}
+table.tableblock th {
+  background: var(--accent-deep);
+  color: #f4f1e8;
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  font-weight: 600;
+  vertical-align: bottom;
+}
+table.tableblock td {
+  padding: 0.42rem 0.6rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+table.tableblock tr:nth-child(even) td { background: #f5f3ee; }
+table.tableblock p { margin: 0; }
+table.tableblock tr { break-inside: avoid; page-break-inside: avoid; }
+
+/* catalogue entries: horizontal description lists */
+.hdlist table { border-collapse: collapse; width: 100%; margin: 0.2rem 0 1.1rem; font-size: 0.9rem; }
+.hdlist td { padding: 0.24rem 0.6rem 0.24rem 0; vertical-align: top; border-bottom: 1px dotted var(--rule); }
+.hdlist td.hdlist1 {
+  width: 8.2rem;
+  font-weight: 600;
+  color: var(--accent-deep);
+  white-space: nowrap;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 0.36rem;
+}
+.hdlist p { margin: 0; }
+.sect2, .sect3 { break-inside: avoid-page; }
+
+/* admonitions */
+.admonitionblock { margin: 1rem 0 1.3rem; }
+.admonitionblock table { width: 100%; border-collapse: collapse; }
+.admonitionblock td.icon {
+  width: 5.6rem;
+  font-weight: 700;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.75rem 0.7rem;
+  vertical-align: top;
+  color: var(--accent-deep);
+  background: var(--accent-wash);
+  border-left: 4px solid var(--accent);
+}
+.admonitionblock td.content { padding: 0.7rem 1rem; background: var(--accent-wash); font-size: 0.93rem; }
+.admonitionblock.important td.icon, .admonitionblock.warning td.icon, .admonitionblock.caution td.icon {
+  color: var(--warm); background: var(--warm-wash); border-left-color: var(--warm);
+}
+.admonitionblock.important td.content, .admonitionblock.warning td.content, .admonitionblock.caution td.content {
+  background: var(--warm-wash);
+}
+.admonitionblock .title { font-weight: 700; margin-bottom: 0.25rem; }
+.admonitionblock td.content > :last-child, .admonitionblock td.content > :last-child p { margin-bottom: 0; }
+
+/* stem blocks */
+.stemblock { margin: 0.7rem 0 1rem; overflow-x: auto; }
+
+/* status chips used inline: [.st-proven]#PROVEN# etc. */
+span[class^="st-"] {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.05rem 0.42rem;
+  border-radius: 3px;
+  vertical-align: 0.08em;
+  white-space: nowrap;
+}
+.st-proven { background: #dff1e3; color: #17603a; }
+.st-tested { background: #e3ecf8; color: #1f4f8f; }
+.st-open { background: var(--warm-wash); color: var(--warm); }
+.st-assumed { background: #ece9f6; color: #4c3f8f; }
+.st-adopt { background: #dff1e3; color: #17603a; }
+.st-wrap { background: #e3ecf8; color: #1f4f8f; }
+.st-build { background: var(--warm-wash); color: var(--warm); }
+.st-core { background: var(--accent-deep); color: #f4f1e8; }
+.st-hold { background: #e9e7e1; color: #55606a; }
+
+.quoteblock { border-left: 3px solid var(--accent); margin: 1rem 0; padding: 0.2rem 1.1rem; color: var(--ink-soft); }
+.quoteblock .attribution { font-size: 0.85rem; }
+
+ul, ol { padding-left: 1.3rem; margin: 0 0 0.8rem; }
+li p { margin-bottom: 0.25rem; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
+
+#footer { color: var(--ink-soft); font-size: 0.8rem; padding-bottom: 2rem; }
+#footnotes { font-size: 0.85rem; color: var(--ink-soft); }
+
+/* ---- print ------------------------------------------------------------ */
+
+@page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+@page :first { margin: 0; }
+
+@media print {
+  html { font-size: 10.4pt; }
+  body { background: #fff; }
+  #header { min-height: 297mm; height: 297mm; }
+  #header > h1 { padding: 0 20mm; }
+  #header .details { padding: 6mm 20mm 26mm; }
+  #header, #content, #footnotes, #footer { padding-left: 0; padding-right: 0; max-width: none; }
+  #content { padding-top: 0; }
+  h1.sect0 { padding-top: 22mm; }
+  a { color: inherit; text-decoration: none; }
+  #footer { display: none; }
+}

@@ -1,0 +1,203 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+= Proposal to BIOCEV
+
+== The proposal in one page
+
+[.lead]
+We ask the protistology groups at BIOCEV to review this catalogue and tell us
+which methods they need, in which order, and where we have them wrong. In
+return their workflows set the order of work, and they are named in the result.
+
+*What exists.* Protoctist.jl 0.1.0 reads the tables a classifier writes and the
+placements a placer writes, types each lineage by the rank ladder it was
+assigned under (PR2 or SILVA), rolls counts and evidence status up the taxonomy
+without dropping a read, writes annotated Newick and iTOL datasets, and decides
+whether two runs may be pooled. It has no package dependencies. On
+18 November 2026 its suite passed under Julia 1.13.4: 11 package-shape checks
+and 115 behaviour tests.
+
+*What is proposed.* A catalogue of {entry-count} method entries in fourteen
+domains, from read quality to reporting. For each one: the defining formula,
+the Julia package that already provides it if one does, whether we tested that
+package, the decision we propose (adopt, wrap, build, or hold), the repository
+that would own any new code, and a formal statement of what must be true for
+the result to be trusted. Protoctist stays small. It becomes the single import
+that offers to install the rest, and adapts their types to one vocabulary.
+
+*What is different.* Three things that other toolkits in this field do not
+offer together:
+
+. *Evidence is data.* A node that says "present" also says according to which
+  reference, under which thresholds, and whether the evidence entails the claim
+  or only supports it. This follows two developments checked in Agda.
+. *Exactness is stated.* Where a decision can be made in exact arithmetic it
+  is, and where floating point enters a comparison the result is marked as
+  supported rather than established. The neighbour-joining search rule that
+  RapidNJ and its successors rely on is proved for exact arithmetic
+  (<<nj-proofs>>).
+. *Absence is visible.* A method that is not offered fails by name. Nothing is
+  substituted silently.
+
+*What we ask.* About four hours of a reviewer's time for the first pass
+(<<review-process>>), and, if the review is favourable, a small set of your
+own runs to serve as the acceptance tests.
+
+*What BIOCEV gets.* Priority over the order of work and early builds; named
+authorship; standing as the reference validation site; and a seat in the
+project's governance (<<biocev-benefits>>).
+
+[[review-process]]
+== How the review works
+
+Each entry carries an identifier (`PC-` followed by a domain letter and a
+number). We ask for three marks per entry, and nothing longer unless you want
+to write it.
+
+[cols="1,3",options="header"]
+|===
+| Mark | Meaning
+
+| *Need*: `now` / `later` / `never`
+| Whether your group would use this method through Protoctist. `never` is a
+  useful answer: it removes work.
+
+| *Decision*: `agree` / `differ`
+| Whether the proposed decision (adopt an existing package, wrap an external
+  tool, build natively, hold) is the right one. If you differ, name the tool or
+  package you would use instead.
+
+| *Correct*: `yes` / `no` / `unsure`
+| Whether the formula, the default and the stated limits match how your group
+  applies the method. This is where a specialist's eye matters most.
+|===
+
+Two further questions sit outside the entries:
+
+* *What is missing?* A method your group uses that the catalogue does not list.
+* *Which defaults?* The primers, reference release, thresholds and filters you
+  apply, so that they can ship as a named profile (<<biocev-benefits>>).
+
+The catalogue source is plain text under version control. Comments are welcome
+as issues on the repository, as an annotated copy of this file, or by email.
+A review sheet with one row per entry is generated from the same source
+(`docs/catalogue/review-sheet.csv`).
+
+[[biocev-benefits]]
+== What BIOCEV gets
+
+The four commitments below are offered by the project's owner. They take
+effect when BIOCEV accepts them, and each names what it changes.
+
+=== Priority and early access
+
+Your workflows decide the order in which the extensions are built. The first
+integration targets are the ones in the MetaManifold reference-tree session:
+PR2 or SILVA lineages, placement on a reference tree, and an annotated tree at
+the end. You receive pre-release builds and the acceptance-test results for
+each, before a version is tagged.
+
+_The advantage:_ the tools arrive shaped for your pipeline first. Groups that
+adopt later adapt to defaults you set.
+
+=== Authorship and citation
+
+Reviewers and contributors are named in `CITATION.cff` from the first release
+their work touches. They are offered co-authorship of the software paper, and
+of any methods paper that their data, review or analysis shapes. Authorship
+follows contribution: review that changes the design counts.
+
+_The advantage:_ credit in the citable record for work that is usually
+invisible.
+
+=== Reference-lab status
+
+BIOCEV is named as the reference validation site. Datasets you choose to share
+become the benchmark corpus that every release must pass, and your defaults
+ship as a named profile, so that an analysis can state that it used the BIOCEV
+profile at a given version.
+
+This needs a short data-sharing understanding before any dataset is used:
+which runs, under what licence, and whether they may be redistributed or only
+referenced by digest. Nothing is taken into the repository without it.
+
+_The advantage:_ the field's Julia tooling is validated against your data and
+your conventions, and results from other groups become comparable to yours
+because they are judged under the same recorded conditions.
+
+=== A seat in governance
+
+One reviewer or maintainer seat, with a say over the catalogue's priorities
+and over the acceptance tests a release must pass. Accepting it changes
+`docs/GOVERNANCE.adoc` and `docs/MAINTAINERS.adoc` in the repository. Those
+files are not changed until you accept.
+
+_The advantage:_ the direction of the tool cannot drift away from the needs of
+working protistologists without your agreement.
+
+== What you can do with it today
+
+These work now, and each is covered by the test suite.
+
+[source,julia]
+----
+using Protoctist
+
+run = load_protist_run("merged.csv")      # lineages + counts, PR2 ladder
+clade_cumulus(run)[1:3]                   # cumulative reads per clade
+export_iqtree_annotated(run, "out/")      # Newick (NHX) + three iTOL datasets
+
+b = Protoctist.Formats.read_jplace("epa_result.jplace")
+Protoctist.Formats.best_placements(b)     # one per query, by likelihood weight ratio
+
+validate_merge(manifest_a, manifest_b)    # may these two runs be pooled, and if not, why
+----
+
+The limits are stated in the repository: the jplace reader is not a general
+JSON parser, the exported tree is the taxonomy the lineages span and carries no
+branch lengths, and row matching is linear in rows × depth × siblings.
+
+== What is not being claimed
+
+* That Protoctist performs classification, denoising, alignment or tree
+  inference. It does not, and under this proposal it still will not: those
+  stay in the packages and tools that do them.
+* That any proposed extension exists. The catalogue marks each as proposed.
+* That a tested package is correct. A smoke test shows that it installs, loads
+  and returns a result on a small input.
+* That the proofs cited cover an implementation. Each proof covers the
+  statement written beside it. <<obligations>> lists what is open.
+* Any performance figure for Protoctist. None has been measured for the
+  proposed extensions.
+
+== Phases and gates
+
+No dates are promised. Each phase ends at a gate, and the next does not start
+until the gate passes.
+
+[cols="1,3,3",options="header"]
+|===
+| Phase | Work | Gate
+
+| 0. Review
+| BIOCEV marks the catalogue. The order of work is fixed from the marks.
+| A marked review sheet, and agreement on the first three extension targets.
+
+| 1. Experiments
+| The empirical experiments in <<experiments>>: installer design, type
+  adapters against two existing packages, neighbour-joining exactness, and
+  placement verdict error rates on a reference tree you choose.
+| Each experiment reports a result, including the ones that fail. A failed
+  experiment changes the catalogue entry; it does not get hidden.
+
+| 2. First extensions
+| The installer and the first three extensions, with your runs as acceptance
+  tests.
+| The acceptance tests pass on your data, on your machine, from a clean
+  install.
+
+| 3. Release and paper
+| Registration in the Julia General registry and the software paper.
+| The release audit gate in `docs/AUDIT.adoc`.
+|===

@@ -1,0 +1,85 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+[[beyond]]
+= Work outside this repository
+
+[.lead]
+Most of what this catalogue proposes does not belong in Protoctist. This list
+is what would need to happen elsewhere, so that it can be tracked there.
+
+[cols="2,4,2",options="header"]
+|===
+| Repository | Item | Depends on
+
+| `hyperpolymath/Cladistics.jl`
+| Tie rule over a content-derived order with a tie report (PC-D05). Row-pruned
+  and chunk-pruned exact search with `exact`, `certified` and `fast` modes
+  (PC-D06, PC-D07). Tamura–Nei, LogDet and gamma distances with domain
+  refusal (PC-D01). Its README says `Pkg.add("Cladistics")`; whether the name
+  is registered is reported in <<ecosystem>>.
+| E-3
+
+| `hyperpolymath/epistemic-types`
+| Row-insertion invariant; a rational instance; the chunk bound; the status
+  homomorphism for rollup (PO-08b, PO-08e, PO-19).
+| None
+
+| `hyperpolymath/EpistemicTypes.jl`
+| Agree which package owns `Standpoint`, `Warrant` and `ProjectionY` before
+  the extension is written. Protoctist's `Lineage*` types exist because the
+  names collide.
+| Owner decision
+
+| `hyperpolymath/ResidualEvidenceTypes.jl`
+| A lineage-shaped case: candidates below a rank, so that
+  `LineageResidual` is derived from `decide` and not hand-filled.
+| None
+
+| `hyperpolymath/CompositionalDA.jl`
+| Extension point for a `ProtistRun`; Aitchison distance exposed for PC-H03.
+| E-2
+
+| `metadatastician/ZeroInflatedCounts.jl`
+| Implementation against its specification before PC-I04 leaves HOLD.
+| Its own gates
+
+| `metadatastician/MetaManifold-Evidence`
+| Merge the two-sided counting module so that PC-E06 can cite it.
+| Owner review
+
+| `hyperpolymath/MetaManifold-WebUI` (fork)
+| Consume Protoctist for lineages, rollup and exports in place of local code,
+  as the recovered design intended. Experiments E-3 and E-4 are the ones its
+  issue 303 lists as not done.
+| Phase 2
+
+| `hyperpolymath/mathesis`
+| Claim pins for obligations as they are proved. Assess the two candidate
+  bridges in <<estate>>.
+| Proofs landing
+
+| `hyperpolymath/trope-checker`
+| A front-end note: how an analysis pipeline lowers to the trope
+  representation (PC-M05).
+| E-7
+
+| `hyperpolymath/gv-clade-index`
+| Protoctist's clade is still unassigned in its identity file.
+| Owner decision
+
+| A new repository
+| Native read processing, only if the review marks PC-B04 `now`. Minting a
+  repository is an owner action and is not proposed here.
+| Review
+|===
+
+== Loose ends found in this repository
+
+These were noticed while preparing the draft and are not part of the proposal.
+
+* The README says 100 behaviour tests; the suite runs 115.
+* The anchor file's list of allowed implementation languages does not
+  include Julia, which looks like template residue.
+* The contamination strip in the iTOL export conveys its meaning by colour
+  alone.
