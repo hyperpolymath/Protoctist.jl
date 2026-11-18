@@ -16,6 +16,9 @@
 
 * link:EXPLAINME.adoc[EXPLAINME]: the design decisions, what each one prevents,
   and how to check the claims yourself.
+* link:catalogue/README.adoc[Field catalogue]: a review draft of what Protoctist
+  should offer the field, with formulae, proof obligations and a tested survey
+  of Julia packages; and the proposal to BIOCEV to review it.
 * link:status/ROADMAP.adoc[Roadmap]: the current release and the candidates for
   the next.
 * link:decisions/0000-template.adoc[Decision records]: the template for new ADRs.

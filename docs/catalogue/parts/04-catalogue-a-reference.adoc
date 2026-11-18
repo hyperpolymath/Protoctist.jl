@@ -1,0 +1,152 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+[[catalogue]]
+= The catalogue: references, reads and assignment
+
+[.lead]
+Each entry gives the method, its defining formula, the proposed decision, the
+repository that would own any new code, what the formal work adds, and the
+obligation that must hold. Whether a Julia package for it exists and was
+tested is in <<ecosystem>>; the obligations are collected in <<obligations>>.
+
+== A. Lineages, ladders and reference frames
+
+=== PC-A01 · Ladder-typed lineages
+
+[horizontal]
+What:: A lineage is a sequence of labels read against a named rank ladder. PR2 version 5 has nine ranks (domain, supergroup, division, subdivision, class, order, family, genus, species). Version 4 had eight; version 5.0.0 renamed kingdom to domain and inserted subdivision.
+Definition:: A path is stem:[p = (\ell, a_1,\dots,a_k)] with ladder stem:[\ell] and stem:[k \le |\ell|]; stem:[a_i = \varnothing] marks an unfilled rank. Equality requires equal ladders.
+Decision:: [.st-core]#CORE#. Exists in 0.1.0 for `:pr2` and `:silva`.
+Proposed:: Ladders as data, with a version: `:pr2v4`, `:pr2v5`, `:silva138`, `:silva144`, `:eukaryome`. A ladder is declared, never inferred from the number of fields.
+Estate:: Misreading a ladder is `p-misbinding`, a deceptive effect; the type prevents it.
+Obligation:: PO-02.
+
+=== PC-A02 · Reference database registry
+
+[horizontal]
+What:: A record for each reference: name, release, date, ladder, licence, size, digest, and source URL. PR2 5.1.1; SILVA 144 (26 August 2026; its eukaryote sequences are included but stated by SILVA to be uncurated); EukRibo 2.0; EUKARYOME 2.1; UNITE 10.0; MIDORI2; GTDB R232 for prokaryote contaminants.
+Decision:: [.st-core]#CORE# for the registry and digest check. Fetching is an explicit command; nothing downloads at load time.
+Estate:: The registry entry is the `source`, `version` and `ladder` of a standpoint. Two runs against different releases are not poolable without a recorded reason (PC-M02).
+Obligation:: PO-07.
+
+=== PC-A03 · Frameworks without a fixed ladder
+
+[horizontal]
+What:: EukRibo and UniEuk give a taxonomy string of variable depth with supergroup and two taxogroup fields, not a fixed rank ladder. Eukaryote classification follows Adl et al. 2019 and Burki et al. 2020; no successor revision was found as of November 2026.
+Decision:: [.st-core]#CORE#: a `:free` ladder kind whose paths compare by prefix only and have no `at_rank`.
+Estate:: Asking a free-ladder path for a rank fails by name. Padding it to a ladder would be `p-falsifying`.
+Obligation:: PO-02.
+
+=== PC-A04 · Cross-ladder comparison
+
+[horizontal]
+What:: Comparing a PR2 lineage with a SILVA one.
+Decision:: [.st-hold]#HOLD#. Protoctist refuses to mix ladders, and its canon says it is not a PR2-to-SILVA mapper.
+If the review asks:: A crosswalk would be a partial map between ladders with an explicit grade per rank (`p-projecting` where a rank has no counterpart) and would live outside the core. It needs a curated table from specialists, which is why it is a question for BIOCEV and not a default.
+
+=== PC-A05 · Classifier conventions
+
+[horizontal]
+What:: QIIME 2 rank prefixes (`d__`, `p__`), DADA2 `NA`, trailing separators, `_X` padding in PR2 for unnamed intermediate ranks, `incertae sedis`.
+Decision:: [.st-core]#CORE#. `NA` and trailing separators are handled in 0.1.0; prefixes and `_X` padding are on the roadmap as options at load time.
+Estate:: Each normalisation is a declared `p-attenuating` step; the original string is kept so the map is recoverable (echo).
+Obligation:: PO-03.
+
+== B. Reads and sequence processing
+
+Protoctist does not process reads today. These entries decide who should.
+
+=== PC-B01 · Sequence and quality I/O
+
+[horizontal]
+What:: FASTA, FASTQ, alignments.
+Decision:: [.st-adopt]#ADOPT# BioSequences, FASTX and BioAlignments from BioJulia.
+Owner:: Extension `ProtoctistBioSequencesExt`: content-addressed feature identifiers and sequence columns in a `ProtistRun`.
+
+=== PC-B02 · Expected-error filtering, exact
+
+[horizontal]
+Formula:: stem:[\mathrm{EE} = \sum_i 10^{-Q_i/10}], and a read passes if stem:[\mathrm{EE} \le \tau].
+Exact form:: With stem:[\theta = 10^{-1/10}], a root of the irreducible stem:[10x^{10}-1], stem:[\mathrm{EE} = \sum_{r=0}^{9} c_r \theta^{r}] with rational stem:[c_r]. Comparison with a rational stem:[\tau] is decided exactly from integer counts per quality value.
+Decision:: [.st-build]#BUILD#, small. Better in one respect: the decision is exact at the threshold, where double precision is measurably wrong on constructed reads and order-dependent on 98.1% of real ones.
+Owner:: The read-processing repository if created; otherwise an optional module beside PC-B01.
+Estate:: An exact comparison may be `FACTIVE`; a floating one is `BELIEF`.
+Obligation:: PO-17. [.st-tested]#TESTED# in MetaManifold-WebUI issue 303; not proved.
+
+=== PC-B03 · Primer and adapter trimming
+
+[horizontal]
+What:: Semi-global alignment of primers with an error rate; cutadapt is the reference. Primer sets come from pr2-primers; V4 with TAReuk454FWD1 and TAReukREV3, V9 with 1389F and 1510R.
+Decision:: [.st-wrap]#WRAP# cutadapt (MIT) as the pipeline already does; [.st-core]#CORE# for a primer registry keyed to PC-A02.
+
+=== PC-B04 · Denoising to amplicon sequence variants
+
+[horizontal]
+What:: DADA2 learns a per-run error model and partitions reads into exact variants.
+Formula:: For sequence stem:[i] with abundance stem:[a_i] and a candidate parent stem:[j] with abundance stem:[n_j], the error rate is stem:[\lambda_{ji} = \prod_{l} p(j(l) \to i(l), q_i(l))] and the abundance p-value is stem:[p_A = \frac{1}{1-\rho_0}\sum_{a \ge a_i} \rho_a], with stem:[\rho_a] the Poisson density of mean stem:[n_j\lambda_{ji}]. A new partition is formed when stem:[p_A] falls below stem:[\Omega_A].
+Decision:: [.st-wrap]#WRAP# through R for now, which is what MetaManifold does. [.st-hold]#HOLD# on a native Julia denoiser until BIOCEV marks it `now`.
+Why hold:: A native denoiser is the largest single piece of work in this catalogue and must reproduce DADA2 on real runs before it is offered. Removing the R dependency is the gain.
+
+=== PC-B05 · Clustering to operational units
+
+[horizontal]
+What:: swarm: single linkage with local threshold stem:[d = 1], broken at abundance valleys. VSEARCH: greedy centroid clustering at an identity threshold. UNOISE: abundance-skew denoising.
+Decision:: [.st-wrap]#WRAP# swarm (AGPL-3.0) and VSEARCH (GPL-3.0 or BSD-2).
+Estate:: Clustering is `p-fusing`. The identity threshold belongs in the manifest; a 97% run and a 99% run are refused by `validate_merge` today.
+
+=== PC-B06 · Chimera detection
+
+[horizontal]
+What:: UCHIME scores a query against two parents by three-way alignment; DADA2 tests whether a variant is an exact bimera of more abundant ones.
+Decision:: [.st-wrap]#WRAP# VSEARCH; DADA2's test with PC-B04.
+
+=== PC-B07 · Copy number and intragenomic variation
+
+[horizontal]
+What:: rDNA copy number varies by orders of magnitude across protists and scales with cell size, so read share is not cell share. Intragenomic variants inflate variant counts.
+Decision:: [.st-hold]#HOLD# on correction. [.st-core]#CORE# for a visible caveat: an abundance figure states that it counts reads.
+Estate:: Reads to cells is a claim about a latent quantity. Without a bound on copy number it is `UNRESOLVED` (residual evidence): presence is established, quantity is not.
+
+== C. Taxonomic assignment
+
+Protoctist consumes assignments. It does not make them.
+
+=== PC-C01 · Naive Bayesian classification
+
+[horizontal]
+Formula:: For a query with word set stem:[W] (8-mers) and genus stem:[G] with stem:[M] training sequences of which stem:[m(w)] contain word stem:[w], and stem:[P_w = \frac{n(w) + 1/2}{N + 1}] over all stem:[N] training sequences: stem:[P(w \mid G) = \frac{m(w) + P_w}{M + 1}] and stem:[\log P(S \mid G) = \sum_{w \in W} \log P(w \mid G)]. Confidence is the share of 100 bootstrap replicates, each on one eighth of the words, that return the same taxon.
+Decision:: [.st-wrap]#WRAP# DADA2 `assignTaxonomy`, IDTAXA or VSEARCH SINTAX. Reading their output is in 0.1.0.
+Estate:: The bootstrap value is the warrant's score; the threshold is the policy. Below threshold at a rank the row is `COLLAPSED` to the deepest rank that passes, and what lies below is the residual.
+Obligation:: PO-19.
+
+=== PC-C02 · Alignment-based assignment
+
+[horizontal]
+What:: Global alignment against a reference at an identity threshold; lowest common ancestor of the hits within a margin.
+Formula:: stem:[\mathrm{LCA}(H) = \text{longest common prefix of } \{p_h : h \in H\}], with stem:[H] the hits within stem:[\delta] of the best identity.
+Decision:: [.st-wrap]#WRAP# VSEARCH for the alignment; [.st-core]#CORE# for LCA over typed paths.
+Estate:: LCA is `p-projecting` with a known residual: the number of named candidates below the LCA is exactly `LineageResidual.named_candidates`.
+Obligation:: PO-02, PO-19.
+
+=== PC-C03 · Placement-based assignment
+
+[horizontal]
+What:: Assign each query the taxonomy of the clades its placement mass falls in. See PC-E04.
+Decision:: [.st-core]#CORE#, built on PC-E.
+
+=== PC-C04 · Agreement between classifiers
+
+[horizontal]
+What:: Two classifiers, or two references, on the same features.
+Formula:: Per rank stem:[r], agreement stem:[A_r = \frac{|\{f : a_r(f) = b_r(f) \ne \varnothing\}|}{|\{f : a_r(f) \ne \varnothing \wedge b_r(f) \ne \varnothing\}|}], reported with the three other cells (only one assigned, neither assigned) and never as a single number.
+Decision:: [.st-core]#CORE#, same ladder only.
+Estate:: Disagreement at a rank is a residual with two named candidates.
+
+=== PC-C05 · Novel-lineage admissibility
+
+[horizontal]
+What:: A feature that classifies confidently to a deep rank and to nothing below it may be a novel lineage or an artefact.
+Decision:: [.st-core]#CORE# for the record; no detector is proposed.
+Estate:: `LineageResidual.novel_ok` is set only after the contamination and chimera gates pass, as in EpistemicTypes.jl. "Novel" is never a default reading of "unassigned".
+Obligation:: PO-19.

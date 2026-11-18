@@ -1,0 +1,202 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+= Architecture
+
+== One import, many owners
+
+[.lead]
+Protoctist stays what it is: types, file formats, rollup, manifests and
+exports, with no dependencies. Everything else arrives through two mechanisms
+that leave that core untouched.
+
+The repository's boundary is recorded in its canon and is kept. Protoctist is
+not a classifier, not a phylogeny tool, not a PR2-to-SILVA mapper, and not
+EpistemicTypes.jl. "The most capable Julia resource for the field" is reached
+by composition, and the boundary is what makes the composition trustworthy:
+every result names the tool that produced it.
+
+[cols="1,2,2",options="header"]
+|===
+| Mechanism | What it does | What it costs the user
+
+| *Package extensions*
+| When a supported package is loaded beside Protoctist, an extension
+  activates and converts between that package's types and Protoctist's
+  (`TaxonomyTree`, `TaxPath`, placements, run manifests). Julia loads
+  extensions automatically; nothing is imported until the user imports it.
+| Nothing until used. `using Protoctist` alone resolves no other package and
+  cannot change a version already in the environment.
+
+| *The installer*
+| A register maps each capability to the packages that provide it.
+  `Protoctist.plan(:placement)` returns what would be installed, as data.
+  `Protoctist.install(:placement)` installs it, and only then.
+| An explicit call. Nothing is installed unasked, nothing is fetched at load
+  time, and no usage data leaves the machine.
+|===
+
+[source,julia]
+.Proposed surface. None of this exists in 0.1.0.
+----
+using Protoctist
+
+Protoctist.capabilities()            # the register: capability, provider, status
+Protoctist.plan(:diversity)          # => [(name = "Diversity", uuid = ..., compat = "0.5"), ...]
+Protoctist.install(:diversity)       # explicit; records what was resolved
+Protoctist.install(:all)             # the meta-package behaviour, on request
+
+using Diversity                      # the extension ProtoctistDiversityExt activates
+hill(run, 0:2)                       # Protoctist's ProtistRun, Diversity's estimator
+----
+
+Three design points need an experiment before they are fixed (<<experiments>>,
+E-1 and E-2):
+
+* whether `install` can live in an extension on the `Pkg` standard library, so
+  that the core keeps no dependency at all, or must be a separate thin package;
+* whether an extension can re-export a provider's function under Protoctist's
+  vocabulary without type piracy, which the Aqua suite checks;
+* how the resolved versions are written into the run manifest, so that the
+  packages that produced a result are part of what a pooling decision compares.
+
+== The five decisions
+
+Every catalogue entry ends in one of five decisions.
+
+[cols="1,4",options="header"]
+|===
+| Decision | Meaning
+
+| [.st-core]#CORE#
+| Within Protoctist's own remit: types, formats, rollup, manifests, exports.
+  Built here.
+
+| [.st-adopt]#ADOPT#
+| A maintained Julia package provides it. Protoctist offers to install that
+  package and adapts types through an extension. Nothing is re-implemented.
+
+| [.st-wrap]#WRAP#
+| The reference implementation is an external program available to Julia as a
+  binary artefact package (a JLL) or through a command. Protoctist installs or
+  locates it, runs it with recorded parameters, and reads what it wrote.
+
+| [.st-build]#BUILD#
+| Nothing adequate exists in Julia, or what exists fails a stated need. A
+  native implementation is proposed in a named owner repository, never in
+  Protoctist's core, and only after the experiment listed in the entry.
+
+| [.st-hold]#HOLD#
+| Deliberately not offered yet. The entry stays in the register so that a
+  request fails by name with the reason, instead of falling back to something
+  else.
+|===
+
+The rule for [.st-build]#BUILD# is the one the request for this catalogue set:
+build again only where we can do better, and say in what respect. Each such
+entry states the respect (exactness, evidence, a missing capability, or removal
+of an R or Python dependency) and the experiment that would show it.
+
+== Where new code lives
+
+New algorithms belong to the repository that owns their subject. Protoctist
+integrates them.
+
+[cols="2,3,2",options="header"]
+|===
+| Owner repository | Subject | Licence
+
+| `hyperpolymath/Protoctist.jl`
+| Lineages and ladders, table and placement formats, rollup, manifests,
+  exports, the capability register, the extensions.
+| MPL-2.0
+
+| `hyperpolymath/Cladistics.jl`
+| Distances, neighbour joining and its fast exact variants, tree comparison,
+  rooting, support.
+| MPL-2.0
+
+| `hyperpolymath/EpistemicTypes.jl`
+| Receipts, epistemic status per row, merge verdicts in general form.
+| MPL-2.0
+
+| `hyperpolymath/ResidualEvidenceTypes.jl`
+| Candidate worlds, `decide` and `identify`: what a residual establishes.
+| MPL-2.0
+
+| `hyperpolymath/CompositionalDA.jl`
+| Log-ratio transforms with explicit zero policies, ALDEx2, ANCOM-BC,
+  Benjamini–Hochberg.
+| MPL-2.0
+
+| `metadatastician/ZeroInflatedCounts.jl`
+| Hurdle and zero-inflated negative binomial models. Specification only at
+  present.
+| MPL-2.0
+
+| A new repository, if the review asks for it
+| Read processing (quality filtering, denoising, chimera removal) in native
+  Julia. Not started, and not proposed unless BIOCEV marks it `now`.
+| MPL-2.0
+|===
+
+[IMPORTANT]
+.A licence boundary that shapes the design
+====
+MetaManifold-WebUI ships as a whole under AGPL-3.0-or-later, because its
+server is; its README states that individual core, pipeline, analysis and
+frontend files carry MPL-2.0 headers. MetaManifold-Evidence is AGPL-3.0.
+Protoctist and its sibling libraries are MPL-2.0. This catalogue proposes no
+transfer of code from either. It draws on published formulae, file formats,
+measured results and proof statements, and any implementation here is written
+against the published definition. Whether an MPL-headed file is ever reused
+is a decision for the copyright holders, made by hand, file by file.
+
+Several external tools the field relies on are themselves copyleft (EPA-ng,
+RAxML-NG and swarm are AGPL-3.0; IQ-TREE, FastTree, gappa and pplacer are GPL).
+A [.st-wrap]#WRAP# entry runs such a tool as a separate program at the user's
+request and reads its output files. It does not link or redistribute it. Each
+entry states the tool's licence so that the reviewer can see it; licences were
+taken from each project's own repository and should be re-checked when a
+version is pinned.
+====
+
+== What the user sees
+
+A protistologist should not need to know any of the above. The intended
+surface is three layers, and only the first is required reading.
+
+[cols="1,3",options="header"]
+|===
+| Layer | For whom
+
+| *Workflows*: `load_protist_run`, `clade_cumulus`, `export_iqtree_annotated`,
+  and their proposed successors for placement, diversity and comparison.
+| Anyone with a table and a question. Defaults come from a named profile.
+
+| *Methods*: the catalogue entries, each callable by name with explicit
+  parameters, each refusing input outside its stated conditions.
+| The analyst who needs to choose and to justify the choice.
+
+| *Evidence*: receipts, status, residuals, merge verdicts, proof references.
+| The reviewer, the methods section, and the biomathematician.
+|===
+
+== Three aspects that cut across every entry
+
+*Security and privacy.* The installer resolves packages by UUID from the
+registry the user has configured, records the resolved versions and tree
+hashes, and can print the plan without acting. Protoctist makes no network
+call of its own. Reference databases are fetched only by an explicit command
+that states the URL, the size and the digest it will check.
+
+*Reproducibility.* A run manifest already records the reference, its version,
+the ladder and the thresholds. The proposal adds the resolved package versions
+and, for wrapped tools, the binary's digest and command line. Two runs are
+poolable only if these agree on the fields that affect the judgement.
+
+*Accessibility.* The aim is that no result depends on colour alone and every
+figure has its data beside it. Today the iTOL status dataset labels its three
+fields as well as colouring them, and count errors name the row, the column
+and the value. The contamination strip is colour only; adding a labelled
+legend to it is part of entry `PC-N02`.

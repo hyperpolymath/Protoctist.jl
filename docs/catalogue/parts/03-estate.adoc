@@ -1,0 +1,251 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+[[estate]]
+= What the formal work adds
+
+== Why a protist toolkit carries type theory
+
+[.lead]
+Three questions come up in every amplicon study and are usually answered in a
+footnote. Is this taxon present, or only not ruled out? What was lost between
+the read and the figure? May these two runs be compared? The formal
+developments below answer each as data that travels with the result.
+
+The catalogue entries refer to these by name. This part says what each one is,
+what has been proved, and which entries use it. Status is quoted from each
+repository's own proof ledger as read on 18 November 2026.
+
+== Evidence types
+
+[cols="2,3,3",options="header"]
+|===
+| Development | What it establishes | Where the catalogue uses it
+
+| *epistemic-types* (Agda)
+| A _factive_ modality has a reflection principle: from the evidence one may
+  conclude the claim. A _belief_ modality deliberately has none. A token alone
+  never yields the claim (`no-receipt-reflection`).
+| The four statuses on every row and node: `FACTIVE`, `BELIEF`, `COLLAPSED`,
+  `SANS_FIBRE`. Every entry that turns a number into a verdict says which
+  status the verdict may carry (placement, detection, pruned search).
+
+| *residual-evidence-types* (Agda) and *ResidualEvidenceTypes.jl*
+| Presence and identification come apart. A quantity can be known to be
+  nonzero without its value being known. Claims are decided over _all_
+  candidate worlds consistent with the observation and the assumptions:
+  entailed, refuted, or unresolved, with a witness each way.
+| Unassigned and partially assigned reads (`LineageResidual`), detection above
+  a noise bound, novel-lineage admissibility, contamination.
+
+| *echo-types* (Agda, with Rocq and Lean legs)
+| What a lossy map retains about its input, and when the input can be
+  recovered from what was retained.
+| Round trips: lineage string to `TaxPath` and back, jplace read and write,
+  rank truncation, table import and export.
+
+| *EpistemicTypes.jl*
+| The runtime form: a receipt binding a call to its standpoint (tool, version,
+  database, release, parameters), its warrant (the classifier's numbers and
+  the sample gates) and its projection (taxon, rank, feature, sample), sealed
+  with a digest; and a merge verdict for two runs.
+| Receipts carried by Protoctist rows; the manifest and pooling entries.
+|===
+
+[NOTE]
+.A word used twice
+====
+_Occupancy_ in this catalogue means site-occupancy modelling in ecology:
+whether a taxon occupies a site given imperfect detection. The estate's
+*occupancy-types* repository is about memory occupancy of programs. It is not
+used here, and the shared word is a coincidence.
+====
+
+[[tropes]]
+== Tropes: a ledger of what each step loses
+
+Trope particularity is a small fixed vocabulary for what happens to a specific
+property as it passes through a system, and whether what survives is enough
+for the use at hand. Its checker takes a graph of steps, each graded by what
+it does to a property, composes the grades, and returns `p-sufficient` or
+`p-insufficient` for a declared use, with the edge that caused the failure.
+
+An amplicon pipeline is such a graph, and its common failures are losses that
+nobody recorded. The proposal is that every Protoctist operation declares its
+grade, so that a run can be checked against what an analysis needs.
+
+[cols="2,2,4",options="header"]
+|===
+| Effect | Grade | Where it happens in a protist workflow
+
+| `p-preserving`
+| `Present`
+| Reading a table without altering it; carrying a receipt.
+
+| `p-projecting`
+| `Dropped`
+| Truncating a lineage to a rank: everything below is withheld, and the path
+  to recover it is known. Keeping only the best placement per query.
+
+| `p-collapsing`
+| `Predicated(P)`
+| Turning counts into presence or absence. Reporting "assigned at genus"
+  instead of the lineage. What survives is the answer to one question.
+
+| `p-attenuating`
+| `Attenuated(δ)`
+| Rarefying to a depth. Rounding. Summarising a placement distribution by its
+  expected position.
+
+| `p-fusing`
+| `Fused(τ)`
+| Clustering sequences into an OTU. Pooling samples. Rolling counts up a
+  clade.
+
+| `p-detaching`
+| `Severed`
+| Exporting a tree without the table it annotates. Dropping the sample
+  metadata from a count matrix.
+
+| `p-falsifying`
+| `Falsified`
+| Reading a blank count as zero. A deceptive effect: the result claims less
+  loss than occurred. Protoctist refuses, with the row named.
+
+| `p-misbinding`
+| `Misbound`
+| Reading a SILVA lineage against the PR2 ladder, so that a name sits at the
+  wrong rank. Deceptive. Protoctist types every path by its ladder and never
+  compares across them.
+
+| `p-conflating`
+| `Conflated`
+| Two different nodes exported under one label, as in an iTOL dataset keyed by
+  name when two taxa share a name. Deceptive. Detecting and refusing this is
+  entry `PC-N02`.
+|===
+
+The grades are ordered
+stem:[\mathsf{Falsified} \sqsubset \mathsf{Dropped} \sqsubset \mathsf{Predicated}(P) \sqsubset \mathsf{Attenuated}(\top) \sqsubset \cdots \sqsubset \mathsf{Attenuated}(1) \sqsubset \mathsf{Present}],
+and compose along a path. An analysis declares a floor. Faith's phylogenetic
+diversity needs branch lengths `Present`; computed on a taxonomy tree, where
+they were never there, the verdict is `p-insufficient` and the witness is the
+tree-building step. The user is told which step to change.
+
+The three deceptive effects are the ones Protoctist's existing design refuses
+by construction. That is not a coincidence of vocabulary: the calculus
+separates honest loss, which composes, from deception, which is a validation
+fault and cannot be written.
+
+== Proofs already in the estate
+
+Each row is a statement a proof assistant accepted in the named repository.
+The grade and the scope are that repository's own.
+
+[cols="3,3,2,2",options="header"]
+|===
+| Statement | Module | Status there | Entries
+
+| The RapidNJ row bound: for a row sorted by distance, `qBound ≤ Q` for every
+  unexamined entry, so a row may be abandoned once `qBound ≥ q_min`
+| `epistemic-types`, `Applications.QCriterion.qBound-≤-Q`,
+  `RapidNJSkip.skip-known`, `whole-row-known`
+| [.st-proven]#PROVEN# in Agda over any ordered group; integers instantiated;
+  ungraded
+| PC-D06, PC-D07
+
+| A token without a soundness map never yields the claim
+| `epistemic-types`, `RapidNJSkip.no-receipt-reflection`
+| [.st-proven]#PROVEN#
+| PC-F03
+
+| Cumulative counts conserve the tip total; a child's cumulative count never
+  exceeds its parent's
+| `MetaManifold-WebUI`, `CladeCumulus.cumulative-conserves-tips`,
+  `child≤parent`
+| [.st-proven]#PROVEN#, PWG-3
+| PC-F01
+
+| Faith's PD is monotone in the taxon set and bounded by the total tree length
+| `CladeCumulus.faithPD-mono`, `faithPD-bounded`
+| [.st-proven]#PROVEN#, PWG-3
+| PC-G05
+
+| The unweighted UniFrac numerator never exceeds its denominator
+| `CladeCumulus.sharedPD≤unionPD`, `unifracNumerator≤Denominator`
+| [.st-proven]#PROVEN#, PWG-3
+| PC-H02
+
+| Benjamini–Hochberg adjusted values dominate the raw p-values, are at most
+  one, and preserve order
+| `MetaManifold-WebUI`, `BenjaminiHochberg.bh-dominates-p`, `bh-at-most-one`,
+  `bh-monotone`; also `CompositionalDA.jl`, P5
+| [.st-proven]#PROVEN#, PWG-3
+| PC-I05
+
+| A permutation p-value has the floor stem:[1/(N+1)] for stem:[N] permutations;
+  with 63 permutations no p-value below 1% is reachable
+| `Permanova.p-floor`, `minP-63`, `no-p-at-1%-with-63`
+| [.st-proven]#PROVEN#, PWG-3
+| PC-H05
+
+| Size-factor scaling: proportions sum to one and lie in stem:[[0,1]]
+| `Scaling.proportions-sum-to-1`, `proportions-bounded`
+| [.st-proven]#PROVEN#, PWG-3
+| PC-I01
+
+| Detection from a count stem:[y] under a noise bound stem:[n]: the candidate
+  latents are exactly stem:[[y \dot{-} n,\; y+n]]; the verdict is entailed iff
+  stem:[n < y], refuted iff stem:[y = n = 0], unresolved otherwise
+| `MetaManifold-Evidence`, `Counts.verdict-sound`, `Bounds.view`
+| [.st-proven]#PROVEN# in Agda, re-proved in Rocq and Lean; PWG-3
+| PC-J01
+
+| The centred log-ratio sums to zero; its algebraic identities under each zero
+  policy
+| `CompositionalDA.jl`, `proofs/agda`
+| [.st-proven]#PROVEN#; each mirrored by a property test with a planted
+  mutant
+| PC-I02
+|===
+
+Two more results are measured, not proved, and are used as such.
+
+* *Exact quality filtering.* An expected-error sum is an element of
+  stem:[\mathbb{Q}(\theta)] with stem:[\theta = 10^{-1/10}], so comparison
+  with a rational threshold is decidable exactly. On 152,360 real reads the
+  exact and double-precision filters agreed on every read; on reads
+  constructed to sum to exactly 2, double precision was wrong on all 2,000
+  (MetaManifold-WebUI, `docs/cladistics/issue-303`, experiments 1 and 4).
+* *Placement verdicts.* With the application's own placement step, clade
+  verdicts from an amplicon fragment were right for 2,375 of 2,388 entailed
+  cases, with no error among 1,515 verdicts on clades of 50 or more
+  references and 7 errors among 62 on clades of two or three (the same
+  document, experiment 8). Entry `PC-E05` builds on this.
+
+== The atlas and the claims registry
+
+Mathesis keeps an atlas of the mathematics across these repositories and a
+registry of claim pins. A pin points at one theorem in its home repository, at
+a commit and a receipt digest, and its grade is derived from the receipt,
+never typed by hand.
+
+The proposal for Protoctist is to treat <<obligations>> the same way. An
+obligation enters this catalogue as [.st-open]#OPEN#. When its home repository
+proves it and records a receipt, a claim pin is added in Mathesis, and the
+catalogue entry cites the pin. Protoctist never asserts a grade for itself.
+
+Two candidate bridges are worth recording for assessment. Neither is claimed.
+
+* *Tree metrics and tropical geometry.* A dissimilarity is a tree metric
+  exactly when it satisfies the four-point condition, which is the tropical
+  Plücker relation; the space of tree metrics is a tropical Grassmannian
+  (Speyer and Sturmfels 2004). The estate has a tropical-types development
+  that this catalogue has not read. Whether its max-plus structures give a
+  type for "this matrix is tree-like to within ε" is an open question, and
+  the right place to ask it is Mathesis.
+* *Zoom laws for placements.* MetaManifold-Evidence states, in a module not
+  yet merged there, that an entailed verdict survives zooming out to an
+  enclosing clade, and a refuted verdict survives zooming in, each under a
+  premise on the error bounds. These are the laws a placement viewer needs
+  (`PC-E06`).

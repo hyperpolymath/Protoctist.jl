@@ -1,0 +1,277 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+= The catalogue: communities, detection and reporting
+
+Notation: a sample has counts stem:[n_1,\dots,n_S] with total stem:[N] and
+proportions stem:[p_i = n_i/N]; stem:[f_k] is the number of taxa seen exactly
+stem:[k] times.
+
+== G. Diversity within a sample
+
+=== PC-G01 · Richness, Shannon, Simpson
+
+[horizontal]
+Formulae:: stem:[S_{\text{obs}} = |\{i : n_i > 0\}|]; stem:[H = -\sum_i p_i \ln p_i]; stem:[\lambda = \sum_i p_i^2], Gini–Simpson stem:[1-\lambda].
+Decision:: [.st-adopt]#ADOPT#, with an exact path: richness and proportions as integers and rationals, as MetaManifold's approved method catalogue does.
+Estate:: Descriptive only. No interval or test is implied.
+
+=== PC-G02 · Hill numbers
+
+[horizontal]
+Formula:: stem:[{}^qD = \left(\sum_i p_i^{\,q}\right)^{1/(1-q)}] for stem:[q \ne 1], and stem:[{}^1D = \exp(H)]. stem:[{}^0D = S_{\text{obs}}], stem:[{}^2D = 1/\lambda] (Hill 1973; Jost 2006).
+Decision:: [.st-adopt]#ADOPT#.
+Obligation:: PO-10.
+
+=== PC-G03 · Richness estimators
+
+[horizontal]
+Chao1:: stem:[\hat S = S_{\text{obs}} + \frac{f_1^2}{2 f_2}], and stem:[S_{\text{obs}} + \frac{f_1(f_1-1)}{2}] when stem:[f_2 = 0].
+Good's coverage:: stem:[\hat C = 1 - f_1/N].
+Caution:: Denoisers remove or alter singletons, so stem:[f_1] after DADA2 is not a sampling quantity. The estimator is refused on a table marked as denoised unless the user overrides by name.
+Decision:: [.st-adopt]#ADOPT#, behind that gate.
+Obligation:: PO-21.
+
+=== PC-G04 · Rarefaction and extrapolation
+
+[horizontal]
+Formula:: Expected richness in a subsample of size stem:[m]: stem:[E[S_m] = \sum_i \left[1 - \binom{N - n_i}{m}\Big/\binom{N}{m}\right]].
+Decision:: [.st-adopt]#ADOPT#. Whether to rarefy is the analyst's call; both sides of the debate are cited (McMurdie and Holmes 2014; Schloss 2024).
+Estate:: Rarefying is `p-attenuating`. The depth and the seed go in the manifest.
+Obligation:: PO-23.
+
+=== PC-G05 · Faith's phylogenetic diversity
+
+[horizontal]
+Formula:: stem:[\mathrm{PD}(X) = \sum_{e \in T(X)} \ell_e], the total length of the edges spanning the taxa stem:[X] and the root.
+Decision:: [.st-core]#CORE# through the Cladistics extension.
+Proved elsewhere:: [.st-proven]#PROVEN# monotone and bounded (`faithPD-mono`, `faithPD-bounded`).
+Estate:: Needs branch lengths `Present`. On a taxonomy tree the request is `p-insufficient` and is refused.
+
+=== PC-G06 · Phylogenetic Hill numbers
+
+[horizontal]
+Formula:: With stem:[a_e] the relative abundance descending from edge stem:[e] and stem:[\bar T = \sum_e \ell_e a_e]: stem:[{}^q\bar D(\bar T) = \left[\sum_e \frac{\ell_e}{\bar T} a_e^{\,q}\right]^{1/(1-q)}] (Chao, Chiu and Jost 2010).
+Decision:: [.st-adopt]#ADOPT# if Diversity.jl with Phylo.jl passes the survey; otherwise [.st-build]#BUILD# on PC-F04.
+
+== H. Differences between samples
+
+=== PC-H01 · Abundance and incidence dissimilarities
+
+[horizontal]
+Bray–Curtis:: stem:[\mathrm{BC}(x,y) = \frac{\sum_i |x_i - y_i|}{\sum_i (x_i + y_i)}].
+Jaccard:: stem:[J(A,B) = 1 - \frac{|A\cap B|}{|A\cup B|}].
+Decision:: [.st-adopt]#ADOPT# Distances.jl.
+Estate:: Jaccard is `p-collapsing`: it sees presence only.
+
+=== PC-H02 · UniFrac
+
+[horizontal]
+Unweighted:: stem:[U = \frac{\sum_e \ell_e\,|\mathbb{1}[a_e>0] - \mathbb{1}[b_e>0]|}{\sum_e \ell_e\,\max(\mathbb{1}[a_e>0], \mathbb{1}[b_e>0])}].
+Weighted:: stem:[W = \sum_e \ell_e\,|a_e - b_e|], normalised by stem:[\sum_i d_i (a_i + b_i)] with stem:[d_i] the root-to-tip distance.
+Generalised:: stem:[\frac{\sum_e \ell_e (a_e + b_e)^{\alpha}\left|\frac{a_e - b_e}{a_e + b_e}\right|}{\sum_e \ell_e (a_e + b_e)^{\alpha}}] (Chen et al. 2012).
+Decision:: [.st-build]#BUILD# on PC-F04. No registered Julia implementation was found; the estate has one inside MetaManifold, checked against scikit-bio.
+Proved elsewhere:: [.st-proven]#PROVEN# that the unweighted numerator never exceeds the denominator.
+Obligation:: PO-11.
+
+=== PC-H03 · Aitchison distance
+
+[horizontal]
+Formula:: stem:[d_A(x,y) = \lVert \mathrm{clr}(x) - \mathrm{clr}(y) \rVert_2], with stem:[\mathrm{clr}(x)_i = \ln x_i - \tfrac1S\sum_j \ln x_j].
+Decision:: [.st-adopt]#ADOPT# CompositionalDA.jl for the transform; zero policy explicit (PC-I02).
+Obligation:: PO-14.
+
+=== PC-H04 · Ordination
+
+[horizontal]
+Principal coordinates:: From stem:[D], form stem:[B = -\tfrac12 J D^{(2)} J] with stem:[J = I - \tfrac1n \mathbf{1}\mathbf{1}^{\!\top}], and take stem:[X = V_k \Lambda_k^{1/2}] from its leading eigenpairs.
+Non-metric scaling:: Minimise stress stem:[\sqrt{\sum (d_{ij} - \hat d_{ij})^2 / \sum d_{ij}^2}] over configurations.
+Decision:: [.st-adopt]#ADOPT# MultivariateStats.jl.
+Estate:: Negative eigenvalues are reported with their share, not discarded silently.
+
+=== PC-H05 · Permutational analysis of variance
+
+[horizontal]
+Formula:: stem:[F = \frac{SS_A/(a-1)}{SS_W/(N-a)}], with stem:[SS_T = \frac1N\sum_{i<j} d_{ij}^2] and stem:[SS_W = \sum_g \frac{1}{n_g}\sum_{i<j \in g} d_{ij}^2] (Anderson 2001). The p-value is stem:[\frac{1 + \#\{F^\pi \ge F\}}{1 + P}] over stem:[P] permutations.
+Decision:: [.st-build]#BUILD# in Julia, with PERMDISP beside it. No registered Julia package was found; MetaManifold currently calls R.
+Proved elsewhere:: [.st-proven]#PROVEN# that the smallest reachable p-value is stem:[1/(P+1)], and which terms are untestable because their labels are fixed within every block.
+Estate:: A p-value below its floor is impossible and is refused; a term whose labels never exchange has its p-value withheld. Exchangeability is an assumption the user states, not one a seed supplies.
+Obligation:: PO-16.
+
+== I. Composition and differential abundance
+
+=== PC-I01 · Scaling
+
+[horizontal]
+Total sum:: stem:[p_i = n_i/N], with stem:[\sum_i p_i = 1].
+Median of ratios:: stem:[s_j = \operatorname{median}_i \frac{n_{ij}}{(\prod_k n_{ik})^{1/m}}] over taxa with no zero.
+Decision:: [.st-adopt]#ADOPT# CompositionalDA.jl.
+Proved elsewhere:: [.st-proven]#PROVEN# sums and bounds (`Scaling`).
+
+=== PC-I02 · Log-ratio transforms and zeros
+
+[horizontal]
+Transforms:: Centred, additive stem:[\mathrm{alr}(x)_i = \ln(x_i/x_S)] and isometric log-ratios.
+Zero policies:: Refuse; pseudocount; multiplicative replacement stem:[r_i = \delta] if stem:[x_i = 0], else stem:[x_i\left(1 - \frac{\sum_{z}\delta}{c}\right)] for a composition summing to stem:[c] (Martín-Fernández et al. 2003).
+Decision:: [.st-adopt]#ADOPT# CompositionalDA.jl, where normalised input is refused by type and no path handles zeros silently.
+Proved elsewhere:: [.st-proven]#PROVEN# algebraic identities of the centred log-ratio, each mirrored by a property test.
+Obligation:: PO-13.
+
+=== PC-I03 · Differential abundance
+
+[horizontal]
+ALDEx2:: Dirichlet Monte Carlo instances of each sample, centred log-ratio, then Welch and Wilcoxon tests averaged over instances.
+ANCOM-BC:: stem:[\ln n_{ij} = d_j + \mathbf{x}_j^{\!\top}\boldsymbol\beta_i + \varepsilon_{ij}] with a sample bias stem:[d_j] estimated and removed (Lin and Peddada 2020).
+Decision:: [.st-adopt]#ADOPT# CompositionalDA.jl for ALDEx2. [.st-hold]#HOLD# on ANCOM-BC: that package's own calibration pilot found severe false-discovery inflation with four against sixteen samples under a complete null, and it makes no calibration claim.
+Estate:: A result names its method, zero policy and number of Monte Carlo instances.
+
+=== PC-I04 · Count models with excess zeros
+
+[horizontal]
+Negative binomial:: stem:[n_{ij} \sim \mathrm{NB}(\mu_{ij}, \phi_i)], stem:[\ln\mu_{ij} = \ln s_j + \mathbf{x}_j^{\!\top}\boldsymbol\beta_i].
+Zero-inflated:: stem:[P(n = 0) = \pi + (1-\pi)\,\mathrm{NB}(0)], stem:[P(n = k) = (1-\pi)\,\mathrm{NB}(k)] for stem:[k>0].
+Hurdle:: stem:[P(n = 0) = \pi_0], stem:[P(n = k) = (1-\pi_0)\frac{\mathrm{NB}(k)}{1 - \mathrm{NB}(0)}] for stem:[k>0].
+Decision:: [.st-hold]#HOLD#. ZeroInflatedCounts.jl is a specification with no implementation yet.
+
+=== PC-I05 · Multiple testing
+
+[horizontal]
+Benjamini–Hochberg:: For ordered stem:[p_{(1)} \le \dots \le p_{(m)}]: stem:[q_{(k)} = \min_{j \ge k} \min\!\left(1, \frac{m}{j} p_{(j)}\right)].
+Decision:: [.st-adopt]#ADOPT# CompositionalDA.jl `bh_adjust`.
+Proved elsewhere:: [.st-proven]#PROVEN#: stem:[q \ge p], stem:[q \le 1], order preserved.
+
+== J. Detection, contamination and occupancy
+
+=== PC-J01 · Detection above a noise bound
+
+[horizontal]
+Rule:: With stem:[y] reads observed and noise at most stem:[n] in either direction, the candidate true counts are stem:[[\max(0, y-n),\, y+n]]. Present is entailed iff stem:[n < y]; refuted iff stem:[y = n = 0]; otherwise unresolved, with a witness each way.
+Decision:: [.st-adopt]#ADOPT# the rule; [.st-core]#CORE# for carrying the verdict on a node.
+Proved elsewhere:: [.st-proven]#PROVEN# in MetaManifold-Evidence in Agda, Rocq and Lean.
+Estate:: The noise bound is a declared assumption, typically from negative controls. Without one, every nonzero count is unresolved.
+
+=== PC-J02 · Contaminant identification
+
+[horizontal]
+Frequency:: A contaminant's frequency falls as input DNA rises: compare the fits stem:[\ln f = \beta_0 - \ln c] and stem:[\ln f = \beta_0] (Davis et al. 2018).
+Prevalence:: Compare presence in negative controls with presence in true samples by a stem:[2\times2] test.
+Decision:: [.st-build]#BUILD#, small, in Julia. No Julia implementation was found.
+Estate:: Contamination suspected sets `LineageResidual.contaminated`, which closes the route to "novel".
+
+=== PC-J03 · Cross-talk between samples
+
+[horizontal]
+What:: Tag jumps and index hopping put a small share of an abundant taxon's reads into other samples (Schnell et al. 2015).
+Decision:: [.st-core]#CORE# as a noise bound for PC-J01: stem:[n_{ij} = \lceil \rho \cdot \max_{j'} y_{ij'} \rceil] for a declared rate stem:[\rho].
+
+=== PC-J04 · Site occupancy
+
+[horizontal]
+Model:: Site stem:[i] is occupied with probability stem:[\psi]; each of stem:[K] visits detects with probability stem:[p]. For a history with stem:[d] detections: stem:[L = \psi\, p^{d}(1-p)^{K-d} + (1-\psi)\,\mathbb{1}[d = 0]].
+Decision:: [.st-hold]#HOLD#. MetaManifold has a low-level estimator that is not yet a workflow; it needs repeated visits and refuses single-visit histories.
+
+== K. Associations and assembly
+
+=== PC-K01 · Association networks
+
+[horizontal]
+What:: SparCC, SPIEC-EASI, and FlashWeave, which is written in Julia.
+Decision:: [.st-adopt]#ADOPT# FlashWeave.jl (GPL-3.0) if it passes the survey.
+Estate:: An edge is an association under a model, never an interaction.
+
+=== PC-K02 · Phylogenetic community structure
+
+[horizontal]
+Formulae:: stem:[\mathrm{NRI} = -\frac{\mathrm{MPD}_{\text{obs}} - \overline{\mathrm{MPD}}_{\text{null}}}{\mathrm{sd}(\mathrm{MPD}_{\text{null}})}], and stem:[\beta\mathrm{NTI}] likewise from the between-sample mean nearest-taxon distance (Webb et al. 2002; Stegen et al. 2013).
+Decision:: [.st-hold]#HOLD#. They need a stable phylogeny, which PC-D10 shows an amplicon tree is not.
+
+== L. Protist-specific concerns
+
+=== PC-L01 · Trophic mode and function
+
+[horizontal]
+What:: Trait tables keyed by taxon (Ramond et al. 2019; Schneider et al. 2020; the Mixoplankton Database, Mitra et al. 2023).
+Decision:: [.st-core]#CORE# for a join by typed lineage at a stated rank, with the unmatched share reported.
+Estate:: A trait inherited from a genus is `p-attenuating`; from a class it may be `p-insufficient` for a functional claim.
+
+=== PC-L02 · Parasites and host signal
+
+[horizontal]
+What:: Syndiniales and apicomplexans can dominate read counts; host reads dominate gut and tissue samples.
+Decision:: [.st-core]#CORE#: named category filters recorded in the manifest, so that "after removing host" is part of the judgement surface.
+
+=== PC-L03 · Long-read ribosomal operons
+
+[horizontal]
+What:: Full 18S or 18S–28S reads give trees that short amplicons cannot (Jamy et al. 2020).
+Decision:: [.st-core]#CORE# for formats; this is the case where PC-D becomes useful directly.
+
+=== PC-L04 · Units of diversity
+
+[horizontal]
+What:: No single identity threshold delimits protist species; richness depends on the unit (Caron and Hu 2019).
+Decision:: [.st-core]#CORE#: every richness figure states its unit and threshold.
+
+== M. Provenance and pooling
+
+=== PC-M01 · Run manifest
+
+[horizontal]
+What:: Reference, version, ladder, thresholds and input digests. In 0.1.0.
+Proposed:: Resolved package versions, wrapped tool versions and digests, profile name.
+Decision:: [.st-core]#CORE#.
+
+=== PC-M02 · Merge verdict
+
+[horizontal]
+Rule:: Two runs pool iff their judgement surfaces agree; otherwise every differing field is listed.
+Decision:: [.st-core]#CORE#. In 0.1.0.
+Obligation:: PO-07.
+
+=== PC-M03 · Receipts
+
+[horizontal]
+What:: A per-row record binding a call to its standpoint, warrant and projection, sealed with a digest.
+Decision:: [.st-adopt]#ADOPT# EpistemicTypes.jl through an extension. Protoctist carries receipts and never mints one.
+
+=== PC-M04 · Metadata standards
+
+[horizontal]
+What:: MIxS and MIMARKS (Yilmaz et al. 2011); the FAIR eDNA checklist (Takahashi et al. 2025).
+Decision:: [.st-core]#CORE#: a checker that lists missing required fields.
+
+=== PC-M05 · Loss ledger
+
+[horizontal]
+What:: The graph of steps a run went through, each with its trope grade, exported for the trope checker.
+Decision:: [.st-core]#CORE#, proposed. See <<tropes>>.
+Obligation:: PO-25.
+
+== N. Export and display
+
+=== PC-N01 · Annotated Newick
+
+[horizontal]
+What:: Newick with NHX comments carrying rank, counts and status. In 0.1.0.
+Decision:: [.st-core]#CORE#.
+
+=== PC-N02 · iTOL datasets
+
+[horizontal]
+What:: Bars for cumulative reads, stacked bars for status, a strip for contamination. In 0.1.0.
+Proposed:: Detect two nodes sharing a label and refuse or disambiguate; add a labelled legend to the contamination strip.
+Decision:: [.st-core]#CORE#.
+Estate:: A shared label is `p-conflating`.
+Obligation:: PO-25.
+
+=== PC-N03 · Tables
+
+[horizontal]
+What:: Any Tables.jl sink; DataFrames; Arrow.
+Decision:: [.st-adopt]#ADOPT# through an extension.
+
+=== PC-N04 · Figures
+
+[horizontal]
+What:: Tree and composition plots in Julia.
+Decision:: [.st-adopt]#ADOPT# Makie through an extension, later. Not a priority unless the review says so.

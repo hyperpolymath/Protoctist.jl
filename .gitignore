@@ -149,3 +149,6 @@ verification/proofs/agda/*.agdai
 /examples/dada2/out/
 /examples/epa-ng/confident.jplace
 /examples/qiime2/lineages.tsv
+
+# Field catalogue build output (HTML, PDF); the committed PDF sits beside the source
+docs/catalogue/out/

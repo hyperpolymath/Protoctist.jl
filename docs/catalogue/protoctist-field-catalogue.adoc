@@ -1,0 +1,79 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= The Protoctist Field Catalogue
+Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+Review draft 0.1, 2026-11-18: Methods, formulae, proof obligations and Julia packages for protist research. A proposal for review by BIOCEV.
+:doctype: book
+:toc: macro
+:toclevels: 1
+:toc-title: Contents
+:sectnums:
+:sectnumlevels: 1
+:partnums:
+:part-signifier: Part
+:stem: latexmath
+:icons!:
+:xrefstyle: short
+:source-highlighter!:
+:repo: https://github.com/hyperpolymath/Protoctist.jl
+
+toc::[]
+
+[preface]
+== About this document
+
+[.lead]
+Protoctist.jl is a small Julia library for protist community analyses built on
+PR2 or SILVA. This document proposes what it should grow into: one import that
+gives a protistologist every method the field uses, by installing the Julia
+packages that already do the work, building natively only what is missing, and
+attaching to each result a statement of what the evidence does and does not
+establish.
+
+It is a review draft. Nothing in the catalogue is implemented because it is
+listed here. Each entry says what exists today, what was tested, and what is
+proposed.
+
+[horizontal]
+Status:: Review draft 0.1, 18 November 2026. Not a release announcement.
+Source:: `docs/catalogue/` in {repo}[hyperpolymath/Protoctist.jl]. This file is generated from AsciiDoc; the source is the authority.
+Licences:: Code `MPL-2.0`. This text and its figures `CC-BY-SA-4.0`. You may share and adapt the text with attribution, under the same licence.
+Author:: Jonathan D.A. Jewell, The Open University. Drafted with an AI assistant; the author answers for the content.
+How to respond:: Every catalogue entry has an identifier such as `PC-D04`. <<review-process>> describes the three marks we ask for.
+
+[IMPORTANT]
+.How to read the claims
+====
+Four words are used with fixed meanings throughout.
+
+[.st-proven]#PROVEN# means a proof assistant accepted the statement, and the
+entry names the repository and module. [.st-tested]#TESTED# means a program was
+run and its result is reported; it is evidence about the cases run, not a
+proof. [.st-assumed]#ASSUMED# means a premise taken from the literature.
+[.st-open]#OPEN# means stated and not yet proved or tested.
+
+A formula in this catalogue is the published definition of a method. Writing it
+down does not mean Protoctist computes it today.
+====
+
+include::parts/01-proposal.adoc[]
+
+include::parts/02-architecture.adoc[]
+
+include::parts/03-estate.adoc[]
+
+include::parts/04-catalogue-a-reference.adoc[]
+
+include::parts/05-catalogue-b-trees.adoc[]
+
+include::parts/06-catalogue-c-community.adoc[]
+
+include::parts/07-obligations.adoc[]
+
+include::parts/08-ecosystem.adoc[]
+
+include::parts/09-experiments.adoc[]
+
+include::parts/10-beyond-repo.adoc[]
+
+include::parts/11-references.adoc[]

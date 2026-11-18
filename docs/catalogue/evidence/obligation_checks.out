@@ -1,0 +1,23 @@
+PO-08  bound holds on every skipped entry (violations = 0), runs         300 / 300
+PO-08  pruned search = full scan at every join, exact rationals          300 / 300
+       entries skipped by the row rule: 286709 over 3521 joins
+PO-08  runs on 240-site p-distances with at least one tied join          300 / 300
+PO-08  Float64 tree = exact rational tree (same input order)             266 / 300   <-- NOT ALL
+PO-08  exact tree unchanged by permuting the input order                 239 / 300   <-- NOT ALL
+PO-10  Hill numbers non-increasing in q over (0, .5, 1, 2, 3)            2000 / 2000
+PO-10  order 0 equals richness, and every order is at least 1            2000 / 2000
+PO-21  Chao1 >= observed richness; coverage in [0, 1]                    2000 / 2000
+PO-23  expected rarefied richness non-decreasing; equals S at full depth 2000 / 2000
+PO-13  centred log-ratio sums to zero (tolerance 1e-9)                   2000 / 2000
+PO-14  Aitchison distance invariant under rescaling each sample          2000 / 2000
+PO-14  Aitchison distance of a subcomposition never exceeds the full     2000 / 2000
+PO-15  Benjamini-Hochberg: q >= p, q <= 1, order kept (exact rationals)  2000 / 2000
+PO-01  rollup conserves the total, including rows counted at an ancestor 1000 / 1000
+PO-01  a child's cumulative count never exceeds its parent's             1000 / 1000
+PO-19  factive + belief <= cumulative; root factive = sum of factive rows1000 / 1000
+PO-06  best placement is the maximum weight, whatever the listing order  500 / 500
+PO-05  weights of a query's candidates sum to at most 1 (as generated)   500 / 500
+PO-07  merge verdict symmetric in outcome and number of reasons          1000 / 1000
+PO-07  a manifest always merges with itself                              1000 / 1000
+
+Julia 1.13.4; seed 20261118; these are tests on generated cases, not proofs.
