@@ -36,7 +36,7 @@ jobs:
 
       - name: "🟡 CHECK: Validate DEED manifests"
         if: steps.detect.outputs.count > 0
-        uses: hyperpolymath/deed-ecosystem/validate-action@eb89a3311e96835cdacad875e52118bed571880d # main
+        uses: hyperpolymath/deed-ecosystem/validate-action@4cb8886be67cf0d67e150679d1213ea519c3806f # main
         with:
           path: '.'
           strict: 'false'
