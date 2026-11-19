@@ -243,11 +243,14 @@ function read_jplace(path::AbstractString)
     fields = String[
         f isa String ? f :
         throw(ArgumentError("$path: a \"fields\" entry is not a string")) for
-        f in _jplace_array(path, get(doc, "fields", Any[]), "fields")
+        f in _jplace_array(path, get(doc, "fields", nothing), "fields")
     ]
+    # Without edge_num a placement has no edge; do not invent edge 0.
+    "edge_num" in fields ||
+        throw(ArgumentError("$path: \"fields\" does not declare \"edge_num\""))
     v = get(doc, "version", 3.0)
-    (v isa Float64 && isinteger(v)) ||
-        throw(ArgumentError("$path: \"version\" is not an integer"))
+    (v isa Float64 && isinteger(v) && -2.0^63 <= v < 2.0^63) ||
+        throw(ArgumentError("$path: \"version\" is not an integer in range"))
     ver = Int(v)
     placements = Placement[]
     for (nm, vals) in _jplace_entries(path, doc, fields)
@@ -277,6 +280,15 @@ function write_jplace(b::PlacementBatch, path::AbstractString)
         isempty(b.fields) ?
         ["edge_num", "likelihood", "like_weight_ratio", "distal_length", "pendant_length"] :
         b.fields
+    # JSON has no infinity. Refuse before the destination is opened, so a
+    # failed export does not truncate an existing file.
+    for p in b.placements
+        for x in (p.likelihood, p.like_weight_ratio, p.distal_length, p.pendant_length)
+            isinf(x) && throw(
+                ArgumentError("cannot write $x for \"$(p.name)\": JSON has no infinity"),
+            )
+        end
+    end
     open(path, "w") do fh
         println(fh, "{")
         println(fh, "  \"tree\": ", _json_quote(b.tree), ",")
@@ -356,13 +368,18 @@ end
 mutable struct _JReader
     s::String
     i::Int
+    depth::Int
 end
+
+# RFC 8259 allows a nesting limit; past it, the error names the byte offset
+# instead of overflowing the stack.
+const _JMAXDEPTH = 512
 
 _jfail(r::_JReader, msg::AbstractString) =
     throw(ArgumentError("invalid JSON at byte $(r.i): $msg"))
 
 function _json_parse(s::String)
-    r = _JReader(s, 1)
+    r = _JReader(s, 1, 0)
     v = _jvalue(r)
     _jskip(r)
     r.i <= ncodeunits(s) && _jfail(r, "unexpected data after the top-level value")
@@ -391,8 +408,13 @@ end
 
 function _jvalue(r::_JReader)
     c = _jpeek(r)
-    c == UInt8('{') && return _jobject(r)
-    c == UInt8('[') && return _jarray(r)
+    if c == UInt8('{') || c == UInt8('[')
+        r.depth += 1
+        r.depth > _JMAXDEPTH && _jfail(r, "nested deeper than $_JMAXDEPTH levels")
+        v = c == UInt8('{') ? _jobject(r) : _jarray(r)
+        r.depth -= 1
+        return v
+    end
     c == UInt8('"') && return _jstring(r)
     (c == UInt8('-') || UInt8('0') <= c <= UInt8('9')) && return _jnumber(r)
     _jliteral(r, "true") && return true
@@ -535,7 +557,8 @@ end
 # --- jplace structure ---------------------------------------------------------
 
 function _jplace_array(path::AbstractString, v, what::AbstractString)
-    v isa Vector{Any} || throw(ArgumentError("$path: \"$what\" is not a JSON array"))
+    v isa Vector{Any} ||
+        throw(ArgumentError("$path: \"$what\" is missing or not a JSON array"))
     return v
 end
 
@@ -552,8 +575,13 @@ function _jplace_names(path::AbstractString, obj::Dict{String,Any})
         # "nm": [[name, multiplicity], ...]; the multiplicity is not kept.
         names = String[]
         for e in _jplace_array(path, obj["nm"], "nm")
-            (e isa Vector{Any} && !isempty(e) && e[1] isa String) ||
-                throw(ArgumentError("$path: an \"nm\" entry is not [name, multiplicity]"))
+            (
+                e isa Vector{Any} &&
+                length(e) == 2 &&
+                e[1] isa String &&
+                e[2] isa Float64 &&
+                e[2] > 0
+            ) || throw(ArgumentError("$path: an \"nm\" entry is not [name, multiplicity]"))
             push!(names, e[1])
         end
         return names
@@ -573,7 +601,7 @@ function _jplace_entries(
     fields::Vector{String},
 )
     out = Tuple{String,Dict{String,Float64}}[]
-    for obj in _jplace_array(path, get(doc, "placements", Any[]), "placements")
+    for obj in _jplace_array(path, get(doc, "placements", nothing), "placements")
         obj isa Dict{String,Any} ||
             throw(ArgumentError("$path: a placement is not a JSON object"))
         haskey(obj, "p") || throw(ArgumentError("$path: a placement has no \"p\""))
@@ -581,10 +609,16 @@ function _jplace_entries(
         isempty(names) && (names = [""])
         for row in _jplace_array(path, obj["p"], "p")
             row = _jplace_array(path, row, "p")
+            length(row) == length(fields) || throw(
+                ArgumentError(
+                    "$path: a \"p\" row has $(length(row)) values for $(length(fields)) fields",
+                ),
+            )
             vals = Dict{String,Float64}()
-            for (i, f) in enumerate(fields)
-                i <= length(row) || break
-                x = row[i]
+            for (f, x) in zip(fields, row)
+                f == "edge_num" &&
+                    !(x isa Float64 && isinteger(x) && -2.0^63 <= x < 2.0^63) &&
+                    throw(ArgumentError("$path: an \"edge_num\" is not an integer"))
                 vals[f] =
                     x === nothing ? NaN :
                     x isa Float64 ? x :

@@ -314,3 +314,57 @@ end
         @test only(Protoctist.Formats.read_jplace(q).placements).name == "a\tb"
     end
 end
+
+@testset "jplace: the shape is checked, nothing is invented" begin
+    mktempdir() do dir
+        hdr = """"tree": "(A);", "version": 3, "fields": ["edge_num", "likelihood", "like_weight_ratio"]"""
+        bad(name, body) = (p = joinpath(dir, name); write(p, body); p)
+        # Each of these used to give a batch with made-up or missing values.
+        for body in (
+            """{"tree": "(A);", "placements": []}""",                       # no fields
+            """{"tree": "(A);", "fields": ["likelihood"], "placements": []}""", # no edge_num
+            """{$hdr}""",                                                      # no placements
+            """{$hdr, "placements": [{"p": [[1]], "n": ["q"]}]}""",            # short row
+            """{$hdr, "placements": [{"p": [[1, -1.0, 0.5, 9]], "n": ["q"]}]}""", # long row
+            """{$hdr, "placements": [{"p": [[1.5, -1.0, 0.5]], "n": ["q"]}]}""", # edge 1.5
+            """{$hdr, "placements": [{"p": [[null, -1.0, 0.5]], "n": ["q"]}]}""", # edge null
+            """{$hdr, "placements": [{"p": [[1, -1.0, 0.5]], "nm": [["q"]]}]}""", # nm no count
+            """{$hdr, "placements": [{"p": [[1, -1.0, 0.5]], "nm": [["q", false]]}]}""",
+            """{"tree": "(A);", "version": 9223372036854775807, "fields": ["edge_num"], "placements": []}""",
+        )
+            @test_throws ArgumentError Protoctist.Formats.read_jplace(bad("x.jplace", body))
+        end
+        # Explicit empty placements and edge 0 are still fine.
+        ok = bad(
+            "ok.jplace",
+            """{$hdr, "placements": [{"p": [[0, -1.0, null]], "nm": [["q", 2]]}]}""",
+        )
+        b = Protoctist.Formats.read_jplace(ok)
+        @test only(b.placements).edge_num == 0
+        @test isnan(only(b.placements).like_weight_ratio)
+        @test isempty(
+            Protoctist.Formats.read_jplace(bad("e.jplace", """{$hdr, "placements": []}""")).placements,
+        )
+
+        # Deep nesting is a located error, not a stack overflow.
+        deep = bad("deep.jplace", """{$hdr, "x": $("["^10_000)""")
+        err = try
+            Protoctist.Formats.read_jplace(deep)
+            nothing
+        catch e
+            e
+        end
+        @test err isa ArgumentError && occursin("nested deeper", err.msg)
+
+        # An infinity is refused before the file is touched.
+        q = bad("keep.jplace", "keep")
+        inf = Protoctist.Formats.PlacementBatch(
+            "(A);",
+            [Protoctist.Formats.Placement("q", 0, -Inf, 1.0, 0.0, 0.0)],
+            String[],
+            3,
+        )
+        @test_throws ArgumentError Protoctist.Formats.write_jplace(inf, q)
+        @test read(q, String) == "keep"
+    end
+end
