@@ -222,9 +222,9 @@ link:docs/guide/troubleshooting.adoc[Troubleshooting] · link:docs/guide/glossar
 
 link:docs/EXPLAINME.adoc[EXPLAINME] gives the reasoning behind each design
 decision, the cost of each choice, and the current limits. Those limits are:
-a jplace reader that handles jplace but is not a general JSON parser, no
-branch lengths on the taxonomy tree, and row matching that is linear in rows
-× depth × siblings.
+a jplace reader that keeps only the five standard fields, no branch lengths
+on the taxonomy tree, and row matching that is linear in rows × depth ×
+siblings.
 
 == Testing
 

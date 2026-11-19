@@ -313,9 +313,11 @@ strip that header.
 These are properties of version 0.1, stated so that nobody meets them by
 surprise.
 
-* *jplace reading.* The reader is a focused scanner, not a JSON parser. It
-  expects placement objects without nested objects, and names without escaped
-  quotes. It keeps the five standard fields. pplacer's `post_prob` and
+* *jplace reading.* A small built-in JSON reader (RFC 8259, no dependency)
+  reads the file. Invalid JSON or a duplicate key is an error that names the
+  file and the byte offset. JSON without the jplace shape, such as a
+  placement without `"p"`, is an error that names the file. It keeps the five
+  standard fields. pplacer's `post_prob` and
   `marginal_like` are not retained. For `nm`, the names are kept but the
   multiplicities are not, and a written file uses `n`.
 * *CSV reading.* A quoted field cannot span lines.
