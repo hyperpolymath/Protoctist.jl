@@ -224,18 +224,33 @@ end
     read_jplace(path) -> PlacementBatch
 
 Read a jplace (phylogenetic placement) file. jplace is JSON; to keep the
-core dependency-free this reads the structure with a small focused scanner
-rather than pulling in a JSON package. It handles the jplace shape — it is
-not a general JSON parser, and says so if the file is not jplace.
+core dependency-free, the file is read by a small built-in JSON reader
+rather than a JSON package. Invalid JSON, or JSON without the jplace
+shape (a `"tree"` string, `"fields"` strings, placement objects with a
+`"p"` array), raises an `ArgumentError` that names the file.
 """
 function read_jplace(path::AbstractString)
-    s = read(path, String)
-    tree = _json_string_field(s, "tree")
-    tree === nothing && throw(ArgumentError("$path: no \"tree\" field — not a jplace file"))
-    fields = _json_string_array(s, "fields")
-    ver = something(_json_int_field(s, "version"), 3)
+    doc = try
+        _json_parse(read(path, String))
+    catch e
+        e isa ArgumentError ? throw(ArgumentError("$path: $(e.msg)")) : rethrow()
+    end
+    doc isa Dict{String,Any} ||
+        throw(ArgumentError("$path: the top level is not a JSON object, not a jplace file"))
+    tree = get(doc, "tree", nothing)
+    tree isa String ||
+        throw(ArgumentError("$path: no \"tree\" string field, not a jplace file"))
+    fields = String[
+        f isa String ? f :
+        throw(ArgumentError("$path: a \"fields\" entry is not a string")) for
+        f in _jplace_array(path, get(doc, "fields", Any[]), "fields")
+    ]
+    v = get(doc, "version", 3.0)
+    (v isa Float64 && isinteger(v)) ||
+        throw(ArgumentError("$path: \"version\" is not an integer"))
+    ver = Int(v)
     placements = Placement[]
-    for (nm, vals) in _jplace_entries(s, fields)
+    for (nm, vals) in _jplace_entries(path, doc, fields)
         push!(
             placements,
             Placement(
@@ -313,6 +328,9 @@ function _json_quote(s::AbstractString)
             print(buf, '\\', c)
         elseif c == '\n'
             print(buf, "\\n")
+        elseif c < ' '
+            # JSON forbids a raw control character in a string.
+            print(buf, "\\u", string(UInt32(c); base = 16, pad = 4))
         else
             print(buf, c)
         end
@@ -321,72 +339,256 @@ function _json_quote(s::AbstractString)
     return String(take!(buf))
 end
 
-# A capture group the pattern requires: the `nothing` arm of the captures
-# union is unreachable once the match succeeded, but the type cannot say so,
-# and JET is right to flag the unguarded access. Fail loud on the impossible
-# branch rather than `something()`-ing it into a TypeError further away.
-function _required_capture(m::RegexMatch)
-    c = m.captures[1]
-    c === nothing && error("required capture group did not participate: pattern regression")
-    return c
-end
-
-function _json_string_field(s::AbstractString, key::AbstractString)
-    m = match(Regex("\"" * key * "\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\""), s)
-    m === nothing && return nothing
-    return replace(_required_capture(m), "\\\"" => "\"", "\\\\" => "\\", "\\n" => "\n")
-end
-
-function _json_int_field(s::AbstractString, key::AbstractString)
-    m = match(Regex("\"" * key * "\"\\s*:\\s*(-?\\d+)"), s)
-    m === nothing && return nothing
-    return parse(Int, _required_capture(m))
-end
-
-function _json_string_array(s::AbstractString, key::AbstractString)
-    m = match(Regex("\"" * key * "\"\\s*:\\s*\\[([^\\]]*)\\]"), s)
-    m === nothing && return String[]
-    return [
-        String(_required_capture(x)) for
-        x in eachmatch(r"\"([^\"]*)\"", _required_capture(m))
-    ]
-end
-
-# Scan "placements": [ { "p": [[...],...], "n": [...] or "nm": [[name,mult],...] } ]
+# --- JSON reader for jplace -------------------------------------------------
 #
-# One placement object carries EVERY candidate edge for its query (pplacer and
-# EPA-ng list several, each with its own like_weight_ratio) and may name
-# several identical queries. The result is one entry per (name, candidate):
-# nothing is dropped, and no candidate is privileged by its position in the
-# file. `null` values (which some placers write for missing fields) become
-# NaN in place, so the remaining columns stay aligned with `fields`.
-function _jplace_entries(s::AbstractString, fields::Vector{String})
-    out = Tuple{String,Dict{String,Float64}}[]
-    pm = match(r"\"placements\"\s*:\s*\[", s)
-    pm === nothing && return out
-    # Whitespace is allowed between the brackets of "p", as pretty-printed
-    # JSON writes it. The pattern used to require "[[" and "]]", so such
-    # a file gave no placements and no error.
-    for obj in
-        eachmatch(r"\{[^{}]*\"p\"\s*:\s*\[\s*\[(.*?)\]\s*\][^{}]*\}"s, s[pm.offset:end])
-        body = obj.match
-        names = _json_string_array(body, "n")
-        if isempty(names)
-            m2 = match(r"\"nm\"\s*:\s*\[(.*?)\]\s*\]"s, body)
-            m2 !== nothing && (
-                names = [
-                    String(_required_capture(x)) for
-                    x in eachmatch(r"\[\s*\"([^\"]*)\"", _required_capture(m2))
-                ]
-            )
+# jplace is JSON (Matsen et al. 2012). The core has no dependencies, so this is
+# a small reader for the whole of RFC 8259 rather than a JSON package. It used
+# to be a set of regular expressions over the raw text; those broke on a brace
+# or a quote inside a string, on a key named in the tree, and on any object
+# shape they did not expect, and some of those failures read as "no
+# placements" instead of an error. A malformed document now fails loudly with
+# its byte offset.
+#
+# Values: object → Dict{String,Any}, array → Vector{Any}, string → String,
+# number → Float64, true/false → Bool, null → nothing. A duplicate key is an
+# error (I-JSON, RFC 7493).
+
+mutable struct _JReader
+    s::String
+    i::Int
+end
+
+_jfail(r::_JReader, msg::AbstractString) =
+    throw(ArgumentError("invalid JSON at byte $(r.i): $msg"))
+
+function _json_parse(s::String)
+    r = _JReader(s, 1)
+    v = _jvalue(r)
+    _jskip(r)
+    r.i <= ncodeunits(s) && _jfail(r, "unexpected data after the top-level value")
+    return v
+end
+
+function _jskip(r::_JReader)
+    n = ncodeunits(r.s)
+    while r.i <= n && codeunit(r.s, r.i) in (0x20, 0x09, 0x0a, 0x0d)
+        r.i += 1
+    end
+    return nothing
+end
+
+function _jpeek(r::_JReader)
+    _jskip(r)
+    r.i <= ncodeunits(r.s) || _jfail(r, "unexpected end of input")
+    return codeunit(r.s, r.i)
+end
+
+function _jexpect(r::_JReader, c::UInt8)
+    _jpeek(r) == c || _jfail(r, "expected '$(Char(c))'")
+    r.i += 1
+    return nothing
+end
+
+function _jvalue(r::_JReader)
+    c = _jpeek(r)
+    c == UInt8('{') && return _jobject(r)
+    c == UInt8('[') && return _jarray(r)
+    c == UInt8('"') && return _jstring(r)
+    (c == UInt8('-') || UInt8('0') <= c <= UInt8('9')) && return _jnumber(r)
+    _jliteral(r, "true") && return true
+    _jliteral(r, "false") && return false
+    _jliteral(r, "null") && return nothing
+    _jfail(r, "unexpected character")
+end
+
+function _jliteral(r::_JReader, lit::String)
+    n = ncodeunits(lit)
+    r.i + n - 1 <= ncodeunits(r.s) || return false
+    for k = 1:n
+        codeunit(r.s, r.i + k - 1) == codeunit(lit, k) || return false
+    end
+    r.i += n
+    return true
+end
+
+function _jobject(r::_JReader)
+    _jexpect(r, UInt8('{'))
+    d = Dict{String,Any}()
+    _jpeek(r) == UInt8('}') && (r.i += 1; return d)
+    while true
+        _jpeek(r) == UInt8('"') || _jfail(r, "expected a string key")
+        at = r.i
+        k = _jstring(r)
+        haskey(d, k) && (r.i = at; _jfail(r, "duplicate key \"$k\""))
+        _jexpect(r, UInt8(':'))
+        d[k] = _jvalue(r)
+        c = _jpeek(r)
+        r.i += 1
+        c == UInt8('}') && return d
+        c == UInt8(',') || (r.i -= 1; _jfail(r, "expected ',' or '}'"))
+    end
+end
+
+function _jarray(r::_JReader)
+    _jexpect(r, UInt8('['))
+    a = Any[]
+    _jpeek(r) == UInt8(']') && (r.i += 1; return a)
+    while true
+        push!(a, _jvalue(r))
+        c = _jpeek(r)
+        r.i += 1
+        c == UInt8(']') && return a
+        c == UInt8(',') || (r.i -= 1; _jfail(r, "expected ',' or ']'"))
+    end
+end
+
+function _jhex4(r::_JReader)
+    r.i + 3 <= ncodeunits(r.s) || _jfail(r, "truncated \\u escape")
+    v = 0
+    for k = 0:3
+        c = codeunit(r.s, r.i + k)
+        d =
+            UInt8('0') <= c <= UInt8('9') ? c - UInt8('0') :
+            UInt8('a') <= c <= UInt8('f') ? c - UInt8('a') + 10 :
+            UInt8('A') <= c <= UInt8('F') ? c - UInt8('A') + 10 :
+            _jfail(r, "bad hex digit in \\u escape")
+        v = 16v + Int(d)
+    end
+    r.i += 4
+    return v
+end
+
+const _JESC = Dict{UInt8,Char}(
+    UInt8('"') => '"',
+    UInt8('\\') => '\\',
+    UInt8('/') => '/',
+    UInt8('b') => '\b',
+    UInt8('f') => '\f',
+    UInt8('n') => '\n',
+    UInt8('r') => '\r',
+    UInt8('t') => '\t',
+)
+
+function _jstring(r::_JReader)
+    _jexpect(r, UInt8('"'))
+    buf = IOBuffer()
+    n = ncodeunits(r.s)
+    while true
+        r.i <= n || _jfail(r, "unterminated string")
+        c = codeunit(r.s, r.i)
+        if c == UInt8('"')
+            r.i += 1
+            s = String(take!(buf))
+            isvalid(s) || _jfail(r, "string is not valid UTF-8")
+            return s
+        elseif c == UInt8('\\')
+            r.i += 1
+            r.i <= n || _jfail(r, "unterminated string")
+            e = codeunit(r.s, r.i)
+            r.i += 1
+            if e == UInt8('u')
+                u = _jhex4(r)
+                if 0xD800 <= u <= 0xDBFF
+                    _jliteral(r, "\\u") || _jfail(r, "unpaired surrogate in \\u escape")
+                    lo = _jhex4(r)
+                    0xDC00 <= lo <= 0xDFFF || _jfail(r, "unpaired surrogate in \\u escape")
+                    u = 0x10000 + ((u - 0xD800) << 10) + (lo - 0xDC00)
+                elseif 0xDC00 <= u <= 0xDFFF
+                    _jfail(r, "unpaired surrogate in \\u escape")
+                end
+                print(buf, Char(u))
+            else
+                ch = get(_JESC, e, nothing)
+                ch === nothing && (r.i -= 1; _jfail(r, "bad escape"))
+                print(buf, ch)
+            end
+        elseif c < 0x20
+            _jfail(r, "control character in string")
+        else
+            write(buf, c)
+            r.i += 1
         end
+    end
+end
+
+function _jnumber(r::_JReader)
+    s, n, start = r.s, ncodeunits(r.s), r.i
+    isdig(k) = k <= n && UInt8('0') <= codeunit(s, k) <= UInt8('9')
+    digits!() = (isdig(r.i) || _jfail(r, "expected a digit"); while isdig(r.i)
+        r.i += 1
+    end)
+    r.i <= n && codeunit(s, r.i) == UInt8('-') && (r.i += 1)
+    if r.i <= n && codeunit(s, r.i) == UInt8('0')
+        r.i += 1
+    else
+        digits!()
+    end
+    r.i <= n && codeunit(s, r.i) == UInt8('.') && (r.i += 1; digits!())
+    if r.i <= n && codeunit(s, r.i) in (UInt8('e'), UInt8('E'))
+        r.i += 1
+        r.i <= n && codeunit(s, r.i) in (UInt8('+'), UInt8('-')) && (r.i += 1)
+        digits!()
+    end
+    return parse(Float64, SubString(s, start, r.i - 1))
+end
+
+# --- jplace structure ---------------------------------------------------------
+
+function _jplace_array(path::AbstractString, v, what::AbstractString)
+    v isa Vector{Any} || throw(ArgumentError("$path: \"$what\" is not a JSON array"))
+    return v
+end
+
+function _jplace_names(path::AbstractString, obj::Dict{String,Any})
+    if haskey(obj, "n")
+        n = obj["n"]
+        n isa String && return [n]
+        return [
+            x isa String ? x :
+            throw(ArgumentError("$path: a name in \"n\" is not a string")) for
+            x in _jplace_array(path, n, "n")
+        ]
+    elseif haskey(obj, "nm")
+        # "nm": [[name, multiplicity], ...]; the multiplicity is not kept.
+        names = String[]
+        for e in _jplace_array(path, obj["nm"], "nm")
+            (e isa Vector{Any} && !isempty(e) && e[1] isa String) ||
+                throw(ArgumentError("$path: an \"nm\" entry is not [name, multiplicity]"))
+            push!(names, e[1])
+        end
+        return names
+    end
+    return String[]
+end
+
+# One entry per (name, candidate) in every placement object. One object carries
+# EVERY candidate edge for its query (pplacer and EPA-ng list several, each with
+# its own like_weight_ratio) and may name several identical queries: nothing is
+# dropped, and no candidate is privileged by its position in the file. `null`
+# (which some placers write for a missing value) becomes NaN in place, so the
+# remaining columns stay aligned with `fields`.
+function _jplace_entries(
+    path::AbstractString,
+    doc::Dict{String,Any},
+    fields::Vector{String},
+)
+    out = Tuple{String,Dict{String,Float64}}[]
+    for obj in _jplace_array(path, get(doc, "placements", Any[]), "placements")
+        obj isa Dict{String,Any} ||
+            throw(ArgumentError("$path: a placement is not a JSON object"))
+        haskey(obj, "p") || throw(ArgumentError("$path: a placement has no \"p\""))
+        names = _jplace_names(path, obj)
         isempty(names) && (names = [""])
-        for entry in split(_required_capture(obj), r"\]\s*,\s*\[")
-            toks = strip.(split(entry, ','))
+        for row in _jplace_array(path, obj["p"], "p")
+            row = _jplace_array(path, row, "p")
             vals = Dict{String,Float64}()
             for (i, f) in enumerate(fields)
-                i <= length(toks) || break
-                vals[f] = toks[i] == "null" ? NaN : parse(Float64, toks[i])
+                i <= length(row) || break
+                x = row[i]
+                vals[f] =
+                    x === nothing ? NaN :
+                    x isa Float64 ? x :
+                    throw(ArgumentError("$path: \"$f\" in \"p\" is not a number or null"))
             end
             for name in names
                 push!(out, (name, vals))

@@ -255,3 +255,62 @@ end
         @test only(filter(x -> x.name == "all_null", best)).edge_num == 0
     end
 end
+
+@testset "jplace: JSON reader, not a pattern scan" begin
+    mktempdir() do dir
+        hdr = """"fields": ["edge_num", "likelihood", "like_weight_ratio", "distal_length", "pendant_length"]"""
+        # A brace and an escaped quote inside a name, the word "placements" and
+        # a fake "p" inside the tree, keys in another order, \\u escapes. The
+        # old scanner split objects at any brace and searched the raw text.
+        p = joinpath(dir, "tricky.jplace")
+        write(
+            p,
+            """
+   {"version": 3, $hdr,
+    "tree": "((A:0.1{0},B:0.2{1}):0.3{2}); \\"placements\\": [{\\"p\\": [[9]]}]",
+    "placements": [
+      {"n": ["q{1}", "q\\"2", "caf\\u00e9"], "p": [[1, -1.5e2, 1.0, 0.0, 0.25]]}
+    ]}
+   """,
+        )
+        b = Protoctist.Formats.read_jplace(p)
+        @test [x.name for x in b.placements] == ["q{1}", "q\"2", "café"]
+        @test all(x -> x.edge_num == 1 && x.likelihood == -150.0, b.placements)
+        @test occursin("\"placements\"", b.tree)
+
+        # Malformed JSON and a placement without "p" fail loudly with the path,
+        # instead of reading as zero placements.
+        bad = joinpath(dir, "bad.jplace")
+        write(
+            bad,
+            """{"tree": "(A);", $hdr, "placements": [{"p": [[0, 1.0,]], "n": ["x"]}]}""",
+        )
+        err = try
+            Protoctist.Formats.read_jplace(bad)
+            nothing
+        catch e
+            e
+        end
+        @test err isa ArgumentError && occursin(bad, err.msg) && occursin("byte", err.msg)
+        nop = joinpath(dir, "nop.jplace")
+        write(nop, """{"tree": "(A);", $hdr, "placements": [{"n": ["x"]}]}""")
+        @test_throws ArgumentError Protoctist.Formats.read_jplace(nop)
+        dup = joinpath(dir, "dup.jplace")
+        write(dup, """{"tree": "(A);", "tree": "(B);", $hdr, "placements": []}""")
+        @test_throws ArgumentError Protoctist.Formats.read_jplace(dup)
+        @test_throws ArgumentError Protoctist.Formats.read_jplace(
+            (write(joinpath(dir, "arr.jplace"), "[1]"); joinpath(dir, "arr.jplace")),
+        )
+
+        # A control character in a name is escaped on write and read back.
+        q = joinpath(dir, "ctl.jplace")
+        b2 = Protoctist.Formats.PlacementBatch(
+            "(A);",
+            [Protoctist.Formats.Placement("a\tb", 0, -1.0, 1.0, 0.0, 0.0)],
+            String[],
+            3,
+        )
+        Protoctist.Formats.write_jplace(b2, q)
+        @test only(Protoctist.Formats.read_jplace(q).placements).name == "a\tb"
+    end
+end
