@@ -35,7 +35,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout caller history
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.sha }}
@@ -43,7 +43,7 @@ jobs:
           persist-credentials: false
 
       - name: Checkout reviewed exemption checker
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           repository: metadatastician/standards
           ref: cf8f91219d80da55cf8cbbfcd587d00c2d8798ed
